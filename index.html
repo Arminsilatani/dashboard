@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="assets/Dashboard.css" />
+  <link rel="stylesheet" href="assets/dashboard.css" />
 </head>
 <body>
 
@@ -20,13 +20,10 @@
     </div>
   </header>
 
-  <!-- GLOBAL LOADER (برای لاگین) -->
-  <div id="global-loader" class="modal hidden">
-    <div class="modal-box" style="background:transparent;border:none;box-shadow:none;text-align:center;">
-      <p style="color:var(--accent);">Signing in…</p>
-    </div>
-  </div>
-
+  <!-- AUTH OVERLAY (صفحه ورود) -->
+  <div id="auth-overlay">
+    <div class="auth-box">
+      <img src="assets/favicon.svg" alt="Dashboard" onerror="this.style.display='none'">
       <h2>Dashboard</h2>
       <p class="sub">Sign in to manage your panel</p>
 
@@ -39,11 +36,11 @@
         data-request-access="write">
       </script>
 
-      <p id="auth-error" class="error-msg"></p>
+      <div class="auth-error" id="auth-error"></div>
     </div>
   </div>
 
-  <!-- MAIN APP -->
+  <!-- MAIN APP (در ابتدا مخفی) -->
   <div id="app-screen" class="screen">
 
     <!-- SIDEBAR -->
@@ -230,6 +227,6 @@
 
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="assets/Dashboard.js" defer></script>
+  <script src="assets/dashboard.js" defer></script>
 </body>
 </html>
