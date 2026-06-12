@@ -393,6 +393,13 @@ td .btn-ghost { padding: 5px 10px; font-size: 12px; }
   text-align: center;
 }
 
+.sub {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  margin-top: -4px;
+}
+
 /* FOOTER */
 .site-footer {
   border-top: 1px solid var(--border);
