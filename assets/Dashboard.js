@@ -1,13 +1,26 @@
 const SUPABASE_URL = 'https://vzqicidepdmraygulrey.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6cWljaWRlcGRtcmF5Z3VscmV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMDg1NjYsImV4cCI6MjA5NTY4NDU2Nn0.3nlzZjgIzDIQOiozUepvbdXsGKmh26q7egoE6IQTkYI';
 
-// ── Supabase REST helpers ──────────────────────────────────────────────────────
+// ── Supabase client ────────────────────────────────────────────────────────────
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// ── Helpers to get token/user for REST calls ────────────────────────────────────
+async function getToken() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token || null;
+}
+async function getUid() {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id || null;
+}
+
+// ── Supabase REST helpers (keep using fetch, but token from above) ──────────────
 async function sbFetch(path, opts = {}) {
   const url = `${SUPABASE_URL}/rest/v1/${path}`;
+  const token = await getToken();
   const headers = {
     'apikey': SUPABASE_KEY,
-    'Authorization': `Bearer ${getToken() || SUPABASE_KEY}`,
+    'Authorization': `Bearer ${token || SUPABASE_KEY}`,
     'Content-Type': 'application/json',
     'Prefer': opts.prefer || 'return=representation',
     ...opts.headers
@@ -21,35 +34,24 @@ async function sbFetch(path, opts = {}) {
   return text ? JSON.parse(text) : null;
 }
 
-function getToken() { return localStorage.getItem('sb_token'); }
-function setToken(t) { localStorage.setItem('sb_token', t); }
-function clearToken() { localStorage.removeItem('sb_token'); localStorage.removeItem('sb_uid'); }
-function getUid() { return localStorage.getItem('sb_uid'); }
-function setUid(u) { localStorage.setItem('sb_uid', u); }
-
-// Auth
-async function signIn(email, password) {
-  const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-    method: 'POST',
-    headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
+// Auth functions via Supabase
+async function signInWithTelegram() {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'telegram',
+    options: {
+      redirectTo: window.location.origin   // به همان دامنه‌ای که پنل باز می‌شود برمی‌گردد
+    }
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error_description || data.msg || 'Auth failed');
-  setToken(data.access_token);
-  setUid(data.user.id);
-  return data;
+  if (error) {
+    document.getElementById('auth-error').textContent = error.message;
+  }
 }
 
 async function signOut() {
-  await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
-    method: 'POST',
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${getToken()}` }
-  }).catch(() => {});
-  clearToken();
+  await supabase.auth.signOut();
 }
 
-// DB helpers
+// DB helpers (unchanged logic, but they call sbFetch with token)
 const db = {
   select: (table, query = '') => sbFetch(`${table}?${query}`),
   insert: (table, body) => sbFetch(table, { method: 'POST', body: JSON.stringify(body) }),
@@ -64,17 +66,36 @@ let openTicketId = null;
 
 // ── Boot ───────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
-  const token = getToken();
-  const uid = getUid();
-  if (token && uid) {
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (session?.user) {
+    // کاربر بعد از OAuth برگشته یا سشن معتبر دارد
+    const uid = session.user.id;
     try {
-      const profiles = await db.select('profiles', `id=eq.${uid}`);
+      let profiles = await db.select('profiles', `id=eq.${uid}`);
       if (profiles && profiles.length) {
         currentUser = profiles[0];
         showApp();
-      } else { showAuth(); }
-    } catch { showAuth(); }
-  } else { showAuth(); }
+      } else {
+        // پروفایل وجود ندارد → یک ردیف جدید بساز (اگر تریگر ندارید)
+        const name = session.user.user_metadata?.full_name || 'User';
+        const newProfile = {
+          id: uid,
+          first_name: name,
+          role: 'user',
+          created_at: new Date().toISOString()
+        };
+        await db.insert('profiles', newProfile);
+        currentUser = newProfile;
+        showApp();
+      }
+    } catch (e) {
+      console.error('Boot error:', e);
+      showAuth();
+    }
+  } else {
+    showAuth();
+  }
 
   bindEvents();
 });
@@ -120,18 +141,7 @@ function loadSection(name) {
 // ── Events ─────────────────────────────────────────────────────────────────────
 function bindEvents() {
   // Auth
-  document.getElementById('auth-btn').addEventListener('click', async () => {
-    const email = document.getElementById('auth-email').value.trim();
-    const pw = document.getElementById('auth-password').value;
-    const errEl = document.getElementById('auth-error');
-    errEl.textContent = '';
-    try {
-      await signIn(email, pw);
-      const profiles = await db.select('profiles', `id=eq.${getUid()}`);
-      currentUser = profiles[0];
-      showApp();
-    } catch (e) { errEl.textContent = e.message; }
-  });
+  document.getElementById('auth-btn').addEventListener('click', signInWithTelegram);
 
   document.getElementById('signout-btn').addEventListener('click', async () => {
     await signOut();
