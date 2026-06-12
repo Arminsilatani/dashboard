@@ -1,26 +1,29 @@
 const SUPABASE_URL = 'https://vzqicidepdmraygulrey.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6cWljaWRlcGRtcmF5Z3VscmV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMDg1NjYsImV4cCI6MjA5NTY4NDU2Nn0.3nlzZjgIzDIQOiozUepvbdXsGKmh26q7egoE6IQTkYI';
+const SUPABASE_ANON_KEY = 'sb_publishable_kqRWgOmLISOE2EuLL1s8fw_WN6FJRTI';
+const TELEGRAM_BOT_ID = '5933108036'; // bot_id ربات arminsilatanibot
 
 // ── Supabase client ────────────────────────────────────────────────────────────
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ── Helpers to get token/user for REST calls ────────────────────────────────────
+// ── Token / User helpers ───────────────────────────────────────────────────────
 async function getToken() {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await sb.auth.getSession();
   return session?.access_token || null;
 }
+
 async function getUid() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await sb.auth.getUser();
   return user?.id || null;
 }
 
-// ── Supabase REST helpers (keep using fetch, but token from above) ──────────────
+// ── REST helper (برای کار با جداول دیگر) ──────────────────────────────────────
 async function sbFetch(path, opts = {}) {
   const url = `${SUPABASE_URL}/rest/v1/${path}`;
   const token = await getToken();
   const headers = {
-    'apikey': SUPABASE_KEY,
-    'Authorization': `Bearer ${token || SUPABASE_KEY}`,
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': `Bearer ${token || SUPABASE_ANON_KEY}`,
     'Content-Type': 'application/json',
     'Prefer': opts.prefer || 'return=representation',
     ...opts.headers
@@ -34,24 +37,6 @@ async function sbFetch(path, opts = {}) {
   return text ? JSON.parse(text) : null;
 }
 
-// Auth functions via Supabase
-async function signInWithTelegram() {
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'telegram',
-    options: {
-      redirectTo: window.location.origin   // به همان دامنه‌ای که پنل باز می‌شود برمی‌گردد
-    }
-  });
-  if (error) {
-    document.getElementById('auth-error').textContent = error.message;
-  }
-}
-
-async function signOut() {
-  await supabase.auth.signOut();
-}
-
-// DB helpers (unchanged logic, but they call sbFetch with token)
 const db = {
   select: (table, query = '') => sbFetch(`${table}?${query}`),
   insert: (table, body) => sbFetch(table, { method: 'POST', body: JSON.stringify(body) }),
@@ -64,30 +49,112 @@ let currentUser = null; // profile row
 let editingUserId = null;
 let openTicketId = null;
 
-// ── Boot ───────────────────────────────────────────────────────────────────────
+// ── Loader ─────────────────────────────────────────────────────────────────────
+function showLoader() {
+  document.getElementById('global-loader').classList.remove('hidden');
+}
+function hideLoader() {
+  document.getElementById('global-loader').classList.add('hidden');
+}
+
+// ── Telegram Auth (popup + Edge Function) ─────────────────────────────────────
+function signInWithTelegram() {
+  const origin = window.location.origin;
+  const width = 400, height = 550;
+  const left = (screen.width - width) / 2;
+  const top = (screen.height - height) / 2;
+  const popup = window.open(
+    `https://oauth.telegram.org/auth?bot_id=${TELEGRAM_BOT_ID}&origin=${encodeURIComponent(origin)}&embed=1&request_access=write`,
+    'telegram-auth',
+    `width=${width},height=${height},left=${left},top=${top}`
+  );
+  if (popup) popup.focus();
+}
+
+// دریافت پیام از پنجره تلگرام
+window.addEventListener('message', function (event) {
+  if (event.origin !== 'https://oauth.telegram.org') return;
+  if (event.data && event.data.id) {
+    window.onTelegramAuth(event.data);
+  }
+});
+
+window.onTelegramAuth = async function (user) {
+  showLoader();
+  const errEl = document.getElementById('auth-error');
+  errEl.textContent = '';
+
+  try {
+    // ۱. دریافت توکن از Edge Function
+    const params = new URLSearchParams(user);
+    const res = await fetch(
+      `${SUPABASE_URL}/functions/v1/telegram-auth?${params.toString()}`
+    );
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(errText || 'Telegram login failed');
+    }
+
+    const { access_token, refresh_token } = await res.json();
+
+    // ۲. تنظیم session در Supabase
+    const { error } = await sb.auth.setSession({ access_token, refresh_token });
+    if (error) throw error;
+
+    // ۳. گرفتن کاربر احراز‌شده
+    const { data: { user: authUser }, error: getUserError } = await sb.auth.getUser();
+    if (getUserError || !authUser) throw new Error('Could not fetch authenticated user');
+
+    // ۴. گرفتن (یا ساختن) پروفایل از جدول profiles
+    let profile = await db.select('profiles', `id=eq.${authUser.id}`);
+    if (!profile || !profile.length) {
+      // اولین ورود ← یک ردیف جدید می‌سازیم
+      const meta = authUser.user_metadata || {};
+      const newProfile = {
+        id: authUser.id,
+        first_name: meta.first_name || '',
+        last_name: meta.last_name || '',
+        username: meta.username || '',
+        role: 'user',
+        created_at: new Date().toISOString()
+      };
+      await db.insert('profiles', newProfile);
+      currentUser = newProfile;
+    } else {
+      currentUser = profile[0];
+    }
+
+    hideLoader();
+    showApp();
+
+  } catch (e) {
+    console.error(e);
+    errEl.textContent = e.message || 'Login failed';
+    hideLoader();
+    await sb.auth.signOut().catch(() => {});
+  }
+};
+
+async function signOut() {
+  await sb.auth.signOut();
+  currentUser = null;
+}
+
+// ── Boot / Session restore ─────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await sb.auth.getSession();
 
   if (session?.user) {
-    // کاربر بعد از OAuth برگشته یا سشن معتبر دارد
-    const uid = session.user.id;
     try {
-      let profiles = await db.select('profiles', `id=eq.${uid}`);
-      if (profiles && profiles.length) {
-        currentUser = profiles[0];
+      let profile = await db.select('profiles', `id=eq.${session.user.id}`);
+      if (profile && profile.length) {
+        currentUser = profile[0];
         showApp();
       } else {
-        // پروفایل وجود ندارد → یک ردیف جدید بساز (اگر تریگر ندارید)
-        const name = session.user.user_metadata?.full_name || 'User';
-        const newProfile = {
-          id: uid,
-          first_name: name,
-          role: 'user',
-          created_at: new Date().toISOString()
-        };
-        await db.insert('profiles', newProfile);
-        currentUser = newProfile;
-        showApp();
+        // پروفایل حذف شده ← سشن نامعتبر
+        await sb.auth.signOut();
+        showAuth();
       }
     } catch (e) {
       console.error('Boot error:', e);
@@ -109,14 +176,14 @@ function showApp() {
   document.getElementById('auth-screen').classList.remove('active');
   document.getElementById('app-screen').classList.add('active');
 
-  // sidebar info
+  // سایدبار
   const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || currentUser.username || 'User';
   document.getElementById('sidebar-name').textContent = name;
   document.getElementById('sidebar-role').textContent = currentUser.role || 'user';
   const av = document.getElementById('sidebar-avatar');
   av.src = currentUser.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4ECDC4&color=0d0d0d`;
 
-  // admin-only items
+  // نمایش بخش‌های مدیریتی برای ادمین
   if (currentUser.role === 'admin') {
     document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
   }
@@ -138,14 +205,12 @@ function loadSection(name) {
   if (name === 'users') loadUsers();
 }
 
-// ── Events ─────────────────────────────────────────────────────────────────────
+// ── Event listeners ────────────────────────────────────────────────────────────
 function bindEvents() {
   // Auth
-  document.getElementById('auth-btn').addEventListener('click', signInWithTelegram);
-
+  document.getElementById('telegram-login-btn').addEventListener('click', signInWithTelegram);
   document.getElementById('signout-btn').addEventListener('click', async () => {
     await signOut();
-    currentUser = null;
     showAuth();
   });
 
@@ -172,25 +237,37 @@ function bindEvents() {
   document.getElementById('close-ticket-btn').addEventListener('click', closeTicket);
 
   // Messages
-  document.getElementById('new-message-btn') && document.getElementById('new-message-btn').addEventListener('click', openSendMessageModal);
-  document.getElementById('cancel-msg-btn').addEventListener('click', () => document.getElementById('send-message-modal').classList.add('hidden'));
+  document.getElementById('new-message-btn')?.addEventListener('click', openSendMessageModal);
+  document.getElementById('cancel-msg-btn').addEventListener('click', () => {
+    document.getElementById('send-message-modal').classList.add('hidden');
+  });
   document.getElementById('submit-msg-btn').addEventListener('click', submitMessage);
 
   // Contracts
-  document.getElementById('new-section-btn').addEventListener('click', () => document.getElementById('add-section-modal').classList.remove('hidden'));
-  document.getElementById('cancel-section-btn').addEventListener('click', () => document.getElementById('add-section-modal').classList.add('hidden'));
+  document.getElementById('new-section-btn').addEventListener('click', () => {
+    document.getElementById('add-section-modal').classList.remove('hidden');
+  });
+  document.getElementById('cancel-section-btn').addEventListener('click', () => {
+    document.getElementById('add-section-modal').classList.add('hidden');
+  });
   document.getElementById('submit-section-btn').addEventListener('click', submitSection);
   document.getElementById('new-contract-btn').addEventListener('click', openAddContractModal);
-  document.getElementById('cancel-contract-btn').addEventListener('click', () => document.getElementById('add-contract-modal').classList.add('hidden'));
+  document.getElementById('cancel-contract-btn').addEventListener('click', () => {
+    document.getElementById('add-contract-modal').classList.add('hidden');
+  });
   document.getElementById('submit-contract-btn').addEventListener('click', submitContract);
 
   // Connections
   document.getElementById('new-conn-btn').addEventListener('click', openConnModal);
-  document.getElementById('cancel-conn-btn').addEventListener('click', () => document.getElementById('send-conn-modal').classList.add('hidden'));
+  document.getElementById('cancel-conn-btn').addEventListener('click', () => {
+    document.getElementById('send-conn-modal').classList.add('hidden');
+  });
   document.getElementById('submit-conn-btn').addEventListener('click', submitConnRequest);
 
   // Users
-  document.getElementById('cancel-edit-user-btn').addEventListener('click', () => document.getElementById('edit-user-modal').classList.add('hidden'));
+  document.getElementById('cancel-edit-user-btn').addEventListener('click', () => {
+    document.getElementById('edit-user-modal').classList.add('hidden');
+  });
   document.getElementById('save-user-btn').addEventListener('click', saveUser);
 }
 
@@ -201,13 +278,14 @@ async function loadTickets() {
   list.classList.remove('hidden');
   list.innerHTML = '<div class="empty-state">Loading...</div>';
   try {
-    let q = currentUser.role === 'admin'
+    const q = currentUser.role === 'admin'
       ? 'order=created_at.desc'
       : `user_id=eq.${currentUser.id}&order=created_at.desc`;
     const tickets = await db.select('tickets', q);
-    if (!tickets || !tickets.length) { list.innerHTML = '<div class="empty-state">No tickets yet.</div>'; return; }
-
-    // fetch profiles for user names
+    if (!tickets || !tickets.length) {
+      list.innerHTML = '<div class="empty-state">No tickets yet.</div>';
+      return;
+    }
     const uids = [...new Set(tickets.map(t => t.user_id))];
     const profiles = await db.select('profiles', `id=in.(${uids.join(',')})&select=id,first_name,last_name,username`);
     const pMap = {};
@@ -229,7 +307,9 @@ async function loadTickets() {
       card.addEventListener('click', () => openTicket(t));
       list.appendChild(card);
     });
-  } catch (e) { list.innerHTML = `<div class="empty-state">${e.message}</div>`; }
+  } catch (e) {
+    list.innerHTML = `<div class="empty-state">${e.message}</div>`;
+  }
 }
 
 async function openTicket(ticket) {
@@ -262,12 +342,12 @@ async function openTicket(ticket) {
     });
     msgs.scrollTop = msgs.scrollHeight;
 
-    // show close btn for admin if open
     if (currentUser.role === 'admin') {
-      const closeBtn = document.getElementById('close-ticket-btn');
-      closeBtn.classList.toggle('hidden', ticket.status === 'closed');
+      document.getElementById('close-ticket-btn').classList.toggle('hidden', ticket.status === 'closed');
     }
-  } catch (e) { msgs.innerHTML = e.message; }
+  } catch (e) {
+    msgs.innerHTML = e.message;
+  }
 }
 
 async function submitTicket() {
@@ -313,7 +393,10 @@ async function loadMessages() {
       ? `from_id=eq.${currentUser.id}&order=created_at.desc`
       : `to_id=eq.${currentUser.id}&order=created_at.desc`;
     const msgs = await db.select('messages', q);
-    if (!msgs || !msgs.length) { list.innerHTML = '<div class="empty-state">No messages.</div>'; return; }
+    if (!msgs || !msgs.length) {
+      list.innerHTML = '<div class="empty-state">No messages.</div>';
+      return;
+    }
 
     const ids = [...new Set([...msgs.map(m => m.from_id), ...msgs.map(m => m.to_id)].filter(Boolean))];
     const profs = await db.select('profiles', `id=in.(${ids.join(',')})&select=id,first_name,last_name,username`);
@@ -335,13 +418,14 @@ async function loadMessages() {
         </div>
         ${!m.read && currentUser.role !== 'admin' ? '<span class="badge badge-unread">New</span>' : ''}
       `;
-      // mark as read
       if (!m.read && m.to_id === currentUser.id) {
         db.update('messages', m.id, { read: true }).catch(() => {});
       }
       list.appendChild(card);
     });
-  } catch (e) { list.innerHTML = `<div class="empty-state">${e.message}</div>`; }
+  } catch (e) {
+    list.innerHTML = `<div class="empty-state">${e.message}</div>`;
+  }
 }
 
 async function openSendMessageModal() {
@@ -381,7 +465,10 @@ async function loadContracts() {
   try {
     const sections = await db.select('contract_sections', 'order=created_at.asc');
     const contracts = await db.select('contracts', 'order=created_at.asc');
-    if (!sections || !sections.length) { list.innerHTML = '<div class="empty-state">No sections yet.</div>'; return; }
+    if (!sections || !sections.length) {
+      list.innerHTML = '<div class="empty-state">No sections yet.</div>';
+      return;
+    }
 
     list.innerHTML = '';
     sections.forEach(sec => {
@@ -400,10 +487,14 @@ async function loadContracts() {
       `;
       const hdr = block.querySelector('.contract-section-header');
       const body = block.querySelector('.contract-files');
-      hdr.addEventListener('click', () => { body.style.display = body.style.display === 'none' ? '' : 'none'; });
+      hdr.addEventListener('click', () => {
+        body.style.display = body.style.display === 'none' ? '' : 'none';
+      });
       list.appendChild(block);
     });
-  } catch (e) { list.innerHTML = `<div class="empty-state">${e.message}</div>`; }
+  } catch (e) {
+    list.innerHTML = `<div class="empty-state">${e.message}</div>`;
+  }
 }
 
 async function submitSection() {
@@ -469,7 +560,6 @@ async function loadConnections() {
     const accepted = (all || []).filter(r => r.status === 'accepted');
     const pending = (all || []).filter(r => r.status === 'pending');
 
-    // Accepted connections
     if (!accepted.length) {
       list.innerHTML = '<div class="empty-state">No connections yet.</div>';
     } else {
@@ -485,7 +575,6 @@ async function loadConnections() {
       });
     }
 
-    // Pending
     if (pending.length) {
       const header = document.createElement('div');
       header.style.cssText = 'color:var(--muted);font-size:12px;margin:14px 0 6px';
@@ -515,7 +604,9 @@ async function loadConnections() {
         reqList.appendChild(card);
       });
     }
-  } catch (e) { list.innerHTML = `<div class="empty-state">${e.message}</div>`; }
+  } catch (e) {
+    list.innerHTML = `<div class="empty-state">${e.message}</div>`;
+  }
 }
 
 async function openConnModal() {
@@ -574,7 +665,9 @@ async function loadUsers() {
       `;
       tbody.appendChild(tr);
     });
-  } catch (e) { tbody.innerHTML = `<tr><td colspan="7">${e.message}</td></tr>`; }
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="7">${e.message}</td></tr>`;
+  }
 }
 
 async function openEditUser(uid) {
