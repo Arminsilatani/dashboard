@@ -901,7 +901,6 @@ async function updateNotificationBadge() {
       badge.classList.remove('active');
     }
   } catch (e) {
-    // جدول وجود نداره، badge رو مخفی کن
     badge.classList.remove('active');
   }
 }
