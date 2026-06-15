@@ -298,13 +298,13 @@ function bindEvents() {
     let photo_url = currentUser.photo_url;
 
     if (pendingPhotoFile) {
-      const filePath = `avatars/${currentUser.id}/${pendingPhotoFile.name}`;
+      const filePath = `avatars/${currentUser.id}/avatar.webp`;
       try {
         showLoader();
         const { error: uploadError } = await sb.storage.from('avatars').upload(filePath, pendingPhotoFile, { upsert: true, contentType: 'image/webp' });
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = sb.storage.from('avatars').getPublicUrl(filePath);
-        photo_url = publicUrl;
+photo_url = publicUrl + '?v=' + Date.now();
         pendingPhotoFile = null;
       } catch (err) {
         alert('Photo upload failed: ' + err.message);
