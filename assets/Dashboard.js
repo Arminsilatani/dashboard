@@ -315,10 +315,14 @@ function bindEvents() {
     if (!currentUser) return;
     document.getElementById('edit-first-name').value = currentUser.first_name || '';
     document.getElementById('edit-last-name').value = currentUser.last_name || '';
+    document.getElementById('edit-email').value = currentUser.email || '';
+    document.getElementById('edit-phone').value = currentUser.phone || '';
+    document.getElementById('edit-website').value = currentUser.website || '';
     document.getElementById('edit-username').value = currentUser.username || '';
+    document.getElementById('edit-avatar-preview').src = currentUser.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.first_name || 'U')}&background=4ECDC4&color=0d0d0d`;
     document.getElementById('edit-profile-modal').classList.remove('hidden');
   });
-
+  
   document.getElementById('cancel-edit-profile-btn')?.addEventListener('click', () => {
     document.getElementById('edit-profile-modal').classList.add('hidden');
   });
