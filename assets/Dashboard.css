@@ -316,13 +316,39 @@ td .btn-ghost { padding: 5px 10px; font-size: 12px; }
 }
 .detail-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
 .detail-value { font-size: 14px; color: var(--text); font-weight: 500; }
-.dash-edit-btn {
-  position: absolute; bottom: 20px; right: 20px;
-  background: var(--accent-dim); border: none; color: var(--accent);
-  width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; transition: background 0.15s;
+/* ── PROFILE AVATAR WRAPPER ─────────────────────────────── */
+.profile-avatar-wrap {
+  position: relative;
+  display: inline-block;
 }
-.dash-edit-btn:hover { background: var(--accent); color: #0d0d0d; }
+
+/* دکمهٔ مداد – فقط روی عکس */
+.dash-avatar-edit-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.65);
+  border: none;
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* هنگام هاور روی wrapper، مداد ظاهر بشه و قابل کلیک باشه */
+.profile-avatar-wrap:hover .dash-avatar-edit-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
 
 .dash-notif-card {
   flex: 3; min-width: 220px; background: var(--surface);
