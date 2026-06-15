@@ -1100,6 +1100,65 @@ td .btn-ghost {
 .notif-dot-connection { background: #ffe76d; }
 .notif-dot-system { background: var(--accent); }
 
+
+/* ── NOTIFICATION BADGE (NEON PULSE) ───────────── */
+.sidebar-user {
+  position: relative;  /* اینو اضافه کن اگر نیست */
+}
+
+.notif-badge {
+  position: absolute;
+  top: 8px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: transparent;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.notif-badge.active {
+  opacity: 1;
+}
+
+.notif-badge::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background-image:
+    radial-gradient(circle, #ff6b6b 40%, transparent 65%),
+    radial-gradient(circle, #ff6b6b 40%, transparent 65%),
+    radial-gradient(circle, #ff6b6b 40%, transparent 65%),
+    radial-gradient(circle, #ff6b6b 40%, transparent 65%),
+    radial-gradient(circle, #ff6b6b 40%, transparent 65%),
+    radial-gradient(circle, #ff6b6b 40%, transparent 65%),
+    radial-gradient(circle, #ff6b6b 40%, transparent 65%),
+    radial-gradient(circle, #ff6b6b 40%, transparent 65%),
+    radial-gradient(circle, #ff6b6b 40%, transparent 65%);
+  background-size:
+    3px 3px, 3px 3px, 3px 3px,
+    3px 3px, 3px 3px, 3px 3px,
+    3px 3px, 3px 3px, 3px 3px;
+  background-position:
+    1.5px 1.5px, 4.5px 1.5px, 7.5px 1.5px,
+    1.5px 4.5px, 4.5px 4.5px, 7.5px 4.5px,
+    1.5px 7.5px, 4.5px 7.5px, 7.5px 7.5px;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 0 2px #ff6b6b);
+  animation: pulseNeon 1.5s infinite ease-in-out;
+  opacity: 0.75;
+}
+
+/* اگه انیمیشن pulseNeon رو نداری، اینم اضافه کن */
+@keyframes pulseNeon {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.9; }
+}
+
 /* ── RESPONSIVE ────────────────────────────── */
 @media (max-width: 680px) {
   .sidebar {
