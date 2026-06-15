@@ -110,6 +110,7 @@ async function showApp() {
     document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
   }
 
+  document.getElementById('section-dashboard').classList.add('active');
   loadSection('dashboard');
 }
 
