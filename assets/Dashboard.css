@@ -818,7 +818,6 @@ td .btn-ghost {
   font-weight: 400;     
   }
   
-/* جزئیات پروفایل – حالت ستونی */
 .profile-details {
   display: flex;
   flex-direction: column;
@@ -1076,6 +1075,12 @@ td .btn-ghost {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--accent);
+}
+
+/* ── NOTIFICATION ─────────────────────────────────── */
+.unread-notif {
+  border-left: 2px solid var(--accent);
+  padding-left: 6px;
 }
 
 /* ── RESPONSIVE ────────────────────────────── */
