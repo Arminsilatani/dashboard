@@ -83,7 +83,7 @@ function showAuth() {
   if (successMsg) successMsg.style.display = 'none';
 }
 
-function showApp() {
+async function showApp() {
   document.getElementById('auth-overlay').style.display = 'none';
   document.getElementById('app-screen').classList.add('active');
 
@@ -97,10 +97,8 @@ function showApp() {
     document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
   }
 
-  // گرفتن ایمیل از auth.users (چون توی profiles نیست)
-  sb.auth.getUser().then(({ data: { user } }) => {
-    if (user?.email) currentUser.email = user.email;
-  });
+  const { data: { user } } = await sb.auth.getUser();
+  if (user?.email) currentUser.email = user.email;
 
   loadSection('tickets');
 }
@@ -292,6 +290,9 @@ function loadSection(name) {
 }
 
 // ── Events ──────────────────────────────────────────────────
+let cropper = null;
+let pendingPhotoFile = null;
+
 function bindEvents() {
   document.getElementById('signout-btn').addEventListener('click', async () => {
     await signOut();
@@ -302,7 +303,6 @@ function bindEvents() {
     btn.addEventListener('click', () => loadSection(btn.dataset.section));
   });
 
-  // کلیک روی عناوین قابل کلیک در داشبورد
   document.querySelectorAll('.card-heading.clickable').forEach(el => {
     el.addEventListener('click', function() {
       const nav = this.dataset.nav;
@@ -310,7 +310,13 @@ function bindEvents() {
     });
   });
 
-  // دکمه ادیت پروفایل
+  // Profile trigger
+  document.getElementById('sidebar-profile-trigger')?.addEventListener('click', () => {
+    if (!currentUser) return;
+    loadSection('dashboard');
+  });
+
+  // Edit profile modal open
   document.getElementById('open-edit-profile-btn')?.addEventListener('click', () => {
     if (!currentUser) return;
     document.getElementById('edit-first-name').value = currentUser.first_name || '';
@@ -320,6 +326,8 @@ function bindEvents() {
     document.getElementById('edit-website').value = currentUser.website || '';
     document.getElementById('edit-username').value = currentUser.username || '';
     document.getElementById('edit-avatar-preview').src = currentUser.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.first_name || 'U')}&background=4ECDC4&color=0d0d0d`;
+    document.getElementById('edit-photo-input').value = '';
+    pendingPhotoFile = null;
     document.getElementById('edit-profile-modal').classList.remove('hidden');
   });
 
@@ -327,28 +335,75 @@ function bindEvents() {
     document.getElementById('edit-profile-modal').classList.add('hidden');
   });
 
-    document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
+  // Photo input → crop
+  document.getElementById('edit-photo-input')?.addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById('crop-image').src = e.target.result;
+      document.getElementById('crop-modal').classList.remove('hidden');
+      if (cropper) cropper.destroy();
+      cropper = new Cropper(document.getElementById('crop-image'), {
+        aspectRatio: 1,
+        viewMode: 1,
+        autoCropArea: 0.8,
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Cancel crop
+  document.getElementById('cancel-crop-btn')?.addEventListener('click', () => {
+    document.getElementById('crop-modal').classList.add('hidden');
+    if (cropper) { cropper.destroy(); cropper = null; }
+    document.getElementById('edit-photo-input').value = '';
+  });
+
+  // Confirm crop → WebP 500×500
+  document.getElementById('confirm-crop-btn')?.addEventListener('click', () => {
+    if (!cropper) return;
+    const canvas = cropper.getCroppedCanvas({ width: 500, height: 500 });
+    canvas.toBlob((blob) => {
+      pendingPhotoFile = new File([blob], `avatar_${Date.now()}.webp`, { type: 'image/webp' });
+      document.getElementById('edit-avatar-preview').src = URL.createObjectURL(blob);
+      document.getElementById('crop-modal').classList.add('hidden');
+      cropper.destroy();
+      cropper = null;
+    }, 'image/webp', 0.75);
+  });
+
+  // Close crop modal by clicking outside
+  document.getElementById('crop-modal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+      this.classList.add('hidden');
+      if (cropper) { cropper.destroy(); cropper = null; }
+      document.getElementById('edit-photo-input').value = '';
+    }
+  });
+
+  // Save profile
+  document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
     const first = document.getElementById('edit-first-name').value.trim();
     const last = document.getElementById('edit-last-name').value.trim();
     const email = document.getElementById('edit-email').value.trim();
     const phone = document.getElementById('edit-phone').value.trim();
     const website = document.getElementById('edit-website').value.trim();
     const username = document.getElementById('edit-username').value.trim();
-    const fileInput = document.getElementById('edit-photo-input');
     let photo_url = currentUser.photo_url;
 
-    // آپلود عکس اگر انتخاب شده باشه
-    if (fileInput && fileInput.files.length > 0) {
-      const file = fileInput.files[0];
-      const filePath = `avatars/${currentUser.id}_${Date.now()}`;
+    if (pendingPhotoFile) {
+      const filePath = `avatars/${currentUser.id}/${pendingPhotoFile.name}`;
       try {
         showLoader();
-        const { data: uploadData, error: uploadError } = await sb.storage
+        const { error: uploadError } = await sb.storage
           .from('avatars')
-          .upload(filePath, file, { upsert: true });
+          .upload(filePath, pendingPhotoFile, { upsert: true, contentType: 'image/webp' });
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = sb.storage.from('avatars').getPublicUrl(filePath);
         photo_url = publicUrl;
+        pendingPhotoFile = null;
       } catch (err) {
         alert('Photo upload failed: ' + err.message);
         hideLoader();
@@ -367,7 +422,6 @@ function bindEvents() {
 
     try {
       await db.update('profiles', currentUser.id, body);
-      // به‌روزرسانی currentUser
       if (body.first_name !== undefined) currentUser.first_name = body.first_name;
       if (body.last_name !== undefined) currentUser.last_name = body.last_name;
       if (body.email !== undefined) currentUser.email = body.email;
@@ -391,22 +445,9 @@ function bindEvents() {
       hideLoader();
     }
   });
-  document.getElementById('edit-photo-input')?.addEventListener('change', function() {
-    const file = this.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => { document.getElementById('edit-avatar-preview').src = e.target.result; };
-      reader.readAsDataURL(file);
-    }
-  });
+
   document.getElementById('edit-profile-modal')?.addEventListener('click', function(e) {
     if (e.target === this) this.classList.add('hidden');
-  });
-
-    // کلیک روی پروفایل → باز کردن داشبورد
-  document.getElementById('sidebar-profile-trigger')?.addEventListener('click', () => {
-    if (!currentUser) return;
-    loadSection('dashboard');
   });
 
   // Tickets
@@ -490,14 +531,13 @@ async function loadMiniCalendar() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDay = new Date(year, month, 1).getDay();
 
-  // دریافت رویدادهای این ماه از ravlo
   let monthEvents = [];
   try {
     const start = `${year}-${String(month + 1).padStart(2, '0')}-01`;
     const end = `${year}-${String(month + 1).padStart(2, '0')}-${daysInMonth}`;
     const events = await db.select('ravlo', `user_id=eq.${currentUser.id}&start_date=gte.${start}&start_date=lte.${end}`);
     monthEvents = events || [];
-  } catch (e) { /* بی‌صدا رد شو */ }
+  } catch (e) {}
 
   const eventDays = new Set(monthEvents.map(ev => new Date(ev.start_date).getDate()));
 
@@ -572,8 +612,6 @@ async function loadRecentMessages() {
 async function loadNotifications() {
   const container = document.getElementById('dash-notif-list');
   if (!container) return;
-  // اینجا می‌تونی نوتیفیکیشن‌های واقعی از یه جدول بخونی
-  // فعلاً استاتیک می‌ذارم:
   container.innerHTML = `
     <div class="mini-item"><div>🎉 Welcome to your dashboard!</div><div class="mini-meta">Just now</div></div>
     <div class="mini-item"><div>📬 You have no unread messages</div><div class="mini-meta">Today</div></div>
