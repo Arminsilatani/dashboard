@@ -126,18 +126,21 @@ html, body {
 .sidebar {
   width: 56px;
   background: var(--accent);
-  border-right: none;
+  border: none;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 16px 6px;
   gap: 8px;
   position: sticky;
-  top: 0;
-  height: 100vh;
+  top: 10px;
+  height: calc(100vh - 20px);
+  margin: 10px;
+  border-radius: 50px;
   overflow: hidden;
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 10;
+  box-shadow: 0 0 20px rgba(0,0,0,0.3);
 }
 .sidebar:hover {
   width: 220px;
@@ -148,14 +151,14 @@ html, body {
   align-items: center;
   gap: 10px;
   padding: 8px 8px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.2);
+  border-bottom: 1px solid rgba(0,0,0,0.15);
   cursor: pointer;
   white-space: nowrap;
   width: 100%;
   transition: background 0.15s;
 }
 .sidebar-user:hover {
-  background: rgba(255,255,255,0.1);
+  background: rgba(0,0,0,0.1);
   border-radius: 8px;
 }
 .avatar {
@@ -172,6 +175,7 @@ html, body {
   visibility: hidden;
   transition: opacity 0.15s, visibility 0.15s;
   white-space: nowrap;
+  color: #0d0d0d;
 }
 .sidebar:hover .sidebar-user-info {
   opacity: 1;
@@ -199,7 +203,7 @@ html, body {
 .nav-item {
   background: none;
   border: none;
-  color: rgba(255,255,255,0.8);
+  color: #0d0d0d;
   text-align: left;
   padding: 12px 8px;
   border-radius: 8px;
@@ -214,17 +218,18 @@ html, body {
   width: 100%;
 }
 .nav-item:hover {
-  background: rgba(255,255,255,0.2);
-  color: #fff;
+  background: rgba(0,0,0,0.15);
+  color: #0d0d0d;
 }
 .nav-item.active {
-  background: rgba(255,255,255,0.25);
-  color: #fff;
+  background: rgba(0,0,0,0.2);
+  color: #0d0d0d;
   font-weight: 700;
 }
 .nav-icon {
   flex-shrink: 0;
   opacity: 0.9;
+  stroke: #0d0d0d;
 }
 .nav-item.active .nav-icon {
   opacity: 1;
@@ -233,6 +238,7 @@ html, body {
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.15s, visibility 0.15s;
+  color: #0d0d0d;
 }
 .sidebar:hover .nav-text {
   opacity: 1;
@@ -243,7 +249,7 @@ html, body {
   margin-top: auto;
   background: none;
   border: none;
-  color: rgba(255,255,255,0.7);
+  color: #0d0d0d;
   padding: 8px;
   border-radius: 8px;
   cursor: pointer;
@@ -255,8 +261,11 @@ html, body {
   height: 40px;
 }
 .btn-signout:hover {
-  background: rgba(255,255,255,0.2);
-  color: #fff;
+  background: rgba(0,0,0,0.2);
+  color: #0d0d0d;
+}
+.btn-signout svg {
+  stroke: #0d0d0d;
 }
 /* ── CONTENT ─────────────────────────────────────────────── */
 .content {
