@@ -883,6 +883,26 @@ async function addNotification(userId, type, title, body = '', link = '') {
   }
 }
 
+// ── Notification Badge ──────────────────────────────────────
+async function updateNotificationBadge() {
+  const badge = document.getElementById('notif-badge');
+  if (!badge) return;
+  
+  try {
+    const notifs = await db.select('notifications', `user_id=eq.${currentUser.id}&is_read=eq.false&select=id`);
+    const unreadCount = (notifs || []).length;
+    
+    if (unreadCount > 0) {
+      badge.classList.add('active');
+    } else {
+      badge.classList.remove('active');
+    }
+  } catch (e) {
+    // جدول وجود نداره، badge رو مخفی کن
+    badge.classList.remove('active');
+  }
+}
+
 // ── Utils ────────────────────────────────────────────────────
 function esc(str) {
   if (!str) return '';
