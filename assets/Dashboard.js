@@ -96,7 +96,7 @@ function showApp() {
   if (currentUser.role === 'admin') {
     document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
   }
-  loadSection('dashboard');
+    loadSection('tickets');
 }
 
 // ── Step‑based Email Auth Flow ──────────────────────────────
@@ -353,7 +353,7 @@ function bindEvents() {
     if (!currentUser) return;
     loadSection('dashboard');
   });
-  
+
   // Tickets
   document.getElementById('new-ticket-btn').addEventListener('click', () => {
     document.getElementById('new-ticket-form').classList.remove('hidden');
