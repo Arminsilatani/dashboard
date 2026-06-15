@@ -450,10 +450,10 @@ async function loadNotifications() {
   if (!c) return;
   
   try {
-    // ۱. اول نوتیفیکیشن‌های معمولی رو بگیر
+    // ۱. نوتیفیکیشن‌های معمولی
     const notifs = await db.select('notifications', `user_id=eq.${currentUser.id}&order=created_at.desc&limit=5`);
     
-    // ۲. رویدادهای امروز و فردا از تقویم رو بگیر
+    // ۲. رویدادهای امروز و فردا از تقویم
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -464,9 +464,7 @@ async function loadNotifications() {
     let calendarEvents = [];
     try {
       calendarEvents = await db.select('ravlo', `user_id=eq.${currentUser.id}&start_date=gte.${todayStr}&start_date=lte.${tomorrowStr}&order=start_date.asc`);
-    } catch (e) {
-      // جدول ravlo ممکنه وجود نداشته باشه
-    }
+    } catch (e) {}
     
     // ۳. رویدادهای تقویم رو به فرمت نوتیفیکیشن دربیار
     const calendarNotifs = (calendarEvents || []).map(ev => ({
@@ -474,10 +472,10 @@ async function loadNotifications() {
       title: ev.title || 'Calendar Event',
       body: ev.start_date ? fmtDate(ev.start_date) : '',
       created_at: ev.start_date,
-      is_read: true  // رویدادهای تقویم همیشه خوانده شده نمایش داده میشن
+      is_read: true
     }));
     
-    // ۴. همه رو ترکیب کن و مرتب کن
+    // ۴. ترکیب و مرتب‌سازی
     const allNotifs = [...(notifs || []), ...calendarNotifs]
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
       .slice(0, 5);
@@ -488,23 +486,26 @@ async function loadNotifications() {
     }
     
     c.innerHTML = allNotifs.map(n => {
-      const icon = { 
-        system: '⚙️', 
-        message: '💬', 
-        ticket: '🎫', 
-        contract: '📄', 
-        calendar: '📅', 
-        connection: '🔗' 
-      }[n.type] || '🔔';
+      const dotClass = {
+        calendar: 'notif-dot-calendar',
+        contract: 'notif-dot-contract',
+        message: 'notif-dot-message',
+        ticket: 'notif-dot-ticket',
+        connection: 'notif-dot-connection',
+        system: 'notif-dot-system'
+      }[n.type] || 'notif-dot-system';
       
       return `<div class="mini-item ${n.is_read ? '' : 'unread-notif'}">
-        <div>${icon} ${esc(n.title)}</div>
-        <div class="mini-meta">${esc(n.body || '')} · ${n.type === 'calendar' ? '📅' : fmtDate(n.created_at)}</div>
+        <div style="display:flex;align-items:center;">
+          <span class="notif-dot-icon ${dotClass}"></span>
+          ${esc(n.title)}
+        </div>
+        <div class="mini-meta">${esc(n.body || '')} · ${fmtDate(n.created_at)}</div>
       </div>`;
     }).join('');
     
   } catch (e) {
-    c.innerHTML = '<div class="mini-item"><div>Welcome to your dashboard!</div><div class="mini-meta">Just now</div></div>';
+    c.innerHTML = '<div class="mini-item"><div><span class="notif-dot-icon notif-dot-system"></span>Welcome to your dashboard!</div><div class="mini-meta">Just now</div></div>';
   }
 }
 // ── TICKETS ─────────────────────────────────────────────────
