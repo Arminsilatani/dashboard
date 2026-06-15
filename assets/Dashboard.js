@@ -450,18 +450,56 @@ async function loadNotifications() {
   if (!c) return;
   
   try {
+    // ۱. اول نوتیفیکیشن‌های معمولی رو بگیر
     const notifs = await db.select('notifications', `user_id=eq.${currentUser.id}&order=created_at.desc&limit=5`);
     
-    if (!notifs || !notifs.length) {
+    // ۲. رویدادهای امروز و فردا از تقویم رو بگیر
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const todayStr = today.toISOString().split('T')[0];
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    
+    let calendarEvents = [];
+    try {
+      calendarEvents = await db.select('ravlo', `user_id=eq.${currentUser.id}&start_date=gte.${todayStr}&start_date=lte.${tomorrowStr}&order=start_date.asc`);
+    } catch (e) {
+      // جدول ravlo ممکنه وجود نداشته باشه
+    }
+    
+    // ۳. رویدادهای تقویم رو به فرمت نوتیفیکیشن دربیار
+    const calendarNotifs = (calendarEvents || []).map(ev => ({
+      type: 'calendar',
+      title: ev.title || 'Calendar Event',
+      body: ev.start_date ? fmtDate(ev.start_date) : '',
+      created_at: ev.start_date,
+      is_read: true  // رویدادهای تقویم همیشه خوانده شده نمایش داده میشن
+    }));
+    
+    // ۴. همه رو ترکیب کن و مرتب کن
+    const allNotifs = [...(notifs || []), ...calendarNotifs]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 5);
+    
+    if (!allNotifs.length) {
       c.innerHTML = '<p class="empty-state">No notifications</p>';
       return;
     }
     
-    c.innerHTML = notifs.map(n => {
-      const icon = { system: '⚙️', message: '💬', ticket: '🎫', contract: '📄', calendar: '📅', connection: '🔗' }[n.type] || '🔔';
+    c.innerHTML = allNotifs.map(n => {
+      const icon = { 
+        system: '⚙️', 
+        message: '💬', 
+        ticket: '🎫', 
+        contract: '📄', 
+        calendar: '📅', 
+        connection: '🔗' 
+      }[n.type] || '🔔';
+      
       return `<div class="mini-item ${n.is_read ? '' : 'unread-notif'}">
         <div>${icon} ${esc(n.title)}</div>
-        <div class="mini-meta">${esc(n.body || '')} · ${fmtDate(n.created_at)}</div>
+        <div class="mini-meta">${esc(n.body || '')} · ${n.type === 'calendar' ? '📅' : fmtDate(n.created_at)}</div>
       </div>`;
     }).join('');
     
