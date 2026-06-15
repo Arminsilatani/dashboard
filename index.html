@@ -298,6 +298,48 @@
         </div>
       </section>
 
+            <!-- PROFILE (صفحهٔ پروفایل کاربر جاری) -->
+      <section id="section-profile" class="section">
+        <div class="section-header">
+          <h2>Your Profile</h2>
+        </div>
+        <div class="profile-card">
+          <div class="profile-avatar-row">
+            <img id="profile-avatar" src="" alt="avatar" class="profile-avatar-img" />
+            <div>
+              <h3 id="profile-fullname"></h3>
+              <span id="profile-role-badge" class="badge badge-open"></span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label>First Name</label>
+            <input type="text" id="profile-first-name" class="auth-field" placeholder="First name" />
+          </div>
+          <div class="form-row">
+            <label>Last Name</label>
+            <input type="text" id="profile-last-name" class="auth-field" placeholder="Last name" />
+          </div>
+          <div class="form-row">
+            <label>Username</label>
+            <input type="text" id="profile-username" class="auth-field" placeholder="Username" />
+          </div>
+          <div class="form-row">
+            <label>Email</label>
+            <input type="email" id="profile-email" class="auth-field" readonly />
+          </div>
+          <div class="form-row">
+            <label>Role</label>
+            <input type="text" id="profile-role" class="auth-field" readonly />
+          </div>
+          <div class="form-row">
+            <label>Joined</label>
+            <input type="text" id="profile-created" class="auth-field" readonly />
+          </div>
+          <button class="btn-accent" id="save-profile-btn" style="width:auto;align-self:flex-start;">Save Changes</button>
+        </div>
+      </section>
+      
     </main>
   </div>
 
