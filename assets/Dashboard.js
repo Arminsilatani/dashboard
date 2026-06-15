@@ -97,10 +97,20 @@ async function showApp() {
     document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
   }
 
+    // گرفتن اطلاعات کامل از auth و profiles
   const { data: { user } } = await sb.auth.getUser();
   if (user?.email) currentUser.email = user.email;
 
-    loadSection('dashboard');
+  // گرفتن phone و website از profiles (اگه از قبل نباشه)
+  if (!currentUser.phone || !currentUser.website) {
+    const [profile] = await db.select('profiles', `id=eq.${currentUser.id}`);
+    if (profile) {
+      if (profile.phone && !currentUser.phone) currentUser.phone = profile.phone;
+      if (profile.website && !currentUser.website) currentUser.website = profile.website;
+    }
+  }
+
+  loadSection('dashboard');
 }
 
 // ── Step‑based Email Auth Flow ──────────────────────────────
