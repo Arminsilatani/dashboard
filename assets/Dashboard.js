@@ -751,6 +751,8 @@ async function submitConnRequest() {
   const to_id = document.getElementById('conn-to-select').value; if (!to_id) return;
   try {
     await db.insert('connection_requests', { from_id: currentUser.id, to_id, status: 'pending' });
+        const senderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
+    await addNotification(to_id, 'connection', 'New connection request', `${senderName} wants to connect`, '#connections');
     document.getElementById('send-conn-modal').classList.add('hidden');
     loadConnections();
   } catch (e) { alert(e.message); }
