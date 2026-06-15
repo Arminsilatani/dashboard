@@ -419,8 +419,8 @@ async function loadDashboard() {
   document.getElementById('dash-fullname').textContent = name;
   document.getElementById('dash-role-badge').textContent = currentUser.role || 'user';
   document.getElementById('dash-email').textContent = currentUser.email || '—';
-  document.getElementById('dash-username').textContent = currentUser.username || '—';
-  document.getElementById('dash-joined').textContent = fmtDate(currentUser.created_at);
+  document.getElementById('dash-phone').textContent = currentUser.phone || '—';
+  document.getElementById('dash-website').textContent = currentUser.website || '—';
   document.getElementById('dash-avatar').src = currentUser.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4ECDC4&color=0d0d0d`;
 
   await Promise.all([
