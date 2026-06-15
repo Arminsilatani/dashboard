@@ -87,9 +87,19 @@ async function showApp() {
   document.getElementById('auth-overlay').style.display = 'none';
   document.getElementById('app-screen').classList.add('active');
 
+  // گرفتن کامل‌ترین نسخه از profiles
+  const freshProfile = await db.select('profiles', `id=eq.${currentUser.id}`);
+  if (freshProfile && freshProfile.length) {
+    currentUser = { ...currentUser, ...freshProfile[0] };
+  }
+
+  // گرفتن ایمیل از auth.users
+  const { data: { user } } = await sb.auth.getUser();
+  if (user?.email) currentUser.email = user.email;
+
   const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || currentUser.username || 'User';
   document.getElementById('sidebar-name').textContent = name;
-  document.getElementById('sidebar-role').textContent = currentUser.role || 'user';
+  document.getElementById('sidebar-role').textContent = currentUser.role || 'viewer';
   const av = document.getElementById('sidebar-avatar');
   av.src = currentUser.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4ECDC4&color=0d0d0d`;
 
@@ -97,17 +107,7 @@ async function showApp() {
     document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
   }
 
-    // گرفتن ایمیل از auth.users
-  const { data: { user } } = await sb.auth.getUser();
-  if (user?.email) currentUser.email = user.email;
-
-  // گرفتن کامل‌ترین نسخه از profiles
-  const [freshProfile] = await db.select('profiles', `id=eq.${currentUser.id}`);
-  if (freshProfile) {
-    currentUser = { ...currentUser, ...freshProfile };
-  }
-
-    loadSection('dashboard');
+  loadSection('dashboard');
 }
 
 // ── Step‑based Email Auth Flow ──────────────────────────────
@@ -266,7 +266,7 @@ async function fetchProfile(authUser) {
     first_name: meta.first_name || '',
     last_name: meta.last_name || '',
     username: meta.username || '',
-    role: 'user',
+    role: 'viewer',
     created_at: new Date().toISOString()
   };
   await db.insert('profiles', newProfile);
@@ -324,7 +324,7 @@ function bindEvents() {
   });
 
   // Edit profile modal open
-    document.getElementById('open-edit-profile-btn')?.addEventListener('click', () => {
+  document.getElementById('open-edit-profile-btn')?.addEventListener('click', () => {
     if (!currentUser) return;
     document.getElementById('edit-first-name').value = currentUser.first_name || '';
     document.getElementById('edit-last-name').value = currentUser.last_name || '';
@@ -360,14 +360,12 @@ function bindEvents() {
     reader.readAsDataURL(file);
   });
 
-  // Cancel crop
   document.getElementById('cancel-crop-btn')?.addEventListener('click', () => {
     document.getElementById('crop-modal').classList.add('hidden');
     if (cropper) { cropper.destroy(); cropper = null; }
     document.getElementById('edit-photo-input').value = '';
   });
 
-  // Confirm crop → WebP 500×500
   document.getElementById('confirm-crop-btn')?.addEventListener('click', () => {
     if (!cropper) return;
     const canvas = cropper.getCroppedCanvas({ width: 500, height: 500 });
@@ -380,7 +378,6 @@ function bindEvents() {
     }, 'image/webp', 0.75);
   });
 
-  // Close crop modal by clicking outside
   document.getElementById('crop-modal')?.addEventListener('click', function(e) {
     if (e.target === this) {
       this.classList.add('hidden');
@@ -417,21 +414,24 @@ function bindEvents() {
     }
 
     const body = { updated_at: new Date().toISOString() };
-    if (first !== currentUser.first_name) body.first_name = first;
-    if (last !== currentUser.last_name) body.last_name = last;
-    if (email !== currentUser.email) body.email = email;
+    if (first !== (currentUser.first_name || '')) body.first_name = first;
+    if (last !== (currentUser.last_name || '')) body.last_name = last;
+    if (email !== (currentUser.email || '')) body.email = email;
     if (phone !== (currentUser.phone || '')) body.phone = phone;
     if (website !== (currentUser.website || '')) body.website = website;
     if (photo_url !== currentUser.photo_url) body.photo_url = photo_url;
 
     try {
+      showLoader();
       await db.update('profiles', currentUser.id, body);
-      if (body.first_name !== undefined) currentUser.first_name = body.first_name;
-      if (body.last_name !== undefined) currentUser.last_name = body.last_name;
-      if (body.email !== undefined) currentUser.email = body.email;
-      if (body.phone !== undefined) currentUser.phone = body.phone;
-      if (body.website !== undefined) currentUser.website = body.website;
-      if (body.photo_url !== undefined) currentUser.photo_url = body.photo_url;
+
+      // بازخوانی کامل پروفایل
+      const freshProfile = await db.select('profiles', `id=eq.${currentUser.id}`);
+      if (freshProfile && freshProfile.length) {
+        currentUser = { ...currentUser, ...freshProfile[0] };
+      }
+      const { data: { user } } = await sb.auth.getUser();
+      if (user?.email) currentUser.email = user.email;
 
       const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'User';
       document.getElementById('sidebar-name').textContent = name;
@@ -508,9 +508,15 @@ function bindEvents() {
 async function loadDashboard() {
   if (!currentUser) return;
 
-  const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || currentUser.username || 'User';
+  // بازخوانی کامل پروفایل
+  const freshProfile = await db.select('profiles', `id=eq.${currentUser.id}`);
+  if (freshProfile && freshProfile.length) {
+    currentUser = { ...currentUser, ...freshProfile[0] };
+  }
+
+  const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'User';
   document.getElementById('dash-fullname').textContent = name;
-  document.getElementById('dash-role-badge').textContent = currentUser.role || 'user';
+  document.getElementById('dash-role-badge').textContent = currentUser.role || 'viewer';
   document.getElementById('dash-email').textContent = currentUser.email || '—';
   document.getElementById('dash-phone').textContent = currentUser.phone || '—';
   document.getElementById('dash-website').textContent = currentUser.website || '—';
