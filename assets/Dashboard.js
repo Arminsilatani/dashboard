@@ -280,6 +280,7 @@ function loadSection(name) {
   if (name === 'contracts') loadContracts();
   if (name === 'connections') loadConnections();
   if (name === 'users') loadUsers();
+  if (name === 'profile') loadProfile();
 }
 
 // ── Events ──────────────────────────────────────────────────
