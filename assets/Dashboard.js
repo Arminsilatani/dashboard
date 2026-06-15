@@ -96,7 +96,7 @@ function showApp() {
   if (currentUser.role === 'admin') {
     document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
   }
-  loadSection('tickets');
+  loadSection('dashboard');
 }
 
 // ── Step‑based Email Auth Flow ──────────────────────────────
@@ -272,15 +272,17 @@ async function signOut() {
 function loadSection(name) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById(`section-${name}`).classList.add('active');
-  document.querySelector(`.nav-item[data-section="${name}"]`).classList.add('active');
+  const sectionEl = document.getElementById(`section-${name}`);
+  if (sectionEl) sectionEl.classList.add('active');
+  const navEl = document.querySelector(`.nav-item[data-section="${name}"]`);
+  if (navEl) navEl.classList.add('active');
 
+  if (name === 'dashboard') loadDashboard();
   if (name === 'tickets') loadTickets();
   if (name === 'messages') loadMessages();
   if (name === 'contracts') loadContracts();
   if (name === 'connections') loadConnections();
   if (name === 'users') loadUsers();
-  if (name === 'profile') loadProfile();
 }
 
 // ── Events ──────────────────────────────────────────────────
@@ -292,6 +294,58 @@ function bindEvents() {
 
   document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => loadSection(btn.dataset.section));
+  });
+
+  // کلیک روی عناوین قابل کلیک در داشبورد
+  document.querySelectorAll('.card-heading.clickable').forEach(el => {
+    el.addEventListener('click', function() {
+      const nav = this.dataset.nav;
+      if (nav) loadSection(nav);
+    });
+  });
+
+  // دکمه ادیت پروفایل
+  document.getElementById('open-edit-profile-btn')?.addEventListener('click', () => {
+    if (!currentUser) return;
+    document.getElementById('edit-first-name').value = currentUser.first_name || '';
+    document.getElementById('edit-last-name').value = currentUser.last_name || '';
+    document.getElementById('edit-username').value = currentUser.username || '';
+    document.getElementById('edit-profile-modal').classList.remove('hidden');
+  });
+
+  document.getElementById('cancel-edit-profile-btn')?.addEventListener('click', () => {
+    document.getElementById('edit-profile-modal').classList.add('hidden');
+  });
+
+  document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
+    const first = document.getElementById('edit-first-name').value.trim();
+    const last = document.getElementById('edit-last-name').value.trim();
+    const username = document.getElementById('edit-username').value.trim();
+    const body = {};
+    if (first !== currentUser.first_name) body.first_name = first;
+    if (last !== currentUser.last_name) body.last_name = last;
+    if (username !== currentUser.username) body.username = username;
+    if (Object.keys(body).length === 0) { document.getElementById('edit-profile-modal').classList.add('hidden'); return; }
+    body.updated_at = new Date().toISOString();
+    try {
+      showLoader();
+      await db.update('profiles', currentUser.id, body);
+      if (body.first_name !== undefined) currentUser.first_name = body.first_name;
+      if (body.last_name !== undefined) currentUser.last_name = body.last_name;
+      if (body.username !== undefined) currentUser.username = body.username;
+      const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || currentUser.username || 'User';
+      document.getElementById('sidebar-name').textContent = name;
+      document.getElementById('dash-fullname').textContent = name;
+      document.getElementById('edit-profile-modal').classList.add('hidden');
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      hideLoader();
+    }
+  });
+
+  document.getElementById('edit-profile-modal')?.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.add('hidden');
   });
 
   // Tickets
@@ -343,85 +397,126 @@ function bindEvents() {
     document.getElementById('edit-user-modal').classList.add('hidden');
   });
   document.getElementById('save-user-btn').addEventListener('click', saveUser);
-
-  // ── Profile Page (Terminal Style) ─────────────────────────
-  document.getElementById('sidebar-profile-trigger')?.addEventListener('click', () => {
-    if (!currentUser) return;
-    loadSection('profile');
-  });
-
-  // کلیک روی آیکون مداد → حالت ویرایش
-  document.querySelectorAll('.term-edit-icon').forEach(icon => {
-    icon.addEventListener('click', function(e) {
-      e.stopPropagation();
-      const field = this.dataset.field;
-      const spanMap = {
-        first_name: 'term-name',
-        last_name: 'term-surname',
-        username: 'term-username'
-      };
-      const span = document.getElementById(spanMap[field]);
-      if (!span) return;
-      span.contentEditable = 'true';
-      span.focus();
-      const range = document.createRange();
-      range.selectNodeContents(span);
-      range.collapse(false);
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-    });
-  });
-
-  // ذخیره با Enter بعد از ویرایش
-  ['term-name', 'term-surname', 'term-username'].forEach(id => {
-    document.getElementById(id)?.addEventListener('keydown', async function(e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        this.contentEditable = 'false';
-        await saveProfileFromTerminal();
-      }
-    });
-  });
 }
 
-async function saveProfileFromTerminal() {
-  const first = document.getElementById('term-name').textContent.trim();
-  const last = document.getElementById('term-surname').textContent.trim();
-  const username = document.getElementById('term-username').textContent.trim();
+// ── DASHBOARD ───────────────────────────────────────────────
+async function loadDashboard() {
+  if (!currentUser) return;
 
-  const body = {};
-  if (first !== currentUser.first_name) body.first_name = first;
-  if (last !== currentUser.last_name) body.last_name = last;
-  if (username !== currentUser.username) body.username = username;
-  if (Object.keys(body).length === 0) return;
+  const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || currentUser.username || 'User';
+  document.getElementById('dash-fullname').textContent = name;
+  document.getElementById('dash-role-badge').textContent = currentUser.role || 'user';
+  document.getElementById('dash-email').textContent = currentUser.email || '—';
+  document.getElementById('dash-username').textContent = currentUser.username || '—';
+  document.getElementById('dash-joined').textContent = fmtDate(currentUser.created_at);
+  document.getElementById('dash-avatar').src = currentUser.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4ECDC4&color=0d0d0d`;
 
-  body.updated_at = new Date().toISOString();
-  const savingRow = document.getElementById('term-saving-row');
+  await Promise.all([
+    loadMiniCalendar(),
+    loadRecentTickets(),
+    loadRecentMessages(),
+    loadNotifications()
+  ]);
+}
+
+async function loadMiniCalendar() {
+  const container = document.getElementById('dash-mini-calendar');
+  if (!container) return;
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const today = now.getDate();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDay = new Date(year, month, 1).getDay();
+
+  // دریافت رویدادهای این ماه از ravlo
+  let monthEvents = [];
   try {
-    if (savingRow) savingRow.style.display = 'flex';
-    await db.update('profiles', currentUser.id, body);
-    if (body.first_name !== undefined) currentUser.first_name = body.first_name;
-    if (body.last_name !== undefined) currentUser.last_name = body.last_name;
-    if (body.username !== undefined) currentUser.username = body.username;
-    const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || currentUser.username || 'User';
-    document.getElementById('sidebar-name').textContent = name;
-  } catch (err) {
-    alert(err.message);
-  } finally {
-    if (savingRow) savingRow.style.display = 'none';
+    const start = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+    const end = `${year}-${String(month + 1).padStart(2, '0')}-${daysInMonth}`;
+    const events = await db.select('ravlo', `user_id=eq.${currentUser.id}&start_date=gte.${start}&start_date=lte.${end}`);
+    monthEvents = events || [];
+  } catch (e) { /* بی‌صدا رد شو */ }
+
+  const eventDays = new Set(monthEvents.map(ev => new Date(ev.start_date).getDate()));
+
+  const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  let html = dayNames.map(d => `<div class="mini-cal-header">${d}</div>`).join('');
+
+  for (let i = 0; i < firstDay; i++) html += '<div class="mini-cal-day"></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    let cls = 'mini-cal-day';
+    if (d === today) cls += ' today';
+    if (eventDays.has(d)) cls += ' has-event';
+    html += `<div class="${cls}">${d}</div>`;
+  }
+  container.innerHTML = html;
+}
+
+async function loadRecentTickets() {
+  const container = document.getElementById('dash-tickets-list');
+  if (!container) return;
+  try {
+    const tickets = await db.select('tickets', `user_id=eq.${currentUser.id}&order=created_at.desc&limit=3`);
+    if (!tickets || !tickets.length) {
+      container.innerHTML = '<p class="empty-state">No tickets yet</p>';
+      return;
+    }
+    container.innerHTML = tickets.map(t => `
+      <div class="mini-item" data-ticket-id="${t.id}">
+        <div>${esc(t.subject)}</div>
+        <div class="mini-meta">${fmtDate(t.created_at)} · ${t.status}</div>
+      </div>
+    `).join('');
+    container.querySelectorAll('.mini-item').forEach(el => {
+      el.addEventListener('click', () => loadSection('tickets'));
+    });
+  } catch (e) {
+    container.innerHTML = '<p class="empty-state">Error loading tickets</p>';
   }
 }
 
-// ── PROFILE LOADER ─────────────────────────────────────────
-function loadProfile() {
-  if (!currentUser) return;
-  document.getElementById('term-name').textContent = currentUser.first_name || '—';
-  document.getElementById('term-surname').textContent = currentUser.last_name || '—';
-  document.getElementById('term-username').textContent = currentUser.username || '—';
-  document.getElementById('term-email').textContent = currentUser.email || '—';
-  document.getElementById('term-role').textContent = currentUser.role || 'user';
-  document.getElementById('term-joined').textContent = fmtDate(currentUser.created_at);
+async function loadRecentMessages() {
+  const container = document.getElementById('dash-messages-list');
+  if (!container) return;
+  try {
+    const msgs = await db.select('messages', `to_id=eq.${currentUser.id}&order=created_at.desc&limit=3`);
+    if (!msgs || !msgs.length) {
+      container.innerHTML = '<p class="empty-state">No messages yet</p>';
+      return;
+    }
+    const senderIds = [...new Set(msgs.map(m => m.from_id))];
+    const profiles = await db.select('profiles', `id=in.(${senderIds.join(',')})&select=id,first_name,last_name`);
+    const pMap = {};
+    (profiles || []).forEach(p => { pMap[p.id] = p; });
+
+    container.innerHTML = msgs.map(m => {
+      const sender = pMap[m.from_id] || {};
+      const name = [sender.first_name, sender.last_name].filter(Boolean).join(' ') || 'Unknown';
+      return `
+        <div class="mini-item">
+          <div>${esc(name)}</div>
+          <div class="mini-meta">${esc(m.body.substring(0, 50))} · ${fmtDate(m.created_at)}</div>
+        </div>
+      `;
+    }).join('');
+    container.querySelectorAll('.mini-item').forEach(el => {
+      el.addEventListener('click', () => loadSection('messages'));
+    });
+  } catch (e) {
+    container.innerHTML = '<p class="empty-state">Error loading messages</p>';
+  }
+}
+
+async function loadNotifications() {
+  const container = document.getElementById('dash-notif-list');
+  if (!container) return;
+  // اینجا می‌تونی نوتیفیکیشن‌های واقعی از یه جدول بخونی
+  // فعلاً استاتیک می‌ذارم:
+  container.innerHTML = `
+    <div class="mini-item"><div>🎉 Welcome to your dashboard!</div><div class="mini-meta">Just now</div></div>
+    <div class="mini-item"><div>📬 You have no unread messages</div><div class="mini-meta">Today</div></div>
+  `;
 }
 
 // ── TICKETS ─────────────────────────────────────────────────
