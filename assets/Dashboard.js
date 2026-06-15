@@ -759,8 +759,24 @@ async function submitConnRequest() {
 }
 
 async function respondConn(id, status) {
-  try { await db.update('connection_requests', id, { status }); loadConnections(); }
-  catch (e) { alert(e.message); }
+  try {
+    await db.update('connection_requests', id, { status });
+    
+    const reqs = await db.select('connection_requests', `id=eq.${id}`);
+    if (reqs && reqs[0]) {
+      const req = reqs[0];
+      const responderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
+      const otherPerson = req.from_id === currentUser.id ? req.to_id : req.from_id;
+      
+      if (status === 'accepted') {
+        await addNotification(otherPerson, 'connection', 'Connection accepted!', `${responderName} accepted your request`, '#connections');
+      } else {
+        await addNotification(otherPerson, 'connection', 'Connection declined', `${responderName} declined your request`, '#connections');
+      }
+    }
+    
+    loadConnections();
+  } catch (e) { alert(e.message); }
 }
 
 // ── USERS (Admin) ────────────────────────────────────────────
