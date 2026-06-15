@@ -87,17 +87,20 @@ async function showApp() {
   document.getElementById('auth-overlay').style.display = 'none';
   document.getElementById('app-screen').classList.add('active');
 
-  // گرفتن کامل‌ترین نسخه از profiles
-  const freshProfile = await db.select('profiles', `id=eq.${currentUser.id}`);
-  if (freshProfile && freshProfile.length) {
-    currentUser = { ...currentUser, ...freshProfile[0] };
+  // بازخوانی کامل از profiles
+  const res = await db.select('profiles', `id=eq.${currentUser.id}`);
+  console.log('🔍 profiles response:', res);
+  if (res && res.length) {
+    currentUser = res[0];
   }
 
-  // گرفتن ایمیل از auth.users
+  // ایمیل از auth
   const { data: { user } } = await sb.auth.getUser();
   if (user?.email) currentUser.email = user.email;
 
-  const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || currentUser.username || 'User';
+  console.log('👤 currentUser:', currentUser);
+
+  const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'User';
   document.getElementById('sidebar-name').textContent = name;
   document.getElementById('sidebar-role').textContent = currentUser.role || 'viewer';
   const av = document.getElementById('sidebar-avatar');
