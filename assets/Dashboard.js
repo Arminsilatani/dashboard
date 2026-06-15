@@ -446,10 +446,29 @@ async function loadRecentMessages() {
 }
 
 async function loadNotifications() {
-  const c = document.getElementById('dash-notif-list'); if (!c) return;
-  c.innerHTML = '<div class="mini-item"><div>Welcome to your dashboard!</div><div class="mini-meta">Just now</div></div><div class="mini-item"><div>You have no unread messages</div><div class="mini-meta">Today</div></div>';
+  const c = document.getElementById('dash-notif-list');
+  if (!c) return;
+  
+  try {
+    const notifs = await db.select('notifications', `user_id=eq.${currentUser.id}&order=created_at.desc&limit=5`);
+    
+    if (!notifs || !notifs.length) {
+      c.innerHTML = '<p class="empty-state">No notifications</p>';
+      return;
+    }
+    
+    c.innerHTML = notifs.map(n => {
+      const icon = { system: '⚙️', message: '💬', ticket: '🎫', contract: '📄', calendar: '📅', connection: '🔗' }[n.type] || '🔔';
+      return `<div class="mini-item ${n.is_read ? '' : 'unread-notif'}">
+        <div>${icon} ${esc(n.title)}</div>
+        <div class="mini-meta">${esc(n.body || '')} · ${fmtDate(n.created_at)}</div>
+      </div>`;
+    }).join('');
+    
+  } catch (e) {
+    c.innerHTML = '<div class="mini-item"><div>Welcome to your dashboard!</div><div class="mini-meta">Just now</div></div>';
+  }
 }
-
 // ── TICKETS ─────────────────────────────────────────────────
 async function loadTickets() {
   const list = document.getElementById('ticket-list');
