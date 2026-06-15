@@ -81,9 +81,7 @@ async function showApp() {
   updateSidebarUI();
   document.getElementById('section-dashboard').classList.add('active');
   loadSection('dashboard');
-  setInterval(() => {
-  if (currentUser) updateNotificationBadge();
-}, 30000);
+  
   updateNotificationBadge();
 }
 
