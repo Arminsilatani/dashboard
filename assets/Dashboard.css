@@ -199,12 +199,13 @@ html, body {
   margin-top: 10px;
   width: 100%;
 }
+
 .nav-item {
   background: none;
   border: none;
   color: #0d0d0d;
   text-align: left;
-  padding: 12px 8px;
+  padding: 12px 0;
   border-radius: 8px;
   cursor: pointer;
   font-family: inherit;
@@ -212,14 +213,39 @@ html, body {
   transition: background 0.15s, color 0.15s;
   display: flex;
   align-items: center;
+  justify-content: center;   /* ← آیکون در حالت بسته وسط می‌آید */
   gap: 10px;
   white-space: nowrap;
   width: 100%;
 }
-.nav-item:hover {
-  background: rgba(0,0,0,0.15);
-  color: #0d0d0d;
+.sidebar:hover .nav-item {
+  justify-content: flex-start;   /* ← هنگام باز شدن، محتوا به چپ می‌چسبد */
+  padding: 12px 8px;
 }
+
+.btn-signout {
+  margin-top: auto;
+  background: none;
+  border: none;
+  color: #0d0d0d;
+  padding: 12px 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;   /* ← آیکون خروج هم وسط */
+  gap: 10px;
+  white-space: nowrap;
+  width: 100%;
+  transition: background 0.15s;
+}
+.sidebar:hover .btn-signout {
+  justify-content: flex-start;
+  padding: 12px 8px;
+}
+
 .nav-item.active {
   background: rgba(0,0,0,0.2);
   color: #0d0d0d;
@@ -244,26 +270,6 @@ html, body {
   visibility: visible;
 }
 
-.btn-signout {
-  margin-top: auto;
-  background: none;
-  border: none;
-  color: #0d0d0d;
-  padding: 12px 8px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  white-space: nowrap;
-  width: 100%;
-  transition: background 0.15s;
-}
-.btn-signout:hover {
-  background: rgba(0,0,0,0.2);
-}
 .btn-signout svg {
   flex-shrink: 0;
   stroke: #0d0d0d;
