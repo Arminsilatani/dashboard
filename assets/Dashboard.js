@@ -516,7 +516,8 @@ async function loadDashboard() {
   const res = await db.select('profiles', `id=eq.${currentUser.id}`);
   console.log('📊 loadDashboard profiles:', res);
   if (res && res.length) {
-    currentUser = res[0];
+        // ادغام با currentUser موجود (تا email از auth.users حفظ بشه)
+    currentUser = { ...currentUser, ...res[0] };
   }
 
   console.log('📋 currentUser in dashboard:', currentUser);
