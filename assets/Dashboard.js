@@ -81,6 +81,7 @@ async function showApp() {
   updateSidebarUI();
   document.getElementById('section-dashboard').classList.add('active');
   loadSection('dashboard');
+  updateNotificationBadge();
 }
 
 async function refreshCurrentUser() {
