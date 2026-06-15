@@ -393,6 +393,7 @@ async function loadDashboard() {
   document.getElementById('dash-avatar').src = currentUser.photo_url
     || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4ECDC4&color=0d0d0d`;
   await Promise.all([loadMiniCalendar(), loadRecentTickets(), loadRecentMessages(), loadNotifications()]);
+  updateNotificationBadge();
 }
 
 async function loadMiniCalendar() {
