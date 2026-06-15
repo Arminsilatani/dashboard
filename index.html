@@ -12,8 +12,8 @@
 
   <!-- GLOBAL LOADER -->
   <div id="global-loader" class="modal hidden">
-    <div class="modal-box" style="background:transparent;border:none;box-shadow:none;text-align:center;">
-      <p style="color:var(--accent);">Signing in…</p>
+    <div class="modal-box modal-loader-box">
+      <p class="loader-text">Signing in…</p>
     </div>
   </div>
 
@@ -26,7 +26,7 @@
 
       <div id="step-1" class="auth-step">
         <input type="email" id="auth-email" class="auth-field" placeholder="Email" required>
-        <button id="auth-continue-btn" class="btn-accent" style="width:100%;">Continue</button>
+        <button id="auth-continue-btn" class="btn-accent auth-full-btn">Continue</button>
         <div class="auth-error" id="auth-error"></div>
       </div>
 
@@ -38,7 +38,7 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
         </div>
-        <button id="auth-signin-btn" class="btn-accent" style="width:100%;">Sign In</button>
+        <button id="auth-signin-btn" class="btn-accent auth-full-btn">Sign In</button>
         <a href="#" id="auth-forgot-link" class="auth-forgot-link">Forgot password?</a>
         <div class="auth-error" id="auth-error-login"></div>
       </div>
@@ -59,13 +59,13 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
           </div>
-          <button id="auth-register-btn" class="btn-accent" style="width:100%;">Create Account</button>
+          <button id="auth-register-btn" class="btn-accent auth-full-btn">Create Account</button>
         </div>
-        <div id="reg-success" style="display:none; text-align:center;">
+        <div id="reg-success" class="reg-success-block">
           <div class="reg-success-icon">✉️</div>
           <h3 class="reg-success-title">Verify your email</h3>
           <p class="reg-success-text">We've sent a confirmation link to your email.<br>Check your inbox and click the link to activate your account.</p>
-          <button id="reg-to-login-btn" class="btn-accent" style="width:auto; margin-top:16px;">Go to Sign In</button>
+          <button id="reg-to-login-btn" class="btn-accent reg-to-login-btn">Go to Sign In</button>
         </div>
         <div class="auth-error" id="auth-error-register"></div>
       </div>
@@ -73,7 +73,7 @@
       <div id="step-forgot" class="auth-step hidden">
         <p class="auth-hint">Enter your email to receive a reset link.</p>
         <input type="email" id="forgot-email" class="auth-field" placeholder="Email" required>
-        <button id="auth-send-reset-btn" class="btn-accent" style="width:100%;">Send Reset Link</button>
+        <button id="auth-send-reset-btn" class="btn-accent auth-full-btn">Send Reset Link</button>
         <a href="#" id="auth-back-to-login" class="auth-back-link">Back to login</a>
         <div class="auth-success" id="auth-success-msg"></div>
       </div>
@@ -209,7 +209,7 @@
       <h3>Edit Profile</h3>
       <div class="profile-photo-upload">
         <img id="edit-avatar-preview" src="" alt="avatar" class="edit-avatar-preview" />
-        <label class="btn-ghost" style="cursor:pointer; display:inline-block;">Change Photo<input type="file" id="edit-photo-input" accept="image/*" style="display:none;" /></label>
+        <label class="btn-ghost photo-upload-label">Change Photo<input type="file" id="edit-photo-input" accept="image/*" class="photo-upload-input" /></label>
       </div>
       <input type="text" id="edit-first-name" class="auth-field" placeholder="First Name" />
       <input type="text" id="edit-last-name" class="auth-field" placeholder="Last Name" />
@@ -226,15 +226,15 @@
 
   <!-- CROP IMAGE MODAL -->
   <div id="crop-modal" class="modal hidden">
-    <div class="modal-box" style="max-width:500px;">
+    <div class="modal-box crop-modal-box">
       <h3>Crop Your Photo</h3>
-      <div style="max-height:350px; overflow:hidden;"><img id="crop-image" style="max-width:100%; display:block;" /></div>
-      <div class="modal-actions" style="justify-content:space-between; align-items:center;">
-                <span style="font-size:10px; color:var(--muted); display:flex; align-items:center; gap:4px;">
-          <img src="assets/logos/Zo.svg" alt="Zorio" style="width:14px; height:14px;" />
-          powered by <span style="color:#fd7e14; font-weight:400;">Zorio</span>
+      <div class="crop-image-wrapper"><img id="crop-image" class="crop-image" /></div>
+      <div class="modal-actions crop-modal-actions">
+        <span class="zorio-credit">
+          <img src="assets/logos/Zo.svg" alt="Zorio" class="zorio-logo" />
+          powered by <span class="zorio-name">Zorio</span>
         </span>
-        <div style="display:flex; gap:8px;">
+        <div class="crop-buttons">
           <button class="btn-ghost" id="cancel-crop-btn">Cancel</button>
           <button class="btn-accent" id="confirm-crop-btn">Confirm</button>
         </div>
