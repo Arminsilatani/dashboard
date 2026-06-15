@@ -348,6 +348,12 @@ function bindEvents() {
     if (e.target === this) this.classList.add('hidden');
   });
 
+    // کلیک روی پروفایل → باز کردن داشبورد
+  document.getElementById('sidebar-profile-trigger')?.addEventListener('click', () => {
+    if (!currentUser) return;
+    loadSection('dashboard');
+  });
+  
   // Tickets
   document.getElementById('new-ticket-btn').addEventListener('click', () => {
     document.getElementById('new-ticket-form').classList.remove('hidden');
