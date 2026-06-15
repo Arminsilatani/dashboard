@@ -199,7 +199,23 @@
       <section id="section-users" class="section">
         <div class="section-header"><h2>User Management</h2></div>
         <div class="table-wrap"><table><thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Telegram</th><th>Joined</th><th>Actions</th></tr></thead><tbody id="users-tbody"></tbody></table></div>
-        <div id="edit-user-modal" class="modal hidden"><div class="modal-box"><h3>Edit User</h3><input id="edit-first-name" type="text" placeholder="First name" /><input id="edit-last-name" type="text" placeholder="Last name" /><input id="edit-username" type="text" placeholder="Username" /><select id="edit-role"><option value="user">User</option><option value="admin">Admin</option></select><input id="edit-telegram" type="text" placeholder="Telegram ID" /><div class="modal-actions"><button class="btn-accent" id="save-user-btn">Save</button><button class="btn-ghost" id="cancel-edit-user-btn">Cancel</button></div></div></div>
+<div id="edit-user-modal" class="modal hidden">
+  <div class="modal-box">
+    <h3>Edit User</h3>
+    <input id="edit-user-first-name" type="text" placeholder="First name" />
+    <input id="edit-user-last-name" type="text" placeholder="Last name" />
+    <input id="edit-user-username" type="text" placeholder="Username" />
+    <select id="edit-user-role">
+      <option value="user">User</option>
+      <option value="admin">Admin</option>
+    </select>
+    <input id="edit-user-telegram" type="text" placeholder="Telegram ID" />
+    <div class="modal-actions">
+      <button class="btn-accent" id="save-user-btn">Save</button>
+      <button class="btn-ghost" id="cancel-edit-user-btn">Cancel</button>
+    </div>
+  </div>
+</div>
       </section>
 
     </main>
