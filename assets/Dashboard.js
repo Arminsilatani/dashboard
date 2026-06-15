@@ -414,6 +414,7 @@ function bindEvents() {
       if (savingRow) savingRow.style.display = 'none';
     }
   }
+}
 
 // ── MESSAGES ─────────────────────────────────────────────────
 async function loadMessages() {
