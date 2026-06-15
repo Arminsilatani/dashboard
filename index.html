@@ -299,44 +299,72 @@
       </section>
 
             <!-- PROFILE (صفحهٔ پروفایل کاربر جاری) -->
+            <!-- PROFILE (ترمینال‌استایل) -->
       <section id="section-profile" class="section">
         <div class="section-header">
-          <h2>Your Profile</h2>
+          <h2>Profile</h2>
         </div>
-        <div class="profile-card">
-          <div class="profile-avatar-row">
-            <img id="profile-avatar" src="" alt="avatar" class="profile-avatar-img" />
-            <div>
-              <h3 id="profile-fullname"></h3>
-              <span id="profile-role-badge" class="badge badge-open"></span>
-            </div>
-          </div>
 
-          <div class="form-row">
-            <label>First Name</label>
-            <input type="text" id="profile-first-name" class="auth-field" placeholder="First name" />
+        <div class="terminal-card">
+          <div class="terminal-header">
+            <span class="term-dot term-dot-red"></span>
+            <span class="term-dot term-dot-yellow"></span>
+            <span class="term-dot term-dot-green"></span>
+            <span class="term-title">user@dashboard ~ profile</span>
           </div>
-          <div class="form-row">
-            <label>Last Name</label>
-            <input type="text" id="profile-last-name" class="auth-field" placeholder="Last name" />
+          <div class="terminal-body">
+
+            <div class="term-row">
+              <span class="term-prompt">$</span>
+              <span class="term-label">name</span>
+              <span class="term-value" id="term-name" contenteditable="false">—</span>
+              <span class="term-edit-icon" data-field="first_name" style="display:none;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+              </span>
+            </div>
+
+            <div class="term-row">
+              <span class="term-prompt">$</span>
+              <span class="term-label">surname</span>
+              <span class="term-value" id="term-surname" contenteditable="false">—</span>
+              <span class="term-edit-icon" data-field="last_name" style="display:none;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+              </span>
+            </div>
+
+            <div class="term-row">
+              <span class="term-prompt">$</span>
+              <span class="term-label">username</span>
+              <span class="term-value" id="term-username" contenteditable="false">—</span>
+              <span class="term-edit-icon" data-field="username" style="display:none;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+              </span>
+            </div>
+
+            <div class="term-row">
+              <span class="term-prompt">$</span>
+              <span class="term-label">email</span>
+              <span class="term-value" id="term-email">—</span>
+            </div>
+
+            <div class="term-row">
+              <span class="term-prompt">$</span>
+              <span class="term-label">role</span>
+              <span class="term-value" id="term-role">—</span>
+            </div>
+
+            <div class="term-row">
+              <span class="term-prompt">$</span>
+              <span class="term-label">joined</span>
+              <span class="term-value" id="term-joined">—</span>
+            </div>
+
+            <div class="term-row" id="term-saving-row" style="display:none;">
+              <span class="term-prompt">$</span>
+              <span class="term-value" style="color:var(--accent);">saving...</span>
+            </div>
+
           </div>
-          <div class="form-row">
-            <label>Username</label>
-            <input type="text" id="profile-username" class="auth-field" placeholder="Username" />
-          </div>
-          <div class="form-row">
-            <label>Email</label>
-            <input type="email" id="profile-email" class="auth-field" readonly />
-          </div>
-          <div class="form-row">
-            <label>Role</label>
-            <input type="text" id="profile-role" class="auth-field" readonly />
-          </div>
-          <div class="form-row">
-            <label>Joined</label>
-            <input type="text" id="profile-created" class="auth-field" readonly />
-          </div>
-          <button class="btn-accent" id="save-profile-btn" style="width:auto;align-self:flex-start;">Save Changes</button>
         </div>
       </section>
 
