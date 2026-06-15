@@ -511,11 +511,14 @@ function bindEvents() {
 async function loadDashboard() {
   if (!currentUser) return;
 
-  // بازخوانی کامل پروفایل
-  const freshProfile = await db.select('profiles', `id=eq.${currentUser.id}`);
-  if (freshProfile && freshProfile.length) {
-    currentUser = { ...currentUser, ...freshProfile[0] };
+  // بازخوانی دوباره برای اطمینان
+  const res = await db.select('profiles', `id=eq.${currentUser.id}`);
+  console.log('📊 loadDashboard profiles:', res);
+  if (res && res.length) {
+    currentUser = res[0];
   }
+
+  console.log('📋 currentUser in dashboard:', currentUser);
 
   const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'User';
   document.getElementById('dash-fullname').textContent = name;
