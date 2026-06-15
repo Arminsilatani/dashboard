@@ -305,7 +305,7 @@ td .btn-ghost { padding: 5px 10px; font-size: 12px; }
 }
 .profile-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
 .dash-avatar {
-  width: 72px; height: 72px; border-radius: 50%; object-fit: cover;
+  width: 72px; height: 72px; border-radius: 100%; object-fit: cover;
   border: 3px solid var(--accent); background: var(--surface2);
 }
 .profile-header-text h2 { font-size: 22px; font-weight: 700; color: var(--text); }
