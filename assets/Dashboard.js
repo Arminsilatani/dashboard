@@ -343,20 +343,10 @@ function bindEvents() {
   });
   document.getElementById('save-user-btn').addEventListener('click', saveUser);
 
-  // ── Profile Modal ────────────────────────────────────────
+  // ── Profile Page ────────────────────────────────────────
   document.getElementById('sidebar-profile-trigger')?.addEventListener('click', () => {
     if (!currentUser) return;
-    document.getElementById('profile-first-name').value = currentUser.first_name || '';
-    document.getElementById('profile-last-name').value = currentUser.last_name || '';
-    document.getElementById('profile-username').value = currentUser.username || '';
-    document.getElementById('profile-email').value = currentUser.email || '';
-    document.getElementById('profile-role').value = currentUser.role || 'user';
-    document.getElementById('profile-created').value = fmtDate(currentUser.created_at);
-    document.getElementById('profile-modal').classList.remove('hidden');
-  });
-
-  document.getElementById('cancel-profile-btn')?.addEventListener('click', () => {
-    document.getElementById('profile-modal').classList.add('hidden');
+    loadSection('profile');
   });
 
   document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
@@ -380,16 +370,12 @@ function bindEvents() {
       currentUser.username = username;
       const name = [first, last].filter(Boolean).join(' ') || username || 'User';
       document.getElementById('sidebar-name').textContent = name;
-      document.getElementById('profile-modal').classList.add('hidden');
+      document.getElementById('profile-fullname').textContent = name;
+      hideLoader();
     } catch (e) {
       alert(e.message);
-    } finally {
       hideLoader();
     }
-  });
-
-  document.getElementById('profile-modal')?.addEventListener('click', function(e) {
-    if (e.target === this) this.classList.add('hidden');
   });
 }
 
