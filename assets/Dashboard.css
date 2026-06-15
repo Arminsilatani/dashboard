@@ -101,7 +101,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 0 16px;
+  padding: 12px 0;
   margin: 0 8px;
   border-bottom: 1px solid rgba(0,0,0,0.15);
   cursor: pointer;
