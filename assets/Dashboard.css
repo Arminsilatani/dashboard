@@ -195,7 +195,7 @@ html, body {
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 54px;
+  gap: 5px;
   flex: 1;
   margin-top: 10px;
   width: 100%;
