@@ -109,7 +109,11 @@ html, body {
   width: calc(100% - 16px);
   transition: background 0.15s;
 }
-.sidebar:hover .sidebar-user { justify-content: flex-start; padding-left: 8px; }
+.sidebar:hover .sidebar-user {
+  justify-content: flex-start;
+  padding-left: 8px;
+  gap: 10px;                  /* ← فقط وقتی منو باز می‌شود فاصله ایجاد شود */
+}
 .sidebar-user:hover { background: rgba(0,0,0,0.1); border-radius: 8px; }
 .avatar {
   width: 38px; height: 38px;
