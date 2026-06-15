@@ -599,6 +599,8 @@ async function submitMessage() {
   if (!to_id || !body) return;
   try {
     await db.insert('messages', { from_id: currentUser.id, to_id, body });
+        const senderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
+    await addNotification(to_id, 'message', `New message from ${senderName}`, body.substring(0, 100), '#messages');
     document.getElementById('msg-body').value = '';
     document.getElementById('send-message-modal').classList.add('hidden');
     loadMessages();
