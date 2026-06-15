@@ -302,12 +302,16 @@
   </div>
 
   <!-- PROFILE MODAL (ویرایش پروفایل کاربر جاری) -->
+    <!-- PROFILE MODAL (ویرایش پروفایل کاربر جاری) -->
   <div id="profile-modal" class="modal hidden">
     <div class="modal-box">
       <h3>Your Profile</h3>
       <input id="profile-first-name" type="text" placeholder="First name" />
       <input id="profile-last-name" type="text" placeholder="Last name" />
       <input id="profile-username" type="text" placeholder="Username" />
+      <input id="profile-email" type="email" placeholder="Email" readonly />
+      <input id="profile-role" type="text" placeholder="Role" readonly />
+      <input id="profile-created" type="text" placeholder="Joined" readonly />
       <div class="modal-actions">
         <button class="btn-accent" id="save-profile-btn">Save</button>
         <button class="btn-ghost" id="cancel-profile-btn">Cancel</button>
