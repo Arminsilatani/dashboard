@@ -101,7 +101,7 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 6px;
+  padding: 16px 0;
   gap: 0;
   position: sticky;
   top: 10px;
@@ -115,6 +115,7 @@ html, body {
 }
 .sidebar:hover {
   width: 220px;
+  padding: 16px 8px;
 }
 
 .sidebar-user {
@@ -123,13 +124,11 @@ html, body {
   justify-content: center;
   gap: 10px;
   padding: 8px 0 16px;
-  margin: 0 4px;
+  margin: 0 8px;
   border-bottom: 1px solid rgba(0,0,0,0.15);
   cursor: pointer;
   white-space: nowrap;
-  width: calc(100% - 8px);
-  min-height: 56px;
-  position: relative;
+  width: calc(100% - 16px);
   transition: background 0.15s;
 }
 .sidebar:hover .sidebar-user {
@@ -147,18 +146,20 @@ html, body {
   object-fit: cover;
   background: #0d0d0d;
   flex-shrink: 0;
-  z-index: 1;
 }
 .sidebar-user-info {
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.2s, visibility 0.2s;
+  width: 0;
+  transition: opacity 0.15s, visibility 0.15s, width 0.15s;
   white-space: nowrap;
   color: #0d0d0d;
+  overflow: hidden;
 }
 .sidebar:hover .sidebar-user-info {
   opacity: 1;
   visibility: visible;
+  width: auto;
 }
 .sidebar-name {
   font-weight: 400;
@@ -174,10 +175,11 @@ html, body {
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   flex: 1;
   margin-top: 12px;
   width: 100%;
+  padding: 0 4px;
 }
 
 .nav-item {
@@ -185,8 +187,7 @@ html, body {
   border: none;
   color: #0d0d0d;
   text-align: left;
-  padding: 0;
-  height: 44px;
+  padding: 12px 0;
   border-radius: 8px;
   cursor: pointer;
   font-family: inherit;
@@ -194,10 +195,17 @@ html, body {
   transition: background 0.15s, color 0.15s;
   display: flex;
   align-items: center;
-  position: relative;
+  justify-content: center;
+  gap: 0;
   white-space: nowrap;
   width: 100%;
 }
+.sidebar:hover .nav-item {
+  justify-content: flex-start;
+  padding: 12px 8px;
+  gap: 10px;
+}
+
 .nav-item:hover {
   background: rgba(0,0,0,0.15);
 }
@@ -206,88 +214,59 @@ html, body {
   color: #0d0d0d;
   font-weight: 400;
 }
-
-/* آیکون همیشه در مرکز افقی دکمه */
 .nav-icon {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
   flex-shrink: 0;
   opacity: 0.9;
   stroke: #0d0d0d;
-  transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 1;
-}
-/* وقتی باز می‌شه، آیکون بره سر جای عادی */
-.sidebar:hover .nav-icon {
-  position: static;
-  transform: none;
-  margin-left: 0;
 }
 .nav-item.active .nav-icon {
   opacity: 1;
 }
-
-/* متن همیشه حضور داره اما شفافه */
 .nav-text {
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s, visibility 0.2s;
+  display: none;
   color: #0d0d0d;
-  margin-left: 0;
-  padding-left: 8px;
 }
 .sidebar:hover .nav-text {
-  opacity: 1;
-  visibility: visible;
+  display: inline;
 }
 
-/* ── دکمهٔ خروج ── */
 .btn-signout {
   margin-top: auto;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
   background: none;
   border: none;
   color: #0d0d0d;
-  padding: 0;
-  height: 44px;
+  padding: 12px 0;
   border-radius: 8px;
   cursor: pointer;
   font-family: inherit;
   font-size: 13px;
   display: flex;
   align-items: center;
-  position: relative;
+  justify-content: center;
+  gap: 0;
   white-space: nowrap;
   width: 100%;
   transition: background 0.15s;
+}
+.sidebar:hover .btn-signout {
+  justify-content: flex-start;
+  padding: 12px 8px;
+  gap: 10px;
 }
 .btn-signout:hover {
   background: rgba(0,0,0,0.2);
 }
 .btn-signout svg {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
   flex-shrink: 0;
   stroke: #0d0d0d;
-  transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 1;
-}
-.sidebar:hover .btn-signout svg {
-  position: static;
-  transform: none;
 }
 .btn-signout .nav-text {
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s, visibility 0.2s;
+  display: none;
   color: #0d0d0d;
-  padding-left: 8px;
 }
 .sidebar:hover .btn-signout .nav-text {
-  opacity: 1;
-  visibility: visible;
+  display: inline;
 }
 
 /* ── CONTENT ───────────────────────────────────────────────── */
