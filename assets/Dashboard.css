@@ -389,15 +389,14 @@ td .btn-ghost { padding: 5px 10px; font-size: 12px; }
 .mini-item:hover { color: var(--accent); }
 .mini-item .mini-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-.detail-label {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--muted);
-  min-width: 80px;
-  flex-shrink: 0;
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  justify-content: flex-start;
 }
-
 
 .detail-label {
   font-size: 12px;
