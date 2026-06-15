@@ -346,144 +346,74 @@ function bindEvents() {
   });
   document.getElementById('save-user-btn').addEventListener('click', saveUser);
 
-  // ── Profile Page ────────────────────────────────────────
+  // ── Profile Page (Terminal Style) ─────────────────────────
   document.getElementById('sidebar-profile-trigger')?.addEventListener('click', () => {
     if (!currentUser) return;
     loadSection('profile');
   });
 
-  document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
-    const first = document.getElementById('profile-first-name').value.trim();
-    const last = document.getElementById('profile-last-name').value.trim();
-    const username = document.getElementById('profile-username').value.trim();
-
-    if (!first && !last && !username) return;
-
-    const body = {
-      first_name: first,
-      last_name: last,
-      username: username,
-      updated_at: new Date().toISOString()
-    };
-    try {
-      showLoader();
-      await db.update('profiles', currentUser.id, body);
-      currentUser.first_name = first;
-      currentUser.last_name = last;
-      currentUser.username = username;
-      const name = [first, last].filter(Boolean).join(' ') || username || 'User';
-      document.getElementById('sidebar-name').textContent = name;
-      document.getElementById('profile-fullname').textContent = name;
-      hideLoader();
-    } catch (e) {
-      alert(e.message);
-      hideLoader();
-    }
+  // کلیک روی آیکون مداد → حالت ویرایش
+  document.querySelectorAll('.term-edit-icon').forEach(icon => {
+    icon.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const field = this.dataset.field;
+      const spanMap = {
+        first_name: 'term-name',
+        last_name: 'term-surname',
+        username: 'term-username'
+      };
+      const span = document.getElementById(spanMap[field]);
+      if (!span) return;
+      span.contentEditable = 'true';
+      span.focus();
+      // قرار دادن کرسر در انتهای متن
+      const range = document.createRange();
+      range.selectNodeContents(span);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    });
   });
-}
 
-// ── TICKETS ─────────────────────────────────────────────────
-async function loadTickets() {
-  const list = document.getElementById('ticket-list');
-  document.getElementById('ticket-thread').classList.add('hidden');
-  list.classList.remove('hidden');
-  list.innerHTML = '<div class="empty-state">Loading...</div>';
-  try {
-    let q = currentUser.role === 'admin'
-      ? 'order=created_at.desc'
-      : `user_id=eq.${currentUser.id}&order=created_at.desc`;
-    const tickets = await db.select('tickets', q);
-    if (!tickets || !tickets.length) { list.innerHTML = '<div class="empty-state">No tickets yet.</div>'; return; }
-
-    const uids = [...new Set(tickets.map(t => t.user_id))];
-    const profiles = await db.select('profiles', `id=in.(${uids.join(',')})&select=id,first_name,last_name,username`);
-    const pMap = {};
-    (profiles || []).forEach(p => { pMap[p.id] = p; });
-
-    list.innerHTML = '';
-    tickets.forEach(t => {
-      const p = pMap[t.user_id] || {};
-      const uname = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username || t.user_id;
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = `
-        <div>
-          <div class="card-title">${esc(t.subject)}</div>
-          <div class="card-sub">By ${esc(uname)} · ${fmtDate(t.created_at)}</div>
-        </div>
-        <span class="badge badge-${t.status}">${t.status}</span>
-      `;
-      card.addEventListener('click', () => openTicket(t));
-      list.appendChild(card);
+  // ذخیره با Enter بعد از ویرایش
+  ['term-name', 'term-surname', 'term-username'].forEach(id => {
+    document.getElementById(id)?.addEventListener('keydown', async function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.contentEditable = 'false';
+        await saveProfileFromTerminal();
+      }
     });
-  } catch (e) { list.innerHTML = `<div class="empty-state">${e.message}</div>`; }
-}
+  });
 
-async function openTicket(ticket) {
-  openTicketId = ticket.id;
-  document.getElementById('ticket-list').classList.add('hidden');
-  document.getElementById('ticket-thread').classList.remove('hidden');
-  document.getElementById('thread-subject').textContent = ticket.subject;
-  const msgs = document.getElementById('thread-messages');
-  msgs.innerHTML = 'Loading...';
-  try {
-    const rows = await db.select('ticket_messages', `ticket_id=eq.${ticket.id}&order=created_at.asc`);
-    const sids = [...new Set((rows || []).map(r => r.sender_id).filter(Boolean))];
-    let pMap = {};
-    if (sids.length) {
-      const profs = await db.select('profiles', `id=in.(${sids.join(',')})&select=id,first_name,last_name,username`);
-      (profs || []).forEach(p => { pMap[p.id] = p; });
+  async function saveProfileFromTerminal() {
+    const first = document.getElementById('term-name').textContent.trim();
+    const last = document.getElementById('term-surname').textContent.trim();
+    const username = document.getElementById('term-username').textContent.trim();
+
+    const body = {};
+    if (first !== currentUser.first_name) body.first_name = first;
+    if (last !== currentUser.last_name) body.last_name = last;
+    if (username !== currentUser.username) body.username = username;
+    if (Object.keys(body).length === 0) return;
+
+    body.updated_at = new Date().toISOString();
+    const savingRow = document.getElementById('term-saving-row');
+    try {
+      if (savingRow) savingRow.style.display = 'flex';
+      await db.update('profiles', currentUser.id, body);
+      if (body.first_name !== undefined) currentUser.first_name = body.first_name;
+      if (body.last_name !== undefined) currentUser.last_name = body.last_name;
+      if (body.username !== undefined) currentUser.username = body.username;
+      const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || currentUser.username || 'User';
+      document.getElementById('sidebar-name').textContent = name;
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      if (savingRow) savingRow.style.display = 'none';
     }
-    msgs.innerHTML = '';
-    (rows || []).forEach(r => {
-      const mine = r.sender_id === currentUser.id;
-      const p = pMap[r.sender_id] || {};
-      const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username || 'Unknown';
-      const b = document.createElement('div');
-      b.className = `msg-bubble ${mine ? 'mine' : 'theirs'}`;
-      b.innerHTML = `<div class="msg-sender">${esc(name)}</div><div class="msg-text">${esc(r.body)}</div><div class="msg-time">${fmtDate(r.created_at)}</div>`;
-      msgs.appendChild(b);
-    });
-    msgs.scrollTop = msgs.scrollHeight;
-    if (currentUser.role === 'admin') {
-      document.getElementById('close-ticket-btn').classList.toggle('hidden', ticket.status === 'closed');
-    }
-  } catch (e) { msgs.innerHTML = e.message; }
-}
-
-async function submitTicket() {
-  const subject = document.getElementById('ticket-subject').value.trim();
-  const body = document.getElementById('ticket-body').value.trim();
-  if (!subject || !body) return;
-  try {
-    const [ticket] = await db.insert('tickets', { user_id: currentUser.id, subject });
-    await db.insert('ticket_messages', { ticket_id: ticket.id, sender_id: currentUser.id, body });
-    document.getElementById('ticket-subject').value = '';
-    document.getElementById('ticket-body').value = '';
-    document.getElementById('new-ticket-form').classList.add('hidden');
-    loadTickets();
-  } catch (e) { alert(e.message); }
-}
-
-async function sendReply() {
-  const body = document.getElementById('reply-body').value.trim();
-  if (!body || !openTicketId) return;
-  try {
-    await db.insert('ticket_messages', { ticket_id: openTicketId, sender_id: currentUser.id, body });
-    document.getElementById('reply-body').value = '';
-    const tickets = await db.select('tickets', `id=eq.${openTicketId}`);
-    if (tickets && tickets[0]) openTicket(tickets[0]);
-  } catch (e) { alert(e.message); }
-}
-
-async function closeTicket() {
-  if (!openTicketId) return;
-  try {
-    await db.update('tickets', openTicketId, { status: 'closed' });
-    document.getElementById('close-ticket-btn').classList.add('hidden');
-    alert('Ticket closed.');
-  } catch (e) { alert(e.message); }
-}
+  }
 
 // ── MESSAGES ─────────────────────────────────────────────────
 async function loadMessages() {
