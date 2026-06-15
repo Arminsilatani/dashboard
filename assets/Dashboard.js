@@ -516,9 +516,13 @@ async function loadDashboard() {
   const res = await db.select('profiles', `id=eq.${currentUser.id}`);
   console.log('📊 loadDashboard profiles:', res);
   if (res && res.length) {
-        // ادغام با currentUser موجود (تا email از auth.users حفظ بشه)
+    // ادغام با currentUser موجود (email از auth.users حفظ بشه)
     currentUser = { ...currentUser, ...res[0] };
   }
+
+  // ایمیل از auth.users (مطمئن‌ترین منبع)
+  const { data: { user } } = await sb.auth.getUser();
+  if (user?.email) currentUser.email = user.email;
 
   console.log('📋 currentUser in dashboard:', currentUser);
 
@@ -537,7 +541,6 @@ async function loadDashboard() {
     loadNotifications()
   ]);
 }
-
 async function loadMiniCalendar() {
   const container = document.getElementById('dash-mini-calendar');
   if (!container) return;
