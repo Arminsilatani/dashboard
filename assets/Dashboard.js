@@ -528,6 +528,13 @@ async function submitTicket() {
   try {
     const [ticket] = await db.insert('tickets', { user_id: currentUser.id, subject });
     await db.insert('ticket_messages', { ticket_id: ticket.id, sender_id: currentUser.id, body });
+        try {
+      const admins = await db.select('profiles', 'role=eq.admin&select=id');
+      const userName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'User';
+      for (const admin of (admins || [])) {
+        await addNotification(admin.id, 'ticket', 'New support ticket', `${userName}: ${subject}`, `#tickets/${ticket.id}`);
+      }
+    } catch (e) {}
     document.getElementById('ticket-subject').value = '';
     document.getElementById('ticket-body').value = '';
     document.getElementById('new-ticket-form').classList.add('hidden');
