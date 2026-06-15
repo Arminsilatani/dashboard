@@ -328,14 +328,22 @@ function bindEvents() {
   });
 
   // Edit profile modal open
-  document.getElementById('open-edit-profile-btn')?.addEventListener('click', () => {
+   // Edit profile modal open
+  document.getElementById('open-edit-profile-btn')?.addEventListener('click', async () => {
     if (!currentUser) return;
-    document.getElementById('edit-first-name').value = currentUser.first_name || '';
-    document.getElementById('edit-last-name').value = currentUser.last_name || '';
-    document.getElementById('edit-email').value = currentUser.email || '';
-    document.getElementById('edit-phone').value = currentUser.phone || '';
-    document.getElementById('edit-website').value = currentUser.website || '';
-    document.getElementById('edit-avatar-preview').src = currentUser.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.first_name || 'U')}&background=4ECDC4&color=0d0d0d`;
+
+    // بازخوانی مستقیم از دیتابیس
+    const res = await db.select('profiles', `id=eq.${currentUser.id}`);
+    const profile = (res && res.length) ? res[0] : currentUser;
+
+    console.log('📝 edit modal profile:', profile);
+
+    document.getElementById('edit-first-name').value = profile.first_name || '';
+    document.getElementById('edit-last-name').value = profile.last_name || '';
+    document.getElementById('edit-email').value = currentUser.email || profile.email || '';
+    document.getElementById('edit-phone').value = profile.phone || '';
+    document.getElementById('edit-website').value = profile.website || '';
+    document.getElementById('edit-avatar-preview').src = profile.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.first_name || 'U')}&background=4ECDC4&color=0d0d0d`;
     document.getElementById('edit-photo-input').value = '';
     pendingPhotoFile = null;
     document.getElementById('edit-profile-modal').classList.remove('hidden');
