@@ -210,8 +210,8 @@ html, body {
   border: none;
   color: #0d0d0d;
   text-align: left;
-  padding: 12px 0;                       /* بالا/پایین */
-  padding-left: 17px;                     /* آیکون دقیقاً وسط 56px */
+  padding: 12px 0;
+  padding-left: 17px;                /* ← مرکز آیکون (56-22)/2 */
   padding-right: 0;
   border-radius: 8px;
   cursor: pointer;
