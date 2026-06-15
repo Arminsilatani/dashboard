@@ -395,7 +395,9 @@ td .btn-ghost { padding: 5px 10px; font-size: 12px; }
   gap: 12px;
   padding: 10px 0;
   border-bottom: 1px solid var(--border);
+  justify-content: flex-start;
 }
+
 .detail-label {
   font-size: 12px;
   text-transform: uppercase;
