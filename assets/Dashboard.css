@@ -396,6 +396,112 @@ td .btn-ghost { padding: 5px 10px; font-size: 12px; }
   text-align: center;
 }
 
+/* ── AUTH STEP FLOW ─────────────────────────────────────── */
+.auth-step {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.auth-field {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.auth-field:focus {
+  border-color: var(--accent);
+}
+
+.auth-user-email {
+  font-size: 14px;
+  color: var(--muted);
+  text-align: left;
+  margin-bottom: 4px;
+}
+
+.auth-forgot-link {
+  font-size: 12px;
+  color: var(--accent);
+  text-decoration: none;
+  cursor: pointer;
+  align-self: flex-end;
+}
+
+.auth-back-link {
+  font-size: 12px;
+  color: var(--accent);
+  text-decoration: none;
+  cursor: pointer;
+  margin-top: 8px;
+  display: inline-block;
+}
+
+.auth-success {
+  color: var(--accent);
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.auth-hint {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.password-field-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-field-wrapper .auth-field {
+  padding-right: 44px;
+}
+
+.toggle-password-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+  padding: 4px;
+}
+.toggle-password-btn:hover {
+  color: var(--text);
+}
+
+.reg-success-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.9;
+}
+
+.reg-success-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.reg-success-text {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+}
 /* ── FOOTER ──────────────────────────────────────────────── */
 .site-footer {
   border-top: 1px solid var(--border);
