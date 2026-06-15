@@ -230,7 +230,10 @@
       <h3>Crop Your Photo</h3>
       <div style="max-height:350px; overflow:hidden;"><img id="crop-image" style="max-width:100%; display:block;" /></div>
       <div class="modal-actions" style="justify-content:space-between; align-items:center;">
-        <span style="font-size:10px; color:var(--muted);">powered by <span style="color:var(--accent);">Zorio</span></span>
+                <span style="font-size:10px; color:var(--muted); display:flex; align-items:center; gap:4px;">
+          <img src="assets/logos/Zo.svg" alt="Zorio" style="width:14px; height:14px;" />
+          powered by <span style="color:#fd7e14; font-weight:600;">Zorio</span>
+        </span>
         <div style="display:flex; gap:8px;">
           <button class="btn-ghost" id="cancel-crop-btn">Cancel</button>
           <button class="btn-accent" id="confirm-crop-btn">Confirm</button>
