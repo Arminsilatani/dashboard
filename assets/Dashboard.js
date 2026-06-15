@@ -396,7 +396,6 @@ function bindEvents() {
     const email = document.getElementById('edit-email').value.trim();
     const phone = document.getElementById('edit-phone').value.trim();
     const website = document.getElementById('edit-website').value.trim();
-    const username = document.getElementById('edit-username').value.trim();
     let photo_url = currentUser.photo_url;
 
     if (pendingPhotoFile) {
