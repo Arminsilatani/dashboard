@@ -1,6 +1,5 @@
 const SUPABASE_URL = 'https://vzqicidepdmraygulrey.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_kqRWgOmLISOE2EuLL1s8fw_WN6FJRTI';
-const TELEGRAM_BOT_ID = '5933108036';
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -50,59 +49,6 @@ function hideLoader() {
   document.getElementById('global-loader').classList.add('hidden');
 }
 
-// ── Telegram Auth ───────────────────────────────────────────
-window.onTelegramAuth = async function(user) {
-  showLoader();
-  const errEl = document.getElementById('auth-error');
-  errEl.textContent = '';
-
-  try {
-    const params = new URLSearchParams(user);
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/telegram-auth?${params.toString()}`);
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(errText || 'Telegram login failed');
-    }
-
-    const { access_token, refresh_token } = await res.json();
-    const { error } = await sb.auth.setSession({ access_token, refresh_token });
-    if (error) throw error;
-
-    const { data: { user: authUser }, error: getUserError } = await sb.auth.getUser();
-    if (getUserError || !authUser) throw new Error('Could not fetch authenticated user');
-
-    let profile = await db.select('profiles', `id=eq.${authUser.id}`);
-    if (!profile || !profile.length) {
-      const meta = authUser.user_metadata || {};
-      const newProfile = {
-        id: authUser.id,
-        first_name: meta.first_name || '',
-        last_name: meta.last_name || '',
-        username: meta.username || '',
-        role: 'user',
-        created_at: new Date().toISOString()
-      };
-      await db.insert('profiles', newProfile);
-      currentUser = newProfile;
-    } else {
-      currentUser = profile[0];
-    }
-
-    hideLoader();
-    showApp();
-  } catch (e) {
-    console.error(e);
-    errEl.textContent = e.message || 'Login failed';
-    hideLoader();
-    await sb.auth.signOut().catch(() => {});
-  }
-};
-
-async function signOut() {
-  await sb.auth.signOut();
-  currentUser = null;
-}
-
 // ── Boot ────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
   const { data: { session } } = await sb.auth.getSession();
@@ -124,12 +70,19 @@ window.addEventListener('DOMContentLoaded', async () => {
     showAuth();
   }
   bindEvents();
+  initAuthListeners();
 });
 
 function showAuth() {
   document.getElementById('auth-overlay').style.display = 'flex';
   document.getElementById('app-screen').classList.remove('active');
+  showStep('step-1');
+  document.getElementById('auth-email').value = '';
+  document.getElementById('auth-error').textContent = '';
+  const successMsg = document.getElementById('auth-success-msg');
+  if (successMsg) successMsg.style.display = 'none';
 }
+
 function showApp() {
   document.getElementById('auth-overlay').style.display = 'none';
   document.getElementById('app-screen').classList.add('active');
@@ -144,6 +97,184 @@ function showApp() {
     document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
   }
   loadSection('tickets');
+}
+
+// ── Step‑based Email Auth Flow ──────────────────────────────
+let authEmail = '';
+
+function showStep(stepId) {
+  document.querySelectorAll('.auth-step').forEach(el => el.classList.add('hidden'));
+  document.getElementById(stepId)?.classList.remove('hidden');
+}
+
+function initAuthListeners() {
+  // مرحله ۱: ادامه
+  document.getElementById('auth-continue-btn')?.addEventListener('click', async function () {
+    const email = document.getElementById('auth-email').value.trim();
+    const errorEl = document.getElementById('auth-error');
+    if (!email) { errorEl.textContent = 'Please enter an email.'; return; }
+    authEmail = email;
+
+    showLoader();
+    try {
+      const { data: exists, error: rpcError } = await sb.rpc('check_email_exists', { email_to_check: email });
+      if (rpcError) throw rpcError;
+      if (exists) {
+        document.getElementById('auth-user-email').textContent = email;
+        showStep('step-2-login');
+      } else {
+        showStep('step-2-register');
+        document.getElementById('reg-form-fields').style.display = '';
+        document.getElementById('reg-success').style.display = 'none';
+      }
+      errorEl.textContent = '';
+    } catch (e) {
+      console.error(e);
+      errorEl.textContent = 'Something went wrong. Try again.';
+    } finally {
+      hideLoader();
+    }
+  });
+
+  // ورود
+  document.getElementById('auth-signin-btn')?.addEventListener('click', async function () {
+    const email = authEmail;
+    const password = document.getElementById('auth-password').value;
+    const errorEl = document.getElementById('auth-error-login');
+    if (!email || !password) { errorEl.textContent = 'Please enter your password.'; return; }
+
+    showLoader();
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    hideLoader();
+    if (error) { errorEl.textContent = error.message; return; }
+
+    currentUser = await fetchProfile(data.user);
+    if (!currentUser) {
+      errorEl.textContent = 'Unable to load profile.';
+      return;
+    }
+    showApp();
+  });
+
+  // فراموشی رمز
+  document.getElementById('auth-forgot-link')?.addEventListener('click', function (e) {
+    e.preventDefault();
+    document.getElementById('forgot-email').value = authEmail;
+    showStep('step-forgot');
+  });
+
+  document.getElementById('auth-send-reset-btn')?.addEventListener('click', async function () {
+    const email = document.getElementById('forgot-email').value.trim();
+    if (!email) return;
+    showLoader();
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+    hideLoader();
+    if (error) {
+      document.getElementById('auth-error-login').textContent = error.message;
+      return;
+    }
+    document.getElementById('auth-success-msg').textContent = 'Password reset link sent.';
+    document.getElementById('auth-success-msg').style.display = 'block';
+  });
+
+  document.getElementById('auth-back-to-login')?.addEventListener('click', function (e) {
+    e.preventDefault();
+    showStep('step-2-login');
+  });
+
+  // ثبت‌نام
+  document.getElementById('auth-register-btn')?.addEventListener('click', async function () {
+    const firstname = document.getElementById('reg-firstname').value.trim();
+    const lastname  = document.getElementById('reg-lastname').value.trim();
+    const password  = document.getElementById('reg-password').value;
+    const confirm   = document.getElementById('reg-confirm').value;
+    const errorEl   = document.getElementById('auth-error-register');
+    if (!firstname || !lastname || !password || !confirm) {
+      errorEl.textContent = 'All fields are required.';
+      return;
+    }
+    if (password !== confirm) {
+      errorEl.textContent = 'Passwords do not match.';
+      return;
+    }
+    showLoader();
+    const { error } = await sb.auth.signUp({
+      email: authEmail,
+      password,
+      options: {
+        data: { first_name: firstname, last_name: lastname },
+        emailRedirectTo: window.location.origin + window.location.pathname
+      }
+    });
+    hideLoader();
+    if (error) { errorEl.textContent = error.message; return; }
+
+    // نمایش پیام تأیید ایمیل
+    document.getElementById('reg-form-fields').style.display = 'none';
+    document.getElementById('reg-success').style.display = 'block';
+    errorEl.textContent = '';
+  });
+
+  // دکمه "Go to Sign In" از صفحه موفقیت
+  document.getElementById('reg-to-login-btn')?.addEventListener('click', function () {
+    document.getElementById('auth-user-email').textContent = authEmail;
+    showStep('step-2-login');
+  });
+
+  // اینتر در تمام مراحل
+  document.querySelectorAll('.auth-step').forEach(step => {
+    step.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const map = {
+          'step-1': 'auth-continue-btn',
+          'step-2-login': 'auth-signin-btn',
+          'step-2-register': 'auth-register-btn',
+          'step-forgot': 'auth-send-reset-btn'
+        };
+        const btnId = map[step.id];
+        if (btnId) document.getElementById(btnId)?.click();
+      }
+    });
+  });
+
+  // نمایش/مخفی رمز عبور
+  document.querySelectorAll('.toggle-password-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const input = document.getElementById(this.dataset.target);
+      if (!input) return;
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      this.innerHTML = isPassword
+        ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="m14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+        : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+    });
+  });
+}
+
+// کمکی برای دریافت یا ساخت پروفایل
+async function fetchProfile(authUser) {
+  let profile = await db.select('profiles', `id=eq.${authUser.id}`);
+  if (profile && profile.length) {
+    return profile[0];
+  }
+  const meta = authUser.user_metadata || {};
+  const newProfile = {
+    id: authUser.id,
+    first_name: meta.first_name || '',
+    last_name: meta.last_name || '',
+    username: meta.username || '',
+    role: 'user',
+    created_at: new Date().toISOString()
+  };
+  await db.insert('profiles', newProfile);
+  return newProfile;
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  currentUser = null;
+  showAuth();
 }
 
 // ── Navigation ──────────────────────────────────────────────
