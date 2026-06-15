@@ -397,6 +397,78 @@ td .btn-ghost { padding: 5px 10px; font-size: 12px; }
   border: 2px solid var(--accent);
   background: var(--surface2);
 }
+
+/* ── GLOBAL LOADER ───────────────────────────────────────── */
+.modal-loader-box {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  text-align: center;
+}
+.loader-text {
+  color: var(--accent);
+}
+
+/* ── AUTH FULL-WIDTH BUTTONS ────────────────────────────── */
+.auth-full-btn {
+  width: 100%;
+}
+
+/* ── REGISTER SUCCESS BLOCK ─────────────────────────────── */
+.reg-success-block {
+  display: none;
+  text-align: center;
+}
+.reg-to-login-btn {
+  width: auto;
+  margin-top: 16px;
+}
+
+/* ── PHOTO UPLOAD ───────────────────────────────────────── */
+.photo-upload-label {
+  cursor: pointer;
+  display: inline-block;
+}
+.photo-upload-input {
+  display: none;
+}
+
+/* ── CROP MODAL ─────────────────────────────────────────── */
+.crop-modal-box {
+  max-width: 500px;
+}
+.crop-image-wrapper {
+  max-height: 350px;
+  overflow: hidden;
+}
+.crop-image {
+  max-width: 100%;
+  display: block;
+}
+.crop-modal-actions {
+  justify-content: space-between;
+  align-items: center;
+}
+.zorio-credit {
+  font-size: 10px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.zorio-logo {
+  width: 14px;
+  height: 14px;
+}
+.zorio-name {
+  color: #fd7e14;
+  font-weight: 400;
+}
+.crop-buttons {
+  display: flex;
+  gap: 8px;
+}
+
 /* ── CROP MODAL ─────────────────────────────────────────── */
 #crop-modal .modal-box {
   max-width: 520px;
