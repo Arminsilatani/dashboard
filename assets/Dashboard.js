@@ -391,7 +391,14 @@ function bindEvents() {
       hideLoader();
     }
   });
-
+  document.getElementById('edit-photo-input')?.addEventListener('change', function() {
+    const file = this.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => { document.getElementById('edit-avatar-preview').src = e.target.result; };
+      reader.readAsDataURL(file);
+    }
+  });
   document.getElementById('edit-profile-modal')?.addEventListener('click', function(e) {
     if (e.target === this) this.classList.add('hidden');
   });
