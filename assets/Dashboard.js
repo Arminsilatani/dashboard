@@ -37,7 +37,7 @@ const db = {
 };
 
 // ── State ───────────────────────────────────────────────────
-let currentUser = null;   // profile row
+let currentUser = null;
 let editingUserId = null;
 let openTicketId = null;
 
@@ -108,7 +108,6 @@ function showStep(stepId) {
 }
 
 function initAuthListeners() {
-  // مرحله ۱: ادامه
   document.getElementById('auth-continue-btn')?.addEventListener('click', async function () {
     const email = document.getElementById('auth-email').value.trim();
     const errorEl = document.getElementById('auth-error');
@@ -136,7 +135,6 @@ function initAuthListeners() {
     }
   });
 
-  // ورود
   document.getElementById('auth-signin-btn')?.addEventListener('click', async function () {
     const email = authEmail;
     const password = document.getElementById('auth-password').value;
@@ -156,7 +154,6 @@ function initAuthListeners() {
     showApp();
   });
 
-  // فراموشی رمز
   document.getElementById('auth-forgot-link')?.addEventListener('click', function (e) {
     e.preventDefault();
     document.getElementById('forgot-email').value = authEmail;
@@ -182,7 +179,6 @@ function initAuthListeners() {
     showStep('step-2-login');
   });
 
-  // ثبت‌نام
   document.getElementById('auth-register-btn')?.addEventListener('click', async function () {
     const firstname = document.getElementById('reg-firstname').value.trim();
     const lastname  = document.getElementById('reg-lastname').value.trim();
@@ -209,19 +205,16 @@ function initAuthListeners() {
     hideLoader();
     if (error) { errorEl.textContent = error.message; return; }
 
-    // نمایش پیام تأیید ایمیل
     document.getElementById('reg-form-fields').style.display = 'none';
     document.getElementById('reg-success').style.display = 'block';
     errorEl.textContent = '';
   });
 
-  // دکمه "Go to Sign In" از صفحه موفقیت
   document.getElementById('reg-to-login-btn')?.addEventListener('click', function () {
     document.getElementById('auth-user-email').textContent = authEmail;
     showStep('step-2-login');
   });
 
-  // اینتر در تمام مراحل
   document.querySelectorAll('.auth-step').forEach(step => {
     step.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
@@ -238,7 +231,6 @@ function initAuthListeners() {
     });
   });
 
-  // نمایش/مخفی رمز عبور
   document.querySelectorAll('.toggle-password-btn').forEach(btn => {
     btn.addEventListener('click', function () {
       const input = document.getElementById(this.dataset.target);
@@ -252,7 +244,6 @@ function initAuthListeners() {
   });
 }
 
-// کمکی برای دریافت یا ساخت پروفایل
 async function fetchProfile(authUser) {
   let profile = await db.select('profiles', `id=eq.${authUser.id}`);
   if (profile && profile.length) {
@@ -351,6 +342,55 @@ function bindEvents() {
     document.getElementById('edit-user-modal').classList.add('hidden');
   });
   document.getElementById('save-user-btn').addEventListener('click', saveUser);
+
+  // ── Profile Modal ────────────────────────────────────────
+  document.getElementById('sidebar-profile-trigger')?.addEventListener('click', () => {
+    if (!currentUser) return;
+    document.getElementById('profile-first-name').value = currentUser.first_name || '';
+    document.getElementById('profile-last-name').value = currentUser.last_name || '';
+    document.getElementById('profile-username').value = currentUser.username || '';
+    document.getElementById('profile-email').value = currentUser.email || '';
+    document.getElementById('profile-role').value = currentUser.role || 'user';
+    document.getElementById('profile-created').value = fmtDate(currentUser.created_at);
+    document.getElementById('profile-modal').classList.remove('hidden');
+  });
+
+  document.getElementById('cancel-profile-btn')?.addEventListener('click', () => {
+    document.getElementById('profile-modal').classList.add('hidden');
+  });
+
+  document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
+    const first = document.getElementById('profile-first-name').value.trim();
+    const last = document.getElementById('profile-last-name').value.trim();
+    const username = document.getElementById('profile-username').value.trim();
+
+    if (!first && !last && !username) return;
+
+    const body = {
+      first_name: first,
+      last_name: last,
+      username: username,
+      updated_at: new Date().toISOString()
+    };
+    try {
+      showLoader();
+      await db.update('profiles', currentUser.id, body);
+      currentUser.first_name = first;
+      currentUser.last_name = last;
+      currentUser.username = username;
+      const name = [first, last].filter(Boolean).join(' ') || username || 'User';
+      document.getElementById('sidebar-name').textContent = name;
+      document.getElementById('profile-modal').classList.add('hidden');
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      hideLoader();
+    }
+  });
+
+  document.getElementById('profile-modal')?.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.add('hidden');
+  });
 }
 
 // ── TICKETS ─────────────────────────────────────────────────
