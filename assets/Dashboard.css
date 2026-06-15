@@ -1083,6 +1083,23 @@ td .btn-ghost {
   padding-left: 6px;
 }
 
+/* ── NOTIFICATION DOTS ──────────────────────────── */
+.notif-dot-icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-right: 8px;
+  display: inline-block;
+}
+
+.notif-dot-calendar { background: #ff6f91; }
+.notif-dot-contract { background: var(--accent); }  /* #4ECDC4 */
+.notif-dot-message { background: #ffe76d; }
+.notif-dot-ticket { background: #ffe76d; }
+.notif-dot-connection { background: #ffe76d; }
+.notif-dot-system { background: var(--accent); }
+
 /* ── RESPONSIVE ────────────────────────────── */
 @media (max-width: 680px) {
   .sidebar {
