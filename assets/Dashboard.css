@@ -317,7 +317,6 @@ td .btn-ghost { padding: 5px 10px; font-size: 12px; }
 .detail-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
 .detail-value { font-size: 14px; color: var(--text); font-weight: 500; }
 /* ── PROFILE AVATAR WRAPPER ─────────────────────────────── */
-/* ── PROFILE AVATAR WRAPPER ─────────────────────────────── */
 .profile-avatar-wrap {
   position: relative;
   display: inline-flex;
