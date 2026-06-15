@@ -397,7 +397,10 @@ td .btn-ghost { padding: 5px 10px; font-size: 12px; }
   border: 2px solid var(--accent);
   background: var(--surface2);
 }
-
+/* ── CROP MODAL ─────────────────────────────────────────── */
+#crop-modal .modal-box {
+  max-width: 520px;
+}
 /* ── SCROLLBAR ─────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
