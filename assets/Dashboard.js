@@ -283,6 +283,8 @@ function loadSection(name) {
   if (name === 'profile') loadProfile();
 }
 
+
+
 // ── Events ──────────────────────────────────────────────────
 function bindEvents() {
   document.getElementById('signout-btn').addEventListener('click', async () => {
