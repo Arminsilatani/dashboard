@@ -814,6 +814,10 @@ td .btn-ghost {
   color: var(--text);
 }
 
+#dash-role-badge {
+  font-weight: 400;     
+  }
+  
 /* جزئیات پروفایل – حالت ستونی */
 .profile-details {
   display: flex;
