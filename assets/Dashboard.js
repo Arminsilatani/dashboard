@@ -96,7 +96,13 @@ function showApp() {
   if (currentUser.role === 'admin') {
     document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
   }
-    loadSection('tickets');
+
+  // گرفتن ایمیل از auth.users (چون توی profiles نیست)
+  sb.auth.getUser().then(({ data: { user } }) => {
+    if (user?.email) currentUser.email = user.email;
+  });
+
+  loadSection('tickets');
 }
 
 // ── Step‑based Email Auth Flow ──────────────────────────────
