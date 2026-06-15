@@ -547,6 +547,21 @@ async function sendReply() {
   if (!body || !openTicketId) return;
   try {
     await db.insert('ticket_messages', { ticket_id: openTicketId, sender_id: currentUser.id, body });
+        const tickets = await db.select('tickets', `id=eq.${openTicketId}`);
+    if (tickets && tickets[0]) {
+      const ticket = tickets[0];
+      const senderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
+      if (currentUser.role === 'admin') {
+        await addNotification(ticket.user_id, 'ticket', 'New reply to your ticket', body.substring(0, 100), `#tickets/${openTicketId}`);
+      } else {
+        try {
+          const admins = await db.select('profiles', 'role=eq.admin&select=id');
+          for (const admin of (admins || [])) {
+            await addNotification(admin.id, 'ticket', `Reply from ${senderName}`, body.substring(0, 100), `#tickets/${openTicketId}`);
+          }
+        } catch (e) {}
+      }
+    }
     document.getElementById('reply-body').value = '';
     const tickets = await db.select('tickets', `id=eq.${openTicketId}`);
     if (tickets && tickets[0]) openTicket(tickets[0]);
