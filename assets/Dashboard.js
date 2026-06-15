@@ -324,7 +324,7 @@ function bindEvents() {
   });
 
   // Edit profile modal open
-  document.getElementById('open-edit-profile-btn')?.addEventListener('click', () => {
+    document.getElementById('open-edit-profile-btn')?.addEventListener('click', () => {
     if (!currentUser) return;
     document.getElementById('edit-first-name').value = currentUser.first_name || '';
     document.getElementById('edit-last-name').value = currentUser.last_name || '';
