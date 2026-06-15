@@ -572,6 +572,10 @@ async function closeTicket() {
   if (!openTicketId) return;
   try {
     await db.update('tickets', openTicketId, { status: 'closed' });
+        const tickets = await db.select('tickets', `id=eq.${openTicketId}`);
+    if (tickets && tickets[0]) {
+      await addNotification(tickets[0].user_id, 'ticket', 'Ticket closed', 'Your ticket has been resolved', '#tickets');
+    }
     document.getElementById('close-ticket-btn').classList.add('hidden');
     alert('Ticket closed.');
   } catch (e) { alert(e.message); }
