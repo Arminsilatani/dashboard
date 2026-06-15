@@ -100,7 +100,7 @@ async function showApp() {
   const { data: { user } } = await sb.auth.getUser();
   if (user?.email) currentUser.email = user.email;
 
-  loadSection('tickets');
+    loadSection('dashboard');
 }
 
 // ── Step‑based Email Auth Flow ──────────────────────────────
