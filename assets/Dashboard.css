@@ -135,9 +135,9 @@ html, body {
 .sidebar-user {
   display: flex;
   align-items: center;
-  justify-content: flex-start;           /* همیشه چپ‌چین */
+  justify-content: flex-start;
   gap: 0;
-  padding: 12px 9px;                     /* چپ و راست 9px → آواتار وسط 56px */
+  padding: 12px 1px;                 /* ← اصلاح‌شده (قبلاً 12px 9px بود) */
   margin: 0 8px;
   border-bottom: 1px solid rgba(0,0,0,0.15);
   cursor: pointer;
