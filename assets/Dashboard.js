@@ -781,6 +781,21 @@ async function saveUser() {
   } catch (e) { alert(e.message); }
 }
 
+// ── Notification Helper ──────────────────────────────────────
+async function addNotification(userId, type, title, body = '', link = '') {
+  try {
+    await db.insert('notifications', {
+      user_id: userId,
+      type,
+      title,
+      body,
+      link
+    });
+  } catch (e) {
+    console.log('Notification skipped (table may not exist)');
+  }
+}
+
 // ── Utils ────────────────────────────────────────────────────
 function esc(str) {
   if (!str) return '';
