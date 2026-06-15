@@ -422,7 +422,6 @@ function bindEvents() {
     if (email !== currentUser.email) body.email = email;
     if (phone !== (currentUser.phone || '')) body.phone = phone;
     if (website !== (currentUser.website || '')) body.website = website;
-    if (username !== currentUser.username) body.username = username;
     if (photo_url !== currentUser.photo_url) body.photo_url = photo_url;
 
     try {
@@ -432,10 +431,9 @@ function bindEvents() {
       if (body.email !== undefined) currentUser.email = body.email;
       if (body.phone !== undefined) currentUser.phone = body.phone;
       if (body.website !== undefined) currentUser.website = body.website;
-      if (body.username !== undefined) currentUser.username = body.username;
       if (body.photo_url !== undefined) currentUser.photo_url = body.photo_url;
 
-      const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || currentUser.username || 'User';
+      const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'User';
       document.getElementById('sidebar-name').textContent = name;
       document.getElementById('sidebar-avatar').src = currentUser.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4ECDC4&color=0d0d0d`;
       document.getElementById('dash-avatar').src = currentUser.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4ECDC4&color=0d0d0d`;
