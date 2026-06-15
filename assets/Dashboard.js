@@ -586,7 +586,9 @@ async function sendReply() {
   if (!body || !openTicketId) return;
   try {
     await db.insert('ticket_messages', { ticket_id: openTicketId, sender_id: currentUser.id, body });
-        const tickets = await db.select('tickets', `id=eq.${openTicketId}`);
+    
+    // نوتیفیکیشن‌ها
+    const tickets = await db.select('tickets', `id=eq.${openTicketId}`);
     if (tickets && tickets[0]) {
       const ticket = tickets[0];
       const senderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
@@ -601,8 +603,8 @@ async function sendReply() {
         } catch (e) {}
       }
     }
+    
     document.getElementById('reply-body').value = '';
-    const tickets = await db.select('tickets', `id=eq.${openTicketId}`);
     if (tickets && tickets[0]) openTicket(tickets[0]);
   } catch (e) { alert(e.message); }
 }
