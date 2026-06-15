@@ -322,30 +322,68 @@ function bindEvents() {
     document.getElementById('edit-avatar-preview').src = currentUser.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.first_name || 'U')}&background=4ECDC4&color=0d0d0d`;
     document.getElementById('edit-profile-modal').classList.remove('hidden');
   });
-  
+
   document.getElementById('cancel-edit-profile-btn')?.addEventListener('click', () => {
     document.getElementById('edit-profile-modal').classList.add('hidden');
   });
 
-  document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
+    document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
     const first = document.getElementById('edit-first-name').value.trim();
     const last = document.getElementById('edit-last-name').value.trim();
+    const email = document.getElementById('edit-email').value.trim();
+    const phone = document.getElementById('edit-phone').value.trim();
+    const website = document.getElementById('edit-website').value.trim();
     const username = document.getElementById('edit-username').value.trim();
-    const body = {};
+    const fileInput = document.getElementById('edit-photo-input');
+    let photo_url = currentUser.photo_url;
+
+    // آپلود عکس اگر انتخاب شده باشه
+    if (fileInput && fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      const filePath = `avatars/${currentUser.id}_${Date.now()}`;
+      try {
+        showLoader();
+        const { data: uploadData, error: uploadError } = await sb.storage
+          .from('avatars')
+          .upload(filePath, file, { upsert: true });
+        if (uploadError) throw uploadError;
+        const { data: { publicUrl } } = sb.storage.from('avatars').getPublicUrl(filePath);
+        photo_url = publicUrl;
+      } catch (err) {
+        alert('Photo upload failed: ' + err.message);
+        hideLoader();
+        return;
+      }
+    }
+
+    const body = { updated_at: new Date().toISOString() };
     if (first !== currentUser.first_name) body.first_name = first;
     if (last !== currentUser.last_name) body.last_name = last;
+    if (email !== currentUser.email) body.email = email;
+    if (phone !== (currentUser.phone || '')) body.phone = phone;
+    if (website !== (currentUser.website || '')) body.website = website;
     if (username !== currentUser.username) body.username = username;
-    if (Object.keys(body).length === 0) { document.getElementById('edit-profile-modal').classList.add('hidden'); return; }
-    body.updated_at = new Date().toISOString();
+    if (photo_url !== currentUser.photo_url) body.photo_url = photo_url;
+
     try {
-      showLoader();
       await db.update('profiles', currentUser.id, body);
+      // به‌روزرسانی currentUser
       if (body.first_name !== undefined) currentUser.first_name = body.first_name;
       if (body.last_name !== undefined) currentUser.last_name = body.last_name;
+      if (body.email !== undefined) currentUser.email = body.email;
+      if (body.phone !== undefined) currentUser.phone = body.phone;
+      if (body.website !== undefined) currentUser.website = body.website;
       if (body.username !== undefined) currentUser.username = body.username;
+      if (body.photo_url !== undefined) currentUser.photo_url = body.photo_url;
+
       const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || currentUser.username || 'User';
       document.getElementById('sidebar-name').textContent = name;
+      document.getElementById('sidebar-avatar').src = currentUser.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4ECDC4&color=0d0d0d`;
+      document.getElementById('dash-avatar').src = currentUser.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4ECDC4&color=0d0d0d`;
       document.getElementById('dash-fullname').textContent = name;
+      document.getElementById('dash-email').textContent = currentUser.email || '—';
+      document.getElementById('dash-phone').textContent = currentUser.phone || '—';
+      document.getElementById('dash-website').textContent = currentUser.website || '—';
       document.getElementById('edit-profile-modal').classList.add('hidden');
     } catch (err) {
       alert(err.message);
