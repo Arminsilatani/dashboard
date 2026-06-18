@@ -1182,6 +1182,201 @@ td .btn-ghost {
     50%      { opacity: 1;   box-shadow: 0 0 6px var(--accent, #ff6f91); }
 }
 
+/* ========== AUTH OVERLAY & GLASS BOX ========== */
+#auth-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.auth-box {
+  background: rgba(22, 22, 22, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 40px 32px 32px;
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.auth-box img {
+  width: 48px;
+  height: 48px;
+}
+
+.auth-box h2 {
+  font-size: 22px;
+  font-weight: 900;
+  color: #f5f5f5;
+  margin-bottom: -10px;
+}
+
+.sub {
+  font-size: 13px;
+  color: #888;
+}
+
+/* ========== STEPS ========== */
+.auth-step {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.auth-step.hidden {
+  display: none;
+}
+
+/* ========== INPUTS ========== */
+.auth-field {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(30, 30, 30, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #f5f5f5;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.auth-field:focus {
+  border-color: var(--accent, #4ECDC4);
+}
+
+/* ========== BUTTONS ========== */
+.accent-btn {
+  background: var(--accent, #4ECDC4);
+  color: #0d0d0d;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.accent-btn:hover {
+  opacity: 0.85;
+}
+
+.auth-full-btn {
+  width: 100%;
+}
+
+/* ========== ERROR & SUCCESS ========== */
+.auth-error {
+  color: #e74c3c;
+  font-size: 12px;
+  min-height: 18px;
+  text-align: left;
+}
+
+.auth-success {
+  color: var(--accent, #4ECDC4);
+  font-size: 13px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* ========== EMAIL DISPLAY ========== */
+.auth-user-email {
+  font-size: 14px;
+  color: #888;
+  text-align: left;
+  margin-bottom: 4px;
+}
+
+/* ========== LINKS ========== */
+.auth-forgot-link,
+.auth-back-link {
+  font-size: 12px;
+  color: var(--accent, #4ECDC4);
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-block;
+}
+
+.auth-forgot-link {
+  align-self: flex-end;
+}
+
+/* ========== PASSWORD TOGGLE ========== */
+.password-field-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-field-wrapper .auth-field {
+  padding-right: 44px;
+}
+
+.toggle-password-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.toggle-password-btn:hover {
+  color: #f5f5f5;
+}
+
+/* ========== REGISTER SUCCESS BLOCK ========== */
+.reg-success-block {
+  text-align: center;
+}
+
+.reg-success-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.reg-success-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #f5f5f5;
+  margin-bottom: 8px;
+}
+
+.reg-success-text {
+  font-size: 14px;
+  color: #888;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+/* ========== HINT ========== */
+.auth-hint {
+  font-size: 13px;
+  color: #888;
+}
+
 /* ── RESPONSIVE ────────────────────────────── */
 @media (max-width: 680px) {
   .sidebar {
