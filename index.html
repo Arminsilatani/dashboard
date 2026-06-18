@@ -9,6 +9,72 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
 </head>
 <body>
+  <!-- AUTH OVERLAY -->
+<div id="auth-overlay">
+  <div class="auth-box">
+    <img src="assets/favicon.svg" alt="Ravlo Calendar" onerror="this.style.display='none'">
+    <h2>Ravlo Calendar</h2>
+    <p class="sub">Sign in to sync your events</p>
+
+    <!-- Step 1: Email input -->
+    <div id="step-1" class="auth-step">
+      <input type="email" id="auth-email" class="auth-field" placeholder="Email" autocomplete="email" required>
+      <button id="auth-continue-btn" class="accent-btn auth-full-btn">Continue</button>
+      <div class="auth-error" id="auth-error"></div>
+    </div>
+
+    <!-- Step 2: Login -->
+    <div id="step-2-login" class="auth-step hidden">
+      <p class="auth-user-email" id="auth-user-email"></p>
+      <div class="password-field-wrapper">
+        <input type="password" id="auth-password" class="auth-field" placeholder="Password" autocomplete="current-password" required>
+        <button type="button" class="toggle-password-btn" data-target="auth-password" aria-label="Show password">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <button id="auth-signin-btn" class="accent-btn auth-full-btn">Sign In</button>
+      <a href="#" id="auth-forgot-link" class="auth-forgot-link">Forgot password?</a>
+      <div class="auth-error" id="auth-error-login"></div>
+    </div>
+
+    <!-- Step 2: Register -->
+    <div id="step-2-register" class="auth-step hidden">
+      <div id="reg-form-fields">
+        <input type="text" id="reg-firstname" class="auth-field" placeholder="First Name" required>
+        <input type="text" id="reg-lastname" class="auth-field" placeholder="Last Name" required>
+        <div class="password-field-wrapper">
+          <input type="password" id="reg-password" class="auth-field" placeholder="Password (min 6 chars)" autocomplete="new-password" required>
+          <button type="button" class="toggle-password-btn" data-target="reg-password" aria-label="Show password">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="password-field-wrapper">
+          <input type="password" id="reg-confirm" class="auth-field" placeholder="Confirm Password" autocomplete="new-password" required>
+          <button type="button" class="toggle-password-btn" data-target="reg-confirm" aria-label="Show password">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <button id="auth-register-btn" class="accent-btn auth-full-btn">Create Account</button>
+      </div>
+      <div id="reg-success" class="reg-success-block" style="display:none;">
+        <div class="reg-success-icon">✉️</div>
+        <h3 class="reg-success-title">Verify your email</h3>
+        <p class="reg-success-text">We've sent a confirmation link to your email.<br>Check your inbox and click the link to activate your account.</p>
+        <button id="reg-to-login-btn" class="accent-btn">Go to Sign In</button>
+      </div>
+      <div class="auth-error" id="auth-error-register"></div>
+    </div>
+
+    <!-- Forgot Password -->
+    <div id="step-forgot" class="auth-step hidden">
+      <p class="auth-hint">Enter your email to receive a reset link.</p>
+      <input type="email" id="forgot-email" class="auth-field" placeholder="Email" required>
+      <button id="auth-send-reset-btn" class="accent-btn auth-full-btn">Send Reset Link</button>
+      <a href="#" id="auth-back-to-login" class="auth-back-link">Back to login</a>
+      <div class="auth-success" id="auth-success-msg" style="display:none;"></div>
+    </div>
+  </div>
+</div>
   <div id="initial-loader" class="fullpage-loader hidden">
     <div class="lds-grid">
         <div></div><div></div><div></div>
