@@ -41,14 +41,19 @@ let currentUser = null;
 let editingUserId = null;
 let openTicketId = null;
 
-// ── Loader ──────────────────────────────────────────────────
-// ── Loader ──────────────────────────────────────────────────
+// ── Loader (shows both old and new loaders together) ────────
 function showLoader() {
-  document.getElementById('initial-loader').classList.remove('hidden'); // لودر نئونی جدید
+  const globalLoader = document.getElementById('global-loader');
+  if (globalLoader) globalLoader.classList.remove('hidden');
+  const initialLoader = document.getElementById('initial-loader');
+  if (initialLoader) initialLoader.classList.remove('hidden');
 }
+
 function hideLoader() {
-  document.getElementById('global-loader').classList.add('hidden');
-  document.getElementById('initial-loader').classList.add('hidden');
+  const globalLoader = document.getElementById('global-loader');
+  if (globalLoader) globalLoader.classList.add('hidden');
+  const initialLoader = document.getElementById('initial-loader');
+  if (initialLoader) initialLoader.classList.add('hidden');
 }
 
 // ── Boot ────────────────────────────────────────────────────
@@ -87,7 +92,6 @@ async function showApp() {
   updateSidebarUI();
   document.getElementById('section-dashboard').classList.add('active');
   loadSection('dashboard');
-  
   updateNotificationBadge();
 }
 
@@ -128,8 +132,14 @@ function initAuthListeners() {
     try {
       const { data: exists, error: rpcError } = await sb.rpc('check_email_exists', { email_to_check: email });
       if (rpcError) throw rpcError;
-      if (exists) { document.getElementById('auth-user-email').textContent = email; showStep('step-2-login'); }
-      else { showStep('step-2-register'); document.getElementById('reg-form-fields').style.display = ''; document.getElementById('reg-success').style.display = 'none'; }
+      if (exists) {
+        document.getElementById('auth-user-email').textContent = email;
+        showStep('step-2-login');
+      } else {
+        showStep('step-2-register');
+        document.getElementById('reg-form-fields').style.display = '';
+        document.getElementById('reg-success').style.display = 'none';
+      }
       errorEl.textContent = '';
     } catch (e) { errorEl.textContent = 'Something went wrong. Try again.'; }
     finally { hideLoader(); }
@@ -147,17 +157,30 @@ function initAuthListeners() {
     showApp();
   });
 
-  document.getElementById('auth-forgot-link')?.addEventListener('click', function (e) { e.preventDefault(); document.getElementById('forgot-email').value = authEmail; showStep('step-forgot'); });
+  document.getElementById('auth-forgot-link')?.addEventListener('click', function (e) {
+    e.preventDefault();
+    document.getElementById('forgot-email').value = authEmail;
+    showStep('step-forgot');
+  });
+
   document.getElementById('auth-send-reset-btn')?.addEventListener('click', async function () {
     const email = document.getElementById('forgot-email').value.trim();
-    if (!email) return; showLoader();
+    if (!email) return;
+    showLoader();
     const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
     hideLoader();
-    if (error) { document.getElementById('auth-error-login').textContent = error.message; return; }
+    if (error) {
+      document.getElementById('auth-error-login').textContent = error.message;
+      return;
+    }
     document.getElementById('auth-success-msg').textContent = 'Password reset link sent.';
     document.getElementById('auth-success-msg').style.display = 'block';
   });
-  document.getElementById('auth-back-to-login')?.addEventListener('click', e => { e.preventDefault(); showStep('step-2-login'); });
+
+  document.getElementById('auth-back-to-login')?.addEventListener('click', e => {
+    e.preventDefault();
+    showStep('step-2-login');
+  });
 
   document.getElementById('auth-register-btn')?.addEventListener('click', async function () {
     const firstname = document.getElementById('reg-firstname').value.trim(),
@@ -168,7 +191,14 @@ function initAuthListeners() {
     if (!firstname || !lastname || !password || !confirm) { errorEl.textContent = 'All fields are required.'; return; }
     if (password !== confirm) { errorEl.textContent = 'Passwords do not match.'; return; }
     showLoader();
-    const { error } = await sb.auth.signUp({ email: authEmail, password, options: { data: { first_name: firstname, last_name: lastname }, emailRedirectTo: window.location.origin + window.location.pathname } });
+    const { error } = await sb.auth.signUp({
+      email: authEmail,
+      password,
+      options: {
+        data: { first_name: firstname, last_name: lastname },
+        emailRedirectTo: window.location.origin + window.location.pathname
+      }
+    });
     hideLoader();
     if (error) { errorEl.textContent = error.message; return; }
     document.getElementById('reg-form-fields').style.display = 'none';
@@ -176,19 +206,29 @@ function initAuthListeners() {
     errorEl.textContent = '';
   });
 
-  document.getElementById('reg-to-login-btn')?.addEventListener('click', () => { document.getElementById('auth-user-email').textContent = authEmail; showStep('step-2-login'); });
+  document.getElementById('reg-to-login-btn')?.addEventListener('click', () => {
+    document.getElementById('auth-user-email').textContent = authEmail;
+    showStep('step-2-login');
+  });
 
   document.querySelectorAll('.auth-step').forEach(step => step.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') {
       e.preventDefault();
-      const map = { 'step-1': 'auth-continue-btn', 'step-2-login': 'auth-signin-btn', 'step-2-register': 'auth-register-btn', 'step-forgot': 'auth-send-reset-btn' };
+      const map = {
+        'step-1': 'auth-continue-btn',
+        'step-2-login': 'auth-signin-btn',
+        'step-2-register': 'auth-register-btn',
+        'step-forgot': 'auth-send-reset-btn'
+      };
       document.getElementById(map[step.id])?.click();
     }
   }));
 
   document.querySelectorAll('.toggle-password-btn').forEach(btn => btn.addEventListener('click', function () {
-    const input = document.getElementById(this.dataset.target); if (!input) return;
-    const isPassword = input.type === 'password'; input.type = isPassword ? 'text' : 'password';
+    const input = document.getElementById(this.dataset.target);
+    if (!input) return;
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
     this.innerHTML = isPassword
       ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="m14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
       : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
@@ -199,12 +239,23 @@ async function fetchProfile(authUser) {
   let profile = await db.select('profiles', `id=eq.${authUser.id}`);
   if (profile && profile.length) return profile[0];
   const meta = authUser.user_metadata || {};
-  const newProfile = { id: authUser.id, first_name: meta.first_name || '', last_name: meta.last_name || '', username: meta.username || '', role: 'viewer', created_at: new Date().toISOString() };
+  const newProfile = {
+    id: authUser.id,
+    first_name: meta.first_name || '',
+    last_name: meta.last_name || '',
+    username: meta.username || '',
+    role: 'viewer',
+    created_at: new Date().toISOString()
+  };
   await db.insert('profiles', newProfile);
   return newProfile;
 }
 
-async function signOut() { await sb.auth.signOut(); currentUser = null; showAuth(); }
+async function signOut() {
+  await sb.auth.signOut();
+  currentUser = null;
+  showAuth();
+}
 
 // ── Navigation ──────────────────────────────────────────────
 function loadSection(name) {
@@ -224,19 +275,26 @@ function loadSection(name) {
 let cropper = null, pendingPhotoFile = null;
 
 function bindEvents() {
-  document.getElementById('signout-btn').addEventListener('click', async () => { await signOut(); showAuth(); });
+  document.getElementById('signout-btn').addEventListener('click', async () => {
+    await signOut();
+    showAuth();
+  });
   document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('click', () => loadSection(btn.dataset.section)));
-  document.querySelectorAll('.card-heading.clickable').forEach(el => el.addEventListener('click', () => { const nav = el.dataset.nav; if (nav) loadSection(nav); }));
-  document.getElementById('sidebar-profile-trigger')?.addEventListener('click', () => { if (!currentUser) return; loadSection('dashboard'); });
+  document.querySelectorAll('.card-heading.clickable').forEach(el => el.addEventListener('click', () => {
+    const nav = el.dataset.nav;
+    if (nav) loadSection(nav);
+  }));
+  document.getElementById('sidebar-profile-trigger')?.addEventListener('click', () => {
+    if (!currentUser) return;
+    loadSection('dashboard');
+  });
 
   // ── Profile Edit Modal ──────────────────────────────────
-  // FIX: استفاده از async/await و populate کردن قبل از نمایش modal
   document.getElementById('open-edit-profile-btn')?.addEventListener('click', async () => {
     if (!currentUser) return;
     showLoader();
     try {
       await refreshCurrentUser();
-      // populate با IDهای مختص profile modal
       document.getElementById('edit-first-name').value = currentUser.first_name || '';
       document.getElementById('edit-last-name').value = currentUser.last_name || '';
       document.getElementById('edit-email').value = currentUser.email || '';
@@ -246,7 +304,6 @@ function bindEvents() {
         || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.first_name || 'U')}&background=4ECDC4&color=0d0d0d`;
       document.getElementById('edit-photo-input').value = '';
       pendingPhotoFile = null;
-      // نمایش modal بعد از populate
       document.getElementById('edit-profile-modal').classList.remove('hidden');
     } catch (err) {
       console.error('Error opening profile modal:', err);
@@ -260,7 +317,8 @@ function bindEvents() {
 
   // Photo crop
   document.getElementById('edit-photo-input')?.addEventListener('change', function () {
-    const file = this.files[0]; if (!file) return;
+    const file = this.files[0];
+    if (!file) return;
     const reader = new FileReader();
     reader.onload = (e) => {
       document.getElementById('crop-image').src = e.target.result;
@@ -312,7 +370,7 @@ function bindEvents() {
         const { error: uploadError } = await sb.storage.from('avatars').upload(filePath, pendingPhotoFile, { upsert: true, contentType: 'image/webp' });
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = sb.storage.from('avatars').getPublicUrl(filePath);
-photo_url = publicUrl + '?v=' + Date.now();
+        photo_url = publicUrl + '?v=' + Date.now();
         pendingPhotoFile = null;
       } catch (err) {
         alert('Photo upload failed: ' + err.message);
@@ -405,7 +463,8 @@ async function loadDashboard() {
 }
 
 async function loadMiniCalendar() {
-  const container = document.getElementById('dash-mini-calendar'); if (!container) return;
+  const container = document.getElementById('dash-mini-calendar');
+  if (!container) return;
   const now = new Date(), year = now.getFullYear(), month = now.getMonth(), today = now.getDate();
   const daysInMonth = new Date(year, month + 1, 0).getDate(), firstDay = new Date(year, month, 1).getDay();
   let monthEvents = [];
@@ -428,7 +487,8 @@ async function loadMiniCalendar() {
 }
 
 async function loadRecentTickets() {
-  const c = document.getElementById('dash-tickets-list'); if (!c) return;
+  const c = document.getElementById('dash-tickets-list');
+  if (!c) return;
   try {
     const tickets = await db.select('tickets', `user_id=eq.${currentUser.id}&order=created_at.desc&limit=3`);
     if (!tickets || !tickets.length) { c.innerHTML = '<p class="empty-state">No tickets yet</p>'; return; }
@@ -438,7 +498,8 @@ async function loadRecentTickets() {
 }
 
 async function loadRecentMessages() {
-  const c = document.getElementById('dash-messages-list'); if (!c) return;
+  const c = document.getElementById('dash-messages-list');
+  if (!c) return;
   try {
     const msgs = await db.select('messages', `to_id=eq.${currentUser.id}&order=created_at.desc&limit=3`);
     if (!msgs || !msgs.length) { c.innerHTML = '<p class="empty-state">No messages yet</p>'; return; }
@@ -457,25 +518,19 @@ async function loadRecentMessages() {
 async function loadNotifications() {
   const c = document.getElementById('dash-notif-list');
   if (!c) return;
-  
+
   try {
-    // ۱. نوتیفیکیشن‌های معمولی
     const notifs = await db.select('notifications', `user_id=eq.${currentUser.id}&order=created_at.desc&limit=5`);
-    
-    // ۲. رویدادهای امروز و فردا از تقویم
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
     const todayStr = today.toISOString().split('T')[0];
     const tomorrowStr = tomorrow.toISOString().split('T')[0];
-    
     let calendarEvents = [];
     try {
       calendarEvents = await db.select('ravlo', `user_id=eq.${currentUser.id}&start_date=gte.${todayStr}&start_date=lte.${tomorrowStr}&order=start_date.asc`);
     } catch (e) {}
-    
-    // ۳. رویدادهای تقویم رو به فرمت نوتیفیکیشن دربیار
+
     const calendarNotifs = (calendarEvents || []).map(ev => ({
       type: 'calendar',
       title: ev.title || 'Calendar Event',
@@ -483,17 +538,16 @@ async function loadNotifications() {
       created_at: ev.start_date,
       is_read: true
     }));
-    
-    // ۴. ترکیب و مرتب‌سازی
+
     const allNotifs = [...(notifs || []), ...calendarNotifs]
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
       .slice(0, 5);
-    
+
     if (!allNotifs.length) {
       c.innerHTML = '<p class="empty-state">No notifications</p>';
       return;
     }
-    
+
     c.innerHTML = allNotifs.map(n => {
       const dotClass = {
         calendar: 'notif-dot-calendar',
@@ -503,7 +557,7 @@ async function loadNotifications() {
         connection: 'notif-dot-connection',
         system: 'notif-dot-system'
       }[n.type] || 'notif-dot-system';
-      
+
       return `<div class="mini-item ${n.is_read ? '' : 'unread-notif'}">
         <div style="display:flex;align-items:center;">
           <span class="notif-dot-icon ${dotClass}"></span>
@@ -512,11 +566,12 @@ async function loadNotifications() {
         <div class="mini-meta">${esc(n.body || '')} · ${fmtDate(n.created_at)}</div>
       </div>`;
     }).join('');
-    
+
   } catch (e) {
     c.innerHTML = '<div class="mini-item"><div><span class="notif-dot-icon notif-dot-system"></span>Welcome to your dashboard!</div><div class="mini-meta">Just now</div></div>';
   }
 }
+
 // ── TICKETS ─────────────────────────────────────────────────
 async function loadTickets() {
   const list = document.getElementById('ticket-list');
@@ -536,7 +591,8 @@ async function loadTickets() {
       const uname = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username || t.user_id;
       const card = document.createElement('div'); card.className = 'card';
       card.innerHTML = `<div><div class="card-title">${esc(t.subject)}</div><div class="card-sub">By ${esc(uname)} · ${fmtDate(t.created_at)}</div></div><span class="badge badge-${t.status}">${t.status}</span>`;
-      card.addEventListener('click', () => openTicket(t)); list.appendChild(card);
+      card.addEventListener('click', () => openTicket(t));
+      list.appendChild(card);
     });
   } catch (e) { list.innerHTML = `<div class="empty-state">${e.message}</div>`; }
 }
@@ -576,7 +632,7 @@ async function submitTicket() {
   try {
     const [ticket] = await db.insert('tickets', { user_id: currentUser.id, subject });
     await db.insert('ticket_messages', { ticket_id: ticket.id, sender_id: currentUser.id, body });
-        try {
+    try {
       const admins = await db.select('profiles', 'role=eq.admin&select=id');
       const userName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'User';
       for (const admin of (admins || [])) {
@@ -595,8 +651,6 @@ async function sendReply() {
   if (!body || !openTicketId) return;
   try {
     await db.insert('ticket_messages', { ticket_id: openTicketId, sender_id: currentUser.id, body });
-    
-    // نوتیفیکیشن‌ها
     const tickets = await db.select('tickets', `id=eq.${openTicketId}`);
     if (tickets && tickets[0]) {
       const ticket = tickets[0];
@@ -612,7 +666,6 @@ async function sendReply() {
         } catch (e) {}
       }
     }
-    
     document.getElementById('reply-body').value = '';
     if (tickets && tickets[0]) openTicket(tickets[0]);
   } catch (e) { alert(e.message); }
@@ -622,7 +675,7 @@ async function closeTicket() {
   if (!openTicketId) return;
   try {
     await db.update('tickets', openTicketId, { status: 'closed' });
-        const tickets = await db.select('tickets', `id=eq.${openTicketId}`);
+    const tickets = await db.select('tickets', `id=eq.${openTicketId}`);
     if (tickets && tickets[0]) {
       await addNotification(tickets[0].user_id, 'ticket', 'Ticket closed', 'Your ticket has been resolved', '#tickets');
     }
@@ -675,7 +728,7 @@ async function submitMessage() {
   if (!to_id || !body) return;
   try {
     await db.insert('messages', { from_id: currentUser.id, to_id, body });
-        const senderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
+    const senderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
     await addNotification(to_id, 'message', `New message from ${senderName}`, body.substring(0, 100), '#messages');
     document.getElementById('msg-body').value = '';
     document.getElementById('send-message-modal').classList.add('hidden');
@@ -801,7 +854,7 @@ async function submitConnRequest() {
   const to_id = document.getElementById('conn-to-select').value; if (!to_id) return;
   try {
     await db.insert('connection_requests', { from_id: currentUser.id, to_id, status: 'pending' });
-        const senderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
+    const senderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
     await addNotification(to_id, 'connection', 'New connection request', `${senderName} wants to connect`, '#connections');
     document.getElementById('send-conn-modal').classList.add('hidden');
     loadConnections();
@@ -811,20 +864,17 @@ async function submitConnRequest() {
 async function respondConn(id, status) {
   try {
     await db.update('connection_requests', id, { status });
-    
     const reqs = await db.select('connection_requests', `id=eq.${id}`);
     if (reqs && reqs[0]) {
       const req = reqs[0];
       const responderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
       const otherPerson = req.from_id === currentUser.id ? req.to_id : req.from_id;
-      
       if (status === 'accepted') {
         await addNotification(otherPerson, 'connection', 'Connection accepted!', `${responderName} accepted your request`, '#connections');
       } else {
         await addNotification(otherPerson, 'connection', 'Connection declined', `${responderName} declined your request`, '#connections');
       }
     }
-    
     loadConnections();
   } catch (e) { alert(e.message); }
 }
@@ -845,12 +895,10 @@ async function loadUsers() {
   } catch (e) { tbody.innerHTML = `<tr><td colspan="7">${e.message}</td></tr>`; }
 }
 
-// FIX: IDهای مختص admin user modal — جلوگیری از conflict با profile modal
 async function openEditUser(uid) {
   editingUserId = uid;
   try {
     const [u] = await db.select('profiles', `id=eq.${uid}`);
-    // استفاده از پیشوند edit-user- برای جلوگیری از تداخل با profile modal
     document.getElementById('edit-user-first-name').value = u.first_name || '';
     document.getElementById('edit-user-last-name').value = u.last_name || '';
     document.getElementById('edit-user-username').value = u.username || '';
@@ -896,11 +944,9 @@ async function addNotification(userId, type, title, body = '', link = '') {
 async function updateNotificationBadge() {
   const badge = document.getElementById('notif-badge');
   if (!badge) return;
-  
   try {
     const notifs = await db.select('notifications', `user_id=eq.${currentUser.id}&is_read=eq.false&select=id`);
     const unreadCount = (notifs || []).length;
-    
     if (unreadCount > 0) {
       badge.classList.add('active');
     } else {
@@ -916,6 +962,7 @@ function esc(str) {
   if (!str) return '';
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
 function fmtDate(iso) {
   if (!iso) return '';
   const d = new Date(iso);
