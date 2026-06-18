@@ -42,8 +42,14 @@ let editingUserId = null;
 let openTicketId = null;
 
 // ── Loader ──────────────────────────────────────────────────
-function showLoader() { document.getElementById('global-loader').classList.remove('hidden'); }
-function hideLoader() { document.getElementById('global-loader').classList.add('hidden'); }
+// ── Loader ──────────────────────────────────────────────────
+function showLoader() {
+  document.getElementById('initial-loader').classList.remove('hidden'); // لودر نئونی جدید
+}
+function hideLoader() {
+  document.getElementById('global-loader').classList.add('hidden');
+  document.getElementById('initial-loader').classList.add('hidden');
+}
 
 // ── Boot ────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
