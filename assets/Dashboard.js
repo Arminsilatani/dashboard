@@ -311,6 +311,7 @@ function initAuthListeners() {
   }));
 }
 
+// ── اصلاح‌شده: ایجاد اتصال با مدیریت خطا و به‌روزرسانی UI ─────
 async function createInviteConnection(referrerId, newUserId) {
   try {
     const existing = await db.select('dashboard_connectionrequests',
@@ -323,6 +324,7 @@ async function createInviteConnection(referrerId, newUserId) {
       status: 'pending'
     });
 
+    // دریافت نام (حتی در صورت خطا، اعلان‌ها ارسال شوند)
     let referrerName = 'Someone';
     try {
       const referrerProf = await db.select('profiles',
@@ -335,13 +337,14 @@ async function createInviteConnection(referrerId, newUserId) {
       console.warn('Could not fetch referrer profile, using default name:', profileError);
     }
 
-    // اعلان‌ها مستقل از خطای دریافت پروفایل
-    console.log('About to send notifications...'); // ← لاگ برای اطمینان
+    // ارسال اعلان‌ها
     await addNotification(newUserId, 'connection', 'New connection request',
       `${referrerName} wants to connect with you`, '#connections');
     await addNotification(referrerId, 'connection', 'Connection request sent',
       `Request sent to new user`, '#connections');
-    console.log('Notifications sent.');
+
+    // به‌روزرسانی نشان و لیست اعلان‌ها (اگر کاربر جاری یکی از طرفین باشد)
+    await refreshNotificationUI();
 
   } catch (e) {
     console.error('Failed to create invite connection:', e);
@@ -430,7 +433,7 @@ function bindEvents() {
       document.getElementById('edit-email').value = currentUser.email || '';
       document.getElementById('edit-phone').value = currentUser.phone || '';
       document.getElementById('edit-website').value = currentUser.website || '';
-document.getElementById('edit-avatar-preview').src = currentUser.photo_url || generateAvatarUrl(currentUser.first_name || 'U');;
+      document.getElementById('edit-avatar-preview').src = currentUser.photo_url || generateAvatarUrl(currentUser.first_name || 'U');
       document.getElementById('edit-photo-input').value = '';
       pendingPhotoFile = null;
       document.getElementById('edit-profile-modal').classList.remove('hidden');
@@ -521,7 +524,7 @@ document.getElementById('edit-avatar-preview').src = currentUser.photo_url || ge
       updateSidebarUI();
       document.getElementById('dash-fullname').textContent = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'User';
       document.getElementById('dash-avatar').src = currentUser.photo_url
-        || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.first_name || 'U')}&background=4ECDC4&color=0d0d0d`;
+        || generateAvatarUrl(currentUser.first_name || 'U');
       document.getElementById('dash-email').textContent = currentUser.email || '—';
       document.getElementById('dash-phone').textContent = currentUser.phone || '—';
       document.getElementById('dash-website').textContent = currentUser.website || '—';
@@ -619,7 +622,7 @@ async function loadDashboard() {
   document.getElementById('dash-email').textContent = currentUser.email || '—';
   document.getElementById('dash-phone').textContent = currentUser.phone || '—';
   document.getElementById('dash-website').textContent = currentUser.website || '—';
-document.getElementById('dash-avatar').src = currentUser.photo_url || generateAvatarUrl(name);;
+  document.getElementById('dash-avatar').src = currentUser.photo_url || generateAvatarUrl(name);
   await Promise.all([loadMiniCalendar(), loadNotifications()]);
   updateNotificationBadge();
 }
@@ -1195,6 +1198,15 @@ async function addNotification(userId, type, title, body = '', link = '') {
   }
 }
 
+// ── به‌روزرسانی نشان و لیست اعلان‌ها (برای کاربر جاری) ─────
+async function refreshNotificationUI() {
+  await updateNotificationBadge();
+  const dashSection = document.getElementById('section-dashboard');
+  if (dashSection && dashSection.classList.contains('active')) {
+    await loadNotifications();
+  }
+}
+
 // ── Notification Badge ──────────────────────────────────────
 async function updateNotificationBadge() {
   const badge = document.getElementById('notif-badge');
@@ -1224,16 +1236,13 @@ function fmtDate(iso) {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-// تولید آواتار محلی (حرف اول نام) با رنگ ثابت
 function generateAvatarUrl(name) {
   const canvas = document.createElement('canvas');
   canvas.width = 100;
   canvas.height = 100;
   const ctx = canvas.getContext('2d');
-  // پس‌زمینه
-  ctx.fillStyle = '#4ECDC4';  // رنگ آکسانت
+  ctx.fillStyle = '#4ECDC4';
   ctx.fillRect(0, 0, 100, 100);
-  // متن
   ctx.fillStyle = '#0d0d0d';
   ctx.font = 'bold 40px Kalameh, sans-serif';
   ctx.textAlign = 'center';
