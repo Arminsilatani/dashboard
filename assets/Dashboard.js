@@ -172,24 +172,27 @@ function initAuthListeners() {
     hideLoader();
     if (error) { errorEl.textContent = error.message; return; }
     currentUser = await fetchProfile(data.user);
-    if (!currentUser) { errorEl.textContent = 'Unable to load profile.'; return; }
+if (!currentUser) { errorEl.textContent = 'Unable to load profile.'; return; }
 
-    showApp();
+const pendingRef = sessionStorage.getItem('pendingRef');
+if (pendingRef && currentUser) {
+  if (!currentUser.referred_by) {
+    await db.update('profiles', currentUser.id, { referred_by: pendingRef });
+    try {
+      await addNotification(pendingRef, 'system', 'Someone joined via your link', '', '#connections');
+    } catch(e) {}
+  }
+  await createInviteConnection(pendingRef, currentUser.id);
+  sessionStorage.removeItem('pendingRef');
+}
 
-    // اگر کاربر با لینک دعوت وارد شده (رفرش از ایمیل یا کلیک مستقیم)
-    const pendingRef = sessionStorage.getItem('pendingRef');
-    if (pendingRef && currentUser) {
-      // اگر قبلاً دعوت نشده، referred_by را تنظیم کن
-      if (!currentUser.referred_by) {
-        await db.update('profiles', currentUser.id, { referred_by: pendingRef });
-        try {
-          await addNotification(pendingRef, 'system', 'Someone joined via your link', '', '#connections');
-        } catch(e) {}
-      }
-      // درخواست اتصال از طرف دعوت‌کننده به کاربر جاری (اگر تکراری نباشد)
-      await createInviteConnection(pendingRef, currentUser.id);
-      sessionStorage.removeItem('pendingRef');
-    }
+showApp();
+
+const pendingToken = sessionStorage.getItem('pendingConnectToken');
+if (pendingToken) {
+  sessionStorage.removeItem('pendingConnectToken');
+  await processConnectToken(pendingToken);
+}
 
     // پردازش توکن اتصال (برای connection request قدیمی)
     const pendingToken = sessionStorage.getItem('pendingConnectToken');
