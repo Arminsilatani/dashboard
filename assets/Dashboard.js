@@ -312,55 +312,30 @@ function initAuthListeners() {
 }
 
 async function createInviteConnection(referrerId, newUserId) {
-  console.log('🚀 createInviteConnection called with:', { referrerId, newUserId });
-
   try {
-    console.log('🔍 Checking existing requests...');
     const existing = await db.select('dashboard_connectionrequests',
       `or=(and(from_id.eq.${referrerId},to_id.eq.${newUserId}),and(from_id.eq.${newUserId},to_id.eq.${referrerId}))`);
-    console.log('📋 Existing requests:', existing);
+    if (existing && existing.length > 0) return;
 
-    if (existing && existing.length > 0) {
-      console.log('⚠️ Request already exists, exiting.');
-      return;
-    }
-
-    console.log('➕ Inserting new connection request...');
     await db.insert('dashboard_connectionrequests', {
       from_id: referrerId,
       to_id: newUserId,
       status: 'pending'
     });
-    console.log('✅ Connection request inserted.');
 
-    // دریافت اطلاعات دعوت‌کننده با try/catch مجزا
-    let referrerName = 'Someone';
-    try {
-      console.log('👤 Fetching referrer profile...');
-      const referrerProf = await db.select('profiles',
-        `id=eq.${referrerId}&select=first_name,last_name`);
-      console.log('📇 Referrer profile:', referrerProf);
+    const referrerProf = await db.select('profiles',
+      `id=eq.${referrerId}&select=first_name,last_name`);
+    const referrerName = (referrerProf && referrerProf[0])
+      ? [referrerProf[0].first_name, referrerProf[0].last_name].filter(Boolean).join(' ')
+      : 'Someone';
 
-      if (referrerProf && referrerProf[0]) {
-        referrerName = [referrerProf[0].first_name, referrerProf[0].last_name]
-          .filter(Boolean).join(' ') || 'Someone';
-      }
-    } catch (err) {
-      console.error('❌ Failed to fetch referrer profile:', err);
-      // با نام پیش‌فرض ادامه بده
-    }
-
-    console.log('📨 Calling addNotification for new user...');
     await addNotification(newUserId, 'connection', 'New connection request',
       `${referrerName} wants to connect with you`, '#connections');
 
-    console.log('📨 Calling addNotification for referrer...');
     await addNotification(referrerId, 'connection', 'Connection request sent',
       `Request sent to new user`, '#connections');
-
-    console.log('🎉 createInviteConnection finished successfully.');
   } catch (e) {
-    console.error('❌ Failed to create invite connection:', e);
+    console.error('Failed to create invite connection:', e);
   }
 }
 
