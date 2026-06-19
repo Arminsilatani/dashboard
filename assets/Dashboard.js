@@ -1201,3 +1201,22 @@ function fmtDate(iso) {
   const d = new Date(iso);
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
+
+// تولید آواتار محلی (حرف اول نام) با رنگ ثابت
+function generateAvatarUrl(name) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 100;
+  canvas.height = 100;
+  const ctx = canvas.getContext('2d');
+  // پس‌زمینه
+  ctx.fillStyle = '#4ECDC4';  // رنگ آکسانت
+  ctx.fillRect(0, 0, 100, 100);
+  // متن
+  ctx.fillStyle = '#0d0d0d';
+  ctx.font = 'bold 40px Kalameh, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const initials = name.split(' ').map(w => w[0]?.toUpperCase()).join('').slice(0, 2);
+  ctx.fillText(initials || '?', 50, 50);
+  return canvas.toDataURL();
+}
