@@ -162,37 +162,77 @@ function initAuthListeners() {
     finally { hideLoader(); }
   });
 
-  document.getElementById('auth-signin-btn')?.addEventListener('click', async function () {
-    const email = authEmail, password = document.getElementById('auth-password').value,
-          errorEl = document.getElementById('auth-error-login');
-    if (!email || !password) { errorEl.textContent = 'Please enter your password.'; return; }
-    showLoader();
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
-    hideLoader();
-    if (error) { errorEl.textContent = error.message; return; }
-    currentUser = await fetchProfile(data.user);
-    if (!currentUser) { errorEl.textContent = 'Unable to load profile.'; return; }
+  // در بخش auth-signin-btn، بعد از لاگین موفق و قبل از showApp
+document.getElementById('auth-signin-btn')?.addEventListener('click', async function () {
+  // ... (کد قبلی بدون تغییر تا اینجا)
+  currentUser = await fetchProfile(data.user);
+  if (!currentUser) { errorEl.textContent = 'Unable to load profile.'; return; }
 
-    const pendingRef = sessionStorage.getItem('pendingRef');
-    if (pendingRef && currentUser) {
-      if (!currentUser.referred_by) {
-        await db.update('profiles', currentUser.id, { referred_by: pendingRef });
-        try {
-          await addNotification(pendingRef, 'system', 'Someone joined via your link', '', '#connections');
-        } catch(e) {}
-      }
-      await createInviteConnection(pendingRef, currentUser.id);
-      sessionStorage.removeItem('pendingRef');
+  // pendingRef را اینجا پردازش نکنید، فقط نگه دارید
+  const pendingRef = sessionStorage.getItem('pendingRef');
+  if (pendingRef && currentUser) {
+    if (!currentUser.referred_by) {
+      await db.update('profiles', currentUser.id, { referred_by: pendingRef });
+      try {
+        await addNotification(pendingRef, 'system', 'Someone joined via your link', '', '#connections');
+      } catch(e) {}
     }
+    // حذف نکنید pendingRef را؛ بگذارید showApp پردازش کند
+    // sessionStorage.removeItem('pendingRef');   // ← این خط حذف شود
+  }
 
-    showApp();
+  showApp();
+  // ...
+});
 
-    const pendingToken = sessionStorage.getItem('pendingConnectToken');
-    if (pendingToken) {
-      sessionStorage.removeItem('pendingConnectToken');
-      await processConnectToken(pendingToken);
-    }
-  });
+// تابع showApp را طوری تغییر دهید که pendingRef را بعد از بارگذاری کامل پردازش کند
+async function showApp() {
+  document.getElementById('auth-overlay').style.display = 'none';
+  document.getElementById('app-screen').classList.add('active');
+  await refreshCurrentUser();
+  updateSidebarUI();
+
+  // حالا که همه چیز آماده است، اتصال دعوت را ایجاد کن
+  const pendingRef = sessionStorage.getItem('pendingRef');
+  if (pendingRef && currentUser) {
+    await createInviteConnection(pendingRef, currentUser.id);
+    sessionStorage.removeItem('pendingRef');
+  }
+
+  document.getElementById('section-dashboard').classList.add('active');
+  loadSection('dashboard');
+  updateNotificationBadge();
+}
+
+// در fetchProfile هم کد مربوط به pendingRef را حذف کنید (یا ساده نگه دارید)
+async function fetchProfile(authUser) {
+  let profile = await db.select('profiles', `id=eq.${authUser.id}`);
+  if (profile && profile.length) return profile[0];
+
+  const meta = authUser.user_metadata || {};
+  const newProfileData = {
+    id: authUser.id,
+    first_name: meta.first_name || '',
+    last_name: meta.last_name || '',
+    username: meta.username || '',
+    role: 'viewer',
+    created_at: new Date().toISOString()
+  };
+
+  // اگر pendingRef وجود داشت، آن را به پروفایل اضافه کن اما فعلاً اتصال را ایجاد نکن
+  const pendingRef = sessionStorage.getItem('pendingRef');
+  if (pendingRef) {
+    newProfileData.referred_by = pendingRef;
+    // sessionStorage.removeItem('pendingRef'); // حذف نشود، بگذار در showApp پردازش شود
+    try {
+      await addNotification(pendingRef, 'system',
+        'New user joined via your link', '', '#connections');
+    } catch(e) {}
+  }
+
+  const [newProfile] = await db.insert('profiles', newProfileData);
+  return newProfile;
+}
 
   document.getElementById('auth-forgot-link')?.addEventListener('click', function (e) {
     e.preventDefault();
