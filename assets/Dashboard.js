@@ -1159,15 +1159,26 @@ async function saveUser() {
 // ── Notification Helper ──────────────────────────────────────
 async function addNotification(userId, type, title, body = '', link = '') {
   try {
-    await db.insert('notifications', {
-      user_id: userId,
-      type,
-      title,
-      body,
-      link
+    // استفاده از fetch مستقیم با Prefer: return=minimal
+    const url = `${SUPABASE_URL}/rest/v1/notifications`;
+    const token = await getToken();
+    const headers = {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${token || SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'   // <-- کلید حل مشکل
+    };
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ user_id: userId, type, title, body, link })
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      console.error('Notification insert failed:', err);
+    }
   } catch (e) {
-    console.log('Notification skipped (table may not exist)');
+    console.error('Notification error:', e);
   }
 }
 
