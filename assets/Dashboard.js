@@ -177,15 +177,12 @@ document.getElementById('auth-signin-btn')?.addEventListener('click', async func
         await addNotification(pendingRef, 'system', 'Someone joined via your link', '', '#connections');
       } catch(e) {}
     }
-    // حذف نکنید pendingRef را؛ بگذارید showApp پردازش کند
-    // sessionStorage.removeItem('pendingRef');   // ← این خط حذف شود
   }
 
   showApp();
   // ...
 });
 
-// تابع showApp را طوری تغییر دهید که pendingRef را بعد از بارگذاری کامل پردازش کند
 async function showApp() {
   document.getElementById('auth-overlay').style.display = 'none';
   document.getElementById('app-screen').classList.add('active');
@@ -204,7 +201,6 @@ async function showApp() {
   updateNotificationBadge();
 }
 
-// در fetchProfile هم کد مربوط به pendingRef را حذف کنید (یا ساده نگه دارید)
 async function fetchProfile(authUser) {
   let profile = await db.select('profiles', `id=eq.${authUser.id}`);
   if (profile && profile.length) return profile[0];
@@ -219,11 +215,9 @@ async function fetchProfile(authUser) {
     created_at: new Date().toISOString()
   };
 
-  // اگر pendingRef وجود داشت، آن را به پروفایل اضافه کن اما فعلاً اتصال را ایجاد نکن
   const pendingRef = sessionStorage.getItem('pendingRef');
   if (pendingRef) {
     newProfileData.referred_by = pendingRef;
-    // sessionStorage.removeItem('pendingRef'); // حذف نشود، بگذار در showApp پردازش شود
     try {
       await addNotification(pendingRef, 'system',
         'New user joined via your link', '', '#connections');
@@ -409,7 +403,6 @@ async function fetchProfile(authUser) {
 
   if (pendingRef) {
     newProfileData.referred_by = pendingRef;
-    sessionStorage.removeItem('pendingRef');
     try {
       await addNotification(pendingRef, 'system',
         'New user joined via your link', '', '#connections');
