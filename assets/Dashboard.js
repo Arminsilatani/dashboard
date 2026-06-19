@@ -854,7 +854,7 @@ async function submitContract() {
   } catch (e) { alert(e.message); }
 }
 
-// ── CONNECTIONS (بازنویسی کامل) ─────────────────────────────
+// ── CONNECTIONS (بازنویسی کامل با نام صحیح جدول) ─────────────
 // جستجوی کاربران
 async function searchProfiles(term) {
   const resultsDiv = document.getElementById('conn-search-results');
@@ -868,7 +868,7 @@ async function searchProfiles(term) {
       return;
     }
     // دریافت ارتباطات تأیید شده کاربر جاری
-    const connections = await db.select('dashboard_connectionrequest',
+    const connections = await db.select('dashboard_connectionrequests',
       `or=(from_id.eq.${currentUser.id},to_id.eq.${currentUser.id})&status=eq.accepted`);
     const connectedIds = new Set((connections || []).flatMap(r => [r.from_id, r.to_id]));
 
@@ -904,7 +904,7 @@ async function searchProfiles(term) {
 // ارسال درخواست اتصال و تولید لینک
 async function sendConnectionRequest(toUserId) {
   try {
-    const [newReq] = await db.insert('dashboard_connectionrequest', {
+    const [newReq] = await db.insert('dashboard_connectionrequests', {
       from_id: currentUser.id,
       to_id: toUserId,
       status: 'pending'
@@ -928,7 +928,7 @@ async function sendConnectionRequest(toUserId) {
 // پردازش توکن اتصال از URL
 async function processConnectToken(requestId) {
   try {
-    const reqs = await db.select('dashboard_connectionrequest', `id=eq.${requestId}`);
+    const reqs = await db.select('dashboard_connectionrequests', `id=eq.${requestId}`);
     if (!reqs || !reqs.length) {
       alert('Invalid or expired connection request.');
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -947,7 +947,7 @@ async function processConnectToken(requestId) {
     }
     const accept = confirm('You have a connection invitation. Do you want to accept?');
     const newStatus = accept ? 'accepted' : 'rejected';
-    await db.update('dashboard_connectionrequest', requestId, { status: newStatus });
+    await db.update('dashboard_connectionrequests', requestId, { status: newStatus });
 
     const responderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
     await addNotification(request.from_id, 'connection',
@@ -969,7 +969,7 @@ async function loadConnections() {
   list.innerHTML = '<div class="empty-state">Loading connections...</div>';
   reqList.innerHTML = '';
   try {
-    const all = await db.select('dashboard_connectionrequest', `or=(from_id.eq.${currentUser.id},to_id.eq.${currentUser.id})&order=created_at.desc`);
+    const all = await db.select('dashboard_connectionrequests', `or=(from_id.eq.${currentUser.id},to_id.eq.${currentUser.id})&order=created_at.desc`);
     const ids = [...new Set((all || []).flatMap(r => [r.from_id, r.to_id]))];
     let pMap = {};
     if (ids.length) {
@@ -1016,8 +1016,8 @@ async function loadConnections() {
 // پاسخ به درخواست (مستقیم از داخل لیست)
 async function respondConn(id, status) {
   try {
-    await db.update('dashboard_connectionrequest', id, { status });
-    const reqs = await db.select('dashboard_connectionrequest', `id=eq.${id}`);
+    await db.update('dashboard_connectionrequests', id, { status });
+    const reqs = await db.select('dashboard_connectionrequests', `id=eq.${id}`);
     if (reqs && reqs[0]) {
       const req = reqs[0];
       const responderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
