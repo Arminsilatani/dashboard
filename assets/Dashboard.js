@@ -58,6 +58,9 @@ function hideLoader() {
 
 // ── Boot ────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const connectToken = urlParams.get('connect');
+  
   const { data: { session } } = await sb.auth.getSession();
   if (session?.user) {
     try {
@@ -65,12 +68,24 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (profile && profile.length) {
         currentUser = profile[0];
         showApp();
+        // اگر پارامتر connect وجود داشت و کاربر لاگین بود، پردازش کن
+        if (connectToken) {
+          await processConnectToken(connectToken);
+        }
       } else {
         await sb.auth.signOut();
         showAuth();
+        if (connectToken) sessionStorage.setItem('pendingConnectToken', connectToken);
       }
-    } catch (e) { console.error('Boot error:', e); showAuth(); }
-  } else { showAuth(); }
+    } catch (e) {
+      console.error('Boot error:', e);
+      showAuth();
+      if (connectToken) sessionStorage.setItem('pendingConnectToken', connectToken);
+    }
+  } else {
+    showAuth();
+    if (connectToken) sessionStorage.setItem('pendingConnectToken', connectToken);
+  }
   bindEvents();
   initAuthListeners();
 });
@@ -155,6 +170,12 @@ function initAuthListeners() {
     currentUser = await fetchProfile(data.user);
     if (!currentUser) { errorEl.textContent = 'Unable to load profile.'; return; }
     showApp();
+    // پردازش توکن اتصال معلق پس از ورود موفق
+    const pendingToken = sessionStorage.getItem('pendingConnectToken');
+    if (pendingToken) {
+      sessionStorage.removeItem('pendingConnectToken');
+      await processConnectToken(pendingToken);
+    }
   });
 
   document.getElementById('auth-forgot-link')?.addEventListener('click', function (e) {
@@ -191,12 +212,17 @@ function initAuthListeners() {
     if (!firstname || !lastname || !password || !confirm) { errorEl.textContent = 'All fields are required.'; return; }
     if (password !== confirm) { errorEl.textContent = 'Passwords do not match.'; return; }
     showLoader();
+    // نگهداری توکن اتصال در URL تأیید ایمیل
+    const pendingToken = sessionStorage.getItem('pendingConnectToken') || '';
+    const redirectBase = window.location.origin + window.location.pathname;
+    const redirectUrl = pendingToken ? `${redirectBase}?connect=${pendingToken}` : redirectBase;
+    
     const { error } = await sb.auth.signUp({
       email: authEmail,
       password,
       options: {
         data: { first_name: firstname, last_name: lastname },
-        emailRedirectTo: window.location.origin + window.location.pathname
+        emailRedirectTo: redirectUrl
       }
     });
     hideLoader();
@@ -435,10 +461,44 @@ function bindEvents() {
   document.getElementById('cancel-contract-btn').addEventListener('click', () => document.getElementById('add-contract-modal').classList.add('hidden'));
   document.getElementById('submit-contract-btn').addEventListener('click', submitContract);
 
-  // Connections
-  document.getElementById('new-conn-btn').addEventListener('click', openConnModal);
-  document.getElementById('cancel-conn-btn').addEventListener('click', () => document.getElementById('send-conn-modal').classList.add('hidden'));
-  document.getElementById('submit-conn-btn').addEventListener('click', submitConnRequest);
+  // ── Connections (New Flow) ──────────────────────────────
+  // جستجوی کاربران با debounce
+  let searchTimeout;
+  const searchInput = document.getElementById('conn-search-input');
+  const searchResults = document.getElementById('conn-search-results');
+
+  searchInput?.addEventListener('input', function () {
+    clearTimeout(searchTimeout);
+    const term = this.value.trim();
+    if (!term) {
+      searchResults.style.display = 'none';
+      return;
+    }
+    searchTimeout = setTimeout(() => searchProfiles(term), 300);
+  });
+
+  // مخفی کردن نتایج با کلیک بیرون
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.conn-search-bar')) {
+      searchResults.style.display = 'none';
+    }
+  });
+
+  // دکمه کپی لینک
+  document.getElementById('copy-conn-link-btn')?.addEventListener('click', () => {
+    const linkInput = document.getElementById('conn-share-link');
+    linkInput.select();
+    document.execCommand('copy');
+    alert('Link copied to clipboard!');
+  });
+
+  // بستن مودال لینک
+  document.getElementById('close-conn-link-modal-btn')?.addEventListener('click', () => {
+    document.getElementById('conn-link-modal').classList.add('hidden');
+  });
+  document.getElementById('conn-link-modal')?.addEventListener('click', function (e) {
+    if (e.target === this) this.classList.add('hidden');
+  });
 
   // Users (Admin)
   document.getElementById('cancel-edit-user-btn').addEventListener('click', () =>
@@ -794,12 +854,122 @@ async function submitContract() {
   } catch (e) { alert(e.message); }
 }
 
-// ── CONNECTIONS ──────────────────────────────────────────────
+// ── CONNECTIONS (بازنویسی کامل) ─────────────────────────────
+// جستجوی کاربران
+async function searchProfiles(term) {
+  const resultsDiv = document.getElementById('conn-search-results');
+  resultsDiv.style.display = 'block';
+  resultsDiv.innerHTML = '<div class="empty-state">Searching...</div>';
+  try {
+    const query = `or=(first_name.ilike.*${term}*,last_name.ilike.*${term}*,username.ilike.*${term}*)&order=first_name.asc&limit=10`;
+    const profiles = await db.select('profiles', query);
+    if (!profiles || !profiles.length) {
+      resultsDiv.innerHTML = '<div class="empty-state">No users found.</div>';
+      return;
+    }
+    // دریافت ارتباطات تأیید شده کاربر جاری
+    const connections = await db.select('dashboard_connectionrequest',
+      `or=(from_id.eq.${currentUser.id},to_id.eq.${currentUser.id})&status=eq.accepted`);
+    const connectedIds = new Set((connections || []).flatMap(r => [r.from_id, r.to_id]));
+
+    resultsDiv.innerHTML = '';
+    profiles.forEach(p => {
+      if (p.id === currentUser.id) return;
+      const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username || 'User';
+      const isConnected = connectedIds.has(p.id);
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.innerHTML = `
+        <div>
+          <div class="card-title">${esc(name)}</div>
+          <div class="card-sub">${esc(p.username || p.email || '')}</div>
+        </div>
+        ${isConnected
+          ? '<span class="badge badge-accepted">Connected</span>'
+          : `<button class="btn-accent send-conn-btn" data-uid="${p.id}">Send Request</button>`
+        }
+      `;
+      resultsDiv.appendChild(div);
+    });
+
+    // اتصال رویداد به دکمه‌های "Send Request"
+    document.querySelectorAll('.send-conn-btn').forEach(btn => {
+      btn.addEventListener('click', () => sendConnectionRequest(btn.dataset.uid));
+    });
+  } catch (e) {
+    resultsDiv.innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+  }
+}
+
+// ارسال درخواست اتصال و تولید لینک
+async function sendConnectionRequest(toUserId) {
+  try {
+    const [newReq] = await db.insert('dashboard_connectionrequest', {
+      from_id: currentUser.id,
+      to_id: toUserId,
+      status: 'pending'
+    });
+    const base = `${window.location.origin}${window.location.pathname}`;
+    const link = `${base}?connect=${newReq.id}`;
+    document.getElementById('conn-share-link').value = link;
+    document.getElementById('conn-link-modal').classList.remove('hidden');
+    // اطلاع‌رسانی (اختیاری)
+    const senderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
+    await addNotification(toUserId, 'connection', 'New connection request', `${senderName} wants to connect`, '#connections');
+    // پاکسازی جستجو
+    document.getElementById('conn-search-results').style.display = 'none';
+    document.getElementById('conn-search-input').value = '';
+    loadConnections();
+  } catch (e) {
+    alert('Failed to send request: ' + e.message);
+  }
+}
+
+// پردازش توکن اتصال از URL
+async function processConnectToken(requestId) {
+  try {
+    const reqs = await db.select('dashboard_connectionrequest', `id=eq.${requestId}`);
+    if (!reqs || !reqs.length) {
+      alert('Invalid or expired connection request.');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+    const request = reqs[0];
+    if (request.to_id !== currentUser.id) {
+      alert('This invitation is not for you.');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+    if (request.status !== 'pending') {
+      alert(`This request has already been ${request.status}.`);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+    const accept = confirm('You have a connection invitation. Do you want to accept?');
+    const newStatus = accept ? 'accepted' : 'rejected';
+    await db.update('dashboard_connectionrequest', requestId, { status: newStatus });
+
+    const responderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
+    await addNotification(request.from_id, 'connection',
+      accept ? 'Connection accepted!' : 'Connection declined',
+      accept ? `${responderName} accepted your request` : `${responderName} declined your request`,
+      '#connections'
+    );
+    alert(`Request ${newStatus}.`);
+    window.history.replaceState({}, document.title, window.location.pathname);
+    loadSection('connections');
+  } catch (e) {
+    alert('Error processing invitation: ' + e.message);
+  }
+}
+
+// بارگذاری لیست ارتباطات و درخواست‌ها
 async function loadConnections() {
   const list = document.getElementById('connections-list'), reqList = document.getElementById('conn-requests-list');
-  list.innerHTML = '<div class="empty-state">Loading connections...</div>'; reqList.innerHTML = '';
+  list.innerHTML = '<div class="empty-state">Loading connections...</div>';
+  reqList.innerHTML = '';
   try {
-    const all = await db.select('connection_requests', `or=(from_id.eq.${currentUser.id},to_id.eq.${currentUser.id})&order=created_at.desc`);
+    const all = await db.select('dashboard_connectionrequest', `or=(from_id.eq.${currentUser.id},to_id.eq.${currentUser.id})&order=created_at.desc`);
     const ids = [...new Set((all || []).flatMap(r => [r.from_id, r.to_id]))];
     let pMap = {};
     if (ids.length) {
@@ -808,8 +978,10 @@ async function loadConnections() {
     }
     const accepted = (all || []).filter(r => r.status === 'accepted');
     const pending = (all || []).filter(r => r.status === 'pending');
-    if (!accepted.length) list.innerHTML = '<div class="empty-state">No connections yet.</div>';
-    else {
+
+    if (!accepted.length) {
+      list.innerHTML = '<div class="empty-state">No connections yet.</div>';
+    } else {
       list.innerHTML = '<div style="color:var(--muted);font-size:12px;margin-bottom:6px">Connected</div>';
       accepted.forEach(r => {
         const otherId = r.from_id === currentUser.id ? r.to_id : r.from_id;
@@ -820,10 +992,12 @@ async function loadConnections() {
         list.appendChild(card);
       });
     }
+
     if (pending.length) {
       const header = document.createElement('div');
       header.style.cssText = 'color:var(--muted);font-size:12px;margin:14px 0 6px';
-      header.textContent = 'Pending Requests'; reqList.appendChild(header);
+      header.textContent = 'Pending Requests';
+      reqList.appendChild(header);
       pending.forEach(r => {
         const isIncoming = r.to_id === currentUser.id;
         const otherId = isIncoming ? r.from_id : r.to_id;
@@ -834,37 +1008,16 @@ async function loadConnections() {
         reqList.appendChild(card);
       });
     }
-  } catch (e) { list.innerHTML = `<div class="empty-state">${e.message}</div>`; }
+  } catch (e) {
+    list.innerHTML = `<div class="empty-state">${e.message}</div>`;
+  }
 }
 
-async function openConnModal() {
-  const modal = document.getElementById('send-conn-modal'), sel = document.getElementById('conn-to-select');
-  sel.innerHTML = '<option value="">Loading...</option>'; modal.classList.remove('hidden');
-  try {
-    const users = await db.select('profiles', 'order=first_name.asc&select=id,first_name,last_name,username');
-    sel.innerHTML = '';
-    (users || []).filter(u => u.id !== currentUser.id).forEach(u => {
-      const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username || u.id;
-      const opt = document.createElement('option'); opt.value = u.id; opt.textContent = name; sel.appendChild(opt);
-    });
-  } catch (e) { sel.innerHTML = `<option>${e.message}</option>`; }
-}
-
-async function submitConnRequest() {
-  const to_id = document.getElementById('conn-to-select').value; if (!to_id) return;
-  try {
-    await db.insert('connection_requests', { from_id: currentUser.id, to_id, status: 'pending' });
-    const senderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
-    await addNotification(to_id, 'connection', 'New connection request', `${senderName} wants to connect`, '#connections');
-    document.getElementById('send-conn-modal').classList.add('hidden');
-    loadConnections();
-  } catch (e) { alert(e.message); }
-}
-
+// پاسخ به درخواست (مستقیم از داخل لیست)
 async function respondConn(id, status) {
   try {
-    await db.update('connection_requests', id, { status });
-    const reqs = await db.select('connection_requests', `id=eq.${id}`);
+    await db.update('dashboard_connectionrequest', id, { status });
+    const reqs = await db.select('dashboard_connectionrequest', `id=eq.${id}`);
     if (reqs && reqs[0]) {
       const req = reqs[0];
       const responderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
