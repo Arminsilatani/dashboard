@@ -679,31 +679,40 @@ async function loadNotifications() {
       return;
     }
 
-c.innerHTML = allNotifs.map(n => {
-  const dotClass = { ... }[n.type] || 'notif-dot-system';
-  return `<div class="mini-item ${n.is_read ? '' : 'unread-notif'}" data-link="${esc(n.link || '')}">
-    <div style="display:flex;align-items:center;">
-      <span class="notif-dot-icon ${dotClass}"></span>
-      ${esc(n.title)}
-    </div>
-    <div class="mini-meta">${esc(n.body || '')} · ${fmtDate(n.created_at)}</div>
-  </div>`;
-}).join('');
+    c.innerHTML = allNotifs.map(n => {
+      const dotClass = {
+        calendar: 'notif-dot-calendar',
+        contract: 'notif-dot-contract',
+        message: 'notif-dot-message',
+        ticket: 'notif-dot-ticket',
+        connection: 'notif-dot-connection',
+        system: 'notif-dot-system'
+      }[n.type] || 'notif-dot-system';
+
+      return `<div class="mini-item ${n.is_read ? '' : 'unread-notif'}" data-link="${esc(n.link || '')}">
+        <div style="display:flex;align-items:center;">
+          <span class="notif-dot-icon ${dotClass}"></span>
+          ${esc(n.title)}
+        </div>
+        <div class="mini-meta">${esc(n.body || '')} · ${fmtDate(n.created_at)}</div>
+      </div>`;
+    }).join('');
 
   } catch (e) {
     c.innerHTML = '<div class="mini-item"><div><span class="notif-dot-icon notif-dot-system"></span>Welcome to your dashboard!</div><div class="mini-meta">Just now</div></div>';
   }
+
   c.addEventListener('click', (e) => {
-  const item = e.target.closest('.mini-item');
-  if (!item) return;
-  const link = item.dataset.link;
-  if (link) {
-    const section = link.replace('#', '');
-    if (section && typeof loadSection === 'function') {
-      loadSection(section);
+    const item = e.target.closest('.mini-item');
+    if (!item) return;
+    const link = item.dataset.link;
+    if (link) {
+      const section = link.replace('#', '');
+      if (section && typeof loadSection === 'function') {
+        loadSection(section);
+      }
     }
-  }
-});
+  });
 }
 
 // ── TICKETS ─────────────────────────────────────────────────
