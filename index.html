@@ -201,10 +201,29 @@
       </section>
 
       <section id="section-connections" class="section">
-        <div class="section-header"><h2>Connections</h2><button class="btn-accent" id="new-conn-btn">+ Connect</button></div>
-        <div id="connections-list" class="card-list"></div><div id="conn-requests-list" class="card-list"></div>
-        <div id="send-conn-modal" class="modal hidden"><div class="modal-box"><h3>Send Connection Request</h3><select id="conn-to-select"></select><div class="modal-actions"><button class="btn-accent" id="submit-conn-btn">Send</button><button class="btn-ghost" id="cancel-conn-btn">Cancel</button></div></div></div>
-      </section>
+  <div class="section-header"><h2>Connections</h2></div>
+  <!-- نوار جستجو -->
+  <div class="conn-search-bar">
+    <input type="text" id="conn-search-input" class="auth-field" placeholder="Search by name..." autocomplete="off">
+    <div id="conn-search-results" class="card-list" style="margin-top:8px; display:none;"></div>
+  </div>
+  <!-- لیست کانکشن‌ها -->
+  <div id="connections-list" class="card-list"></div>
+  <!-- درخواست‌های در انتظار -->
+  <div id="conn-requests-list" class="card-list"></div>
+  <!-- مودال نمایش لینک دعوت -->
+  <div id="conn-link-modal" class="modal hidden">
+    <div class="modal-box">
+      <h3>🔗 Invitation Link</h3>
+      <p style="color:var(--muted); font-size:13px;">Share this link with the person you want to connect with:</p>
+      <div class="copy-link-box">
+        <input type="text" id="conn-share-link" class="auth-field" readonly>
+        <button id="copy-conn-link-btn" class="btn-accent">Copy</button>
+      </div>
+      <button class="btn-ghost" id="close-conn-link-modal-btn">Close</button>
+    </div>
+  </div>
+</section>
 
       <section id="section-users" class="section">
         <div class="section-header"><h2>User Management</h2></div>
