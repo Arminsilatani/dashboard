@@ -1261,6 +1261,20 @@ td .btn-ghost {
   flex-direction: column;
   gap: 12px;
 }
+/* مخفی کردن دکمۀ نمایش پسورد پیش‌فرض در Edge/Chrome */
+::-ms-reveal {
+  display: none;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  display: none !important;
+  visibility: hidden;
+}
+
+/* اگر باز هم آیکون ظاهر شد، این هم اضافه کن */
+input[type="password"]::-webkit-textfield-decoration-container {
+  display: none;
+}
 /* =================================================================
    RESPONSIVE
    ================================================================= */
