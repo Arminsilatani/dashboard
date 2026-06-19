@@ -693,6 +693,17 @@ c.innerHTML = allNotifs.map(n => {
   } catch (e) {
     c.innerHTML = '<div class="mini-item"><div><span class="notif-dot-icon notif-dot-system"></span>Welcome to your dashboard!</div><div class="mini-meta">Just now</div></div>';
   }
+  c.addEventListener('click', (e) => {
+  const item = e.target.closest('.mini-item');
+  if (!item) return;
+  const link = item.dataset.link;
+  if (link) {
+    const section = link.replace('#', '');
+    if (section && typeof loadSection === 'function') {
+      loadSection(section);
+    }
+  }
+});
 }
 
 // ── TICKETS ─────────────────────────────────────────────────
