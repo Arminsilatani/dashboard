@@ -164,7 +164,8 @@ function initAuthListeners() {
   });
 
   document.getElementById('auth-signin-btn')?.addEventListener('click', async function () {
-    const email = authEmail, password = document.getElementById('auth-password').value, errorEl = document.getElementById('auth-error-login');
+    const email = authEmail, password = document.getElementById('auth-password').value,
+          errorEl = document.getElementById('auth-error-login');
     if (!email || !password) { errorEl.textContent = 'Please enter your password.'; return; }
     showLoader();
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
@@ -172,18 +173,26 @@ function initAuthListeners() {
     if (error) { errorEl.textContent = error.message; return; }
     currentUser = await fetchProfile(data.user);
     if (!currentUser) { errorEl.textContent = 'Unable to load profile.'; return; }
+
     showApp();
-const pendingRef = sessionStorage.getItem('pendingRef');
-if (pendingRef && currentUser) {
-  // اگر کاربر لاگین کرده و هنوز referred_by نداره، آپدیتش کن
-  if (!currentUser.referred_by) {
-    await db.update('profiles', currentUser.id, { referred_by: pendingRef });
-    try {
-      await addNotification(pendingRef, 'system', 'Someone joined via your link', '', '#connections');
-    } catch(e) {}
-  }
-  sessionStorage.removeItem('pendingRef');
-}    const pendingToken = sessionStorage.getItem('pendingConnectToken');
+
+    // اگر کاربر با لینک دعوت وارد شده (رفرش از ایمیل یا کلیک مستقیم)
+    const pendingRef = sessionStorage.getItem('pendingRef');
+    if (pendingRef && currentUser) {
+      // اگر قبلاً دعوت نشده، referred_by را تنظیم کن
+      if (!currentUser.referred_by) {
+        await db.update('profiles', currentUser.id, { referred_by: pendingRef });
+        try {
+          await addNotification(pendingRef, 'system', 'Someone joined via your link', '', '#connections');
+        } catch(e) {}
+      }
+      // درخواست اتصال از طرف دعوت‌کننده به کاربر جاری (اگر تکراری نباشد)
+      await createInviteConnection(pendingRef, currentUser.id);
+      sessionStorage.removeItem('pendingRef');
+    }
+
+    // پردازش توکن اتصال (برای connection request قدیمی)
+    const pendingToken = sessionStorage.getItem('pendingConnectToken');
     if (pendingToken) {
       sessionStorage.removeItem('pendingConnectToken');
       await processConnectToken(pendingToken);
@@ -200,7 +209,9 @@ if (pendingRef && currentUser) {
     const email = document.getElementById('forgot-email').value.trim();
     if (!email) return;
     showLoader();
-    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + window.location.pathname
+    });
     hideLoader();
     if (error) {
       document.getElementById('auth-error-login').textContent = error.message;
@@ -216,68 +227,96 @@ if (pendingRef && currentUser) {
   });
 
   document.getElementById('auth-register-btn')?.addEventListener('click', async function () {
-  const firstname = document.getElementById('reg-firstname').value.trim(),
-        lastname = document.getElementById('reg-lastname').value.trim(),
-        password = document.getElementById('reg-password').value,
-        confirm = document.getElementById('reg-confirm').value,
-        errorEl = document.getElementById('auth-error-register');
+    const firstname = document.getElementById('reg-firstname').value.trim(),
+          lastname = document.getElementById('reg-lastname').value.trim(),
+          password = document.getElementById('reg-password').value,
+          confirm = document.getElementById('reg-confirm').value,
+          errorEl = document.getElementById('auth-error-register');
 
-  // ➕ اعتبارسنجی جدید: فقط حروف انگلیسی (بدون فاصله یا عدد)
-  const nameRegex = /^[A-Za-z]+$/;
-  if (!nameRegex.test(firstname)) {
-    errorEl.textContent = 'First name must contain only English letters.';
-    return;
-  }
-  if (!nameRegex.test(lastname)) {
-    errorEl.textContent = 'Last name must contain only English letters.';
-    return;
-  }
-
-  if (!firstname || !lastname || !password || !confirm) {
-    errorEl.textContent = 'All fields are required.';
-    return;
-  }
-  if (password !== confirm) {
-    errorEl.textContent = 'Passwords do not match.';
-    return;
-  }
-
-  showLoader();
-
-  // نگهداری توکن اتصال و لینک دعوت در URL تأیید ایمیل
-  const pendingToken = sessionStorage.getItem('pendingConnectToken') || '';
-  const pendingRef = sessionStorage.getItem('pendingRef') || '';
-  const redirectBase = window.location.origin + window.location.pathname;
-  let redirectUrl = redirectBase;
-  if (pendingToken && pendingRef) {
-    redirectUrl = `${redirectBase}?connect=${pendingToken}&ref=${pendingRef}`;
-  } else if (pendingToken) {
-    redirectUrl = `${redirectBase}?connect=${pendingToken}`;
-  } else if (pendingRef) {
-    redirectUrl = `${redirectBase}?ref=${pendingRef}`;
-  }
-
-  const { error } = await sb.auth.signUp({
-    email: authEmail,
-    password,
-    options: {
-      data: { first_name: firstname, last_name: lastname },
-      emailRedirectTo: redirectUrl
+    // اعتبارسنجی نام انگلیسی
+    const nameRegex = /^[A-Za-z]+$/;
+    if (!nameRegex.test(firstname)) {
+      errorEl.textContent = 'First name must contain only English letters.';
+      return;
     }
+    if (!nameRegex.test(lastname)) {
+      errorEl.textContent = 'Last name must contain only English letters.';
+      return;
+    }
+
+    if (!firstname || !lastname || !password || !confirm) {
+      errorEl.textContent = 'All fields are required.';
+      return;
+    }
+    if (password !== confirm) {
+      errorEl.textContent = 'Passwords do not match.';
+      return;
+    }
+
+    showLoader();
+
+    // نگهداری توکن اتصال و لینک دعوت در URL تأیید ایمیل
+    const pendingToken = sessionStorage.getItem('pendingConnectToken') || '';
+    const pendingRef = sessionStorage.getItem('pendingRef') || '';
+    const redirectBase = window.location.origin + window.location.pathname;
+    let redirectUrl = redirectBase;
+    if (pendingToken && pendingRef) {
+      redirectUrl = `${redirectBase}?connect=${pendingToken}&ref=${pendingRef}`;
+    } else if (pendingToken) {
+      redirectUrl = `${redirectBase}?connect=${pendingToken}`;
+    } else if (pendingRef) {
+      redirectUrl = `${redirectBase}?ref=${pendingRef}`;
+    }
+
+    const { error } = await sb.auth.signUp({
+      email: authEmail,
+      password,
+      options: {
+        data: { first_name: firstname, last_name: lastname },
+        emailRedirectTo: redirectUrl
+      }
+    });
+
+    hideLoader();
+
+    if (error) {
+      errorEl.textContent = error.message;
+      return;
+    }
+
+    document.getElementById('reg-form-fields').style.display = 'none';
+    document.getElementById('reg-success').style.display = 'block';
+    errorEl.textContent = '';
   });
 
-  hideLoader();
+  document.getElementById('reg-to-login-btn')?.addEventListener('click', () => {
+    document.getElementById('auth-user-email').textContent = authEmail;
+    showStep('step-2-login');
+  });
 
-  if (error) {
-    errorEl.textContent = error.message;
-    return;
-  }
+  document.querySelectorAll('.auth-step').forEach(step => step.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const map = {
+        'step-1': 'auth-continue-btn',
+        'step-2-login': 'auth-signin-btn',
+        'step-2-register': 'auth-register-btn',
+        'step-forgot': 'auth-send-reset-btn'
+      };
+      document.getElementById(map[step.id])?.click();
+    }
+  }));
 
-  document.getElementById('reg-form-fields').style.display = 'none';
-  document.getElementById('reg-success').style.display = 'block';
-  errorEl.textContent = '';
-});
-
+  document.querySelectorAll('.toggle-password-btn').forEach(btn => btn.addEventListener('click', function () {
+    const input = document.getElementById(this.dataset.target);
+    if (!input) return;
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    this.innerHTML = isPassword
+      ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="m14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+      : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  }));
+}
 document.getElementById('reg-to-login-btn')?.addEventListener('click', () => {
   document.getElementById('auth-user-email').textContent = authEmail;
   showStep('step-2-login');
@@ -338,9 +377,10 @@ async function createInviteConnection(referrerId, newUserId) {
 async function fetchProfile(authUser) {
   let profile = await db.select('profiles', `id=eq.${authUser.id}`);
   if (profile && profile.length) return profile[0];
+
   const meta = authUser.user_metadata || {};
   const pendingRef = sessionStorage.getItem('pendingRef');
-  const newProfile = {
+  const newProfileData = {
     id: authUser.id,
     first_name: meta.first_name || '',
     last_name: meta.last_name || '',
@@ -348,14 +388,22 @@ async function fetchProfile(authUser) {
     role: 'viewer',
     created_at: new Date().toISOString()
   };
+
   if (pendingRef) {
-    newProfile.referred_by = pendingRef;
+    newProfileData.referred_by = pendingRef;
     sessionStorage.removeItem('pendingRef');
     try {
-      await addNotification(pendingRef, 'system', 'New user joined via your link', '', '#connections');
+      await addNotification(pendingRef, 'system',
+        'New user joined via your link', '', '#connections');
     } catch(e) {}
   }
-  await db.insert('profiles', newProfile);
+
+  const [newProfile] = await db.insert('profiles', newProfileData);
+
+  if (pendingRef) {
+    await createInviteConnection(pendingRef, newProfile.id);
+  }
+
   return newProfile;
 }
 
