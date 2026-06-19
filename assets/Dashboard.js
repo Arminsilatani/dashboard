@@ -108,13 +108,6 @@ async function showApp() {
   await refreshCurrentUser();
   updateSidebarUI();
 
-  // اتصال دعوت را بعد از بارگذاری کامل ایجاد کن
-  const pendingRef = sessionStorage.getItem('pendingRef');
-  if (pendingRef && currentUser) {
-    await createInviteConnection(pendingRef, currentUser.id);
-    sessionStorage.removeItem('pendingRef');
-  }
-
   document.getElementById('section-dashboard').classList.add('active');
   loadSection('dashboard');
   updateNotificationBadge();
@@ -377,6 +370,12 @@ async function fetchProfile(authUser) {
   }
 
   const [newProfile] = await db.insert('profiles', newProfileData);
+
+  if (pendingRef) {
+    await createInviteConnection(pendingRef, newProfile.id);
+    sessionStorage.removeItem('pendingRef'); // پاک‌سازی بعد از انجام کامل
+  }
+
   return newProfile;
 }
 
