@@ -307,6 +307,34 @@ document.querySelectorAll('.auth-step').forEach(step => step.addEventListener('k
   }));
 }
 
+async function createInviteConnection(referrerId, newUserId) {
+  try {
+    const existing = await db.select('dashboard_connectionrequests',
+      `or=(and(from_id.eq.${referrerId},to_id.eq.${newUserId}),and(from_id.eq.${newUserId},to_id.eq.${referrerId}))`);
+    if (existing && existing.length > 0) return;
+
+    await db.insert('dashboard_connectionrequests', {
+      from_id: referrerId,
+      to_id: newUserId,
+      status: 'pending'
+    });
+
+    const referrerProf = await db.select('profiles',
+      `id=eq.${referrerId}&select=first_name,last_name`);
+    const referrerName = (referrerProf && referrerProf[0])
+      ? [referrerProf[0].first_name, referrerProf[0].last_name].filter(Boolean).join(' ')
+      : 'Someone';
+
+    await addNotification(newUserId, 'connection', 'New connection request',
+      `${referrerName} wants to connect with you`, '#connections');
+
+    await addNotification(referrerId, 'connection', 'Connection request sent',
+      `Request sent to new user`, '#connections');
+  } catch (e) {
+    console.error('Failed to create invite connection:', e);
+  }
+}
+
 async function fetchProfile(authUser) {
   let profile = await db.select('profiles', `id=eq.${authUser.id}`);
   if (profile && profile.length) return profile[0];
