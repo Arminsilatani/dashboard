@@ -124,10 +124,10 @@ async function refreshCurrentUser() {
 function updateSidebarUI() {
   const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'User';
   document.getElementById('sidebar-name').textContent = name;
-  document.getElementById('sidebar-role').textContent = currentUser.role || 'viewer';
+  document.getElementById('sidebar-role').textContent = currentUser.role || 'Recruit';
   const av = document.getElementById('sidebar-avatar');
   av.src = currentUser.photo_url || generateAvatarUrl(name);
-  if (currentUser.role === 'admin') {
+  if (currentUser.role === 'General') {
     document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
   }
 }
@@ -357,7 +357,7 @@ async function fetchProfile(authUser) {
     first_name: meta.first_name || '',
     last_name: meta.last_name || '',
     username: meta.username || '',
-    role: 'viewer',
+    role: 'Recruit',
     created_at: new Date().toISOString()
   };
 
@@ -613,7 +613,7 @@ async function loadDashboard() {
   await refreshCurrentUser();
   const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'User';
   document.getElementById('dash-fullname').textContent = name;
-  document.getElementById('dash-role-badge').textContent = currentUser.role || 'viewer';
+  document.getElementById('dash-role-badge').textContent = currentUser.role || 'Recruit';
   document.getElementById('dash-email').textContent = currentUser.email || '—';
   document.getElementById('dash-phone').textContent = currentUser.phone || '—';
   document.getElementById('dash-website').textContent = currentUser.website || '—';
@@ -722,7 +722,7 @@ async function loadTickets() {
   list.classList.remove('hidden');
   list.innerHTML = '<div class="empty-state">Loading...</div>';
   try {
-    const q = currentUser.role === 'admin' ? 'order=created_at.desc' : `user_id=eq.${currentUser.id}&order=created_at.desc`;
+    const q = currentUser.role === 'General' ? 'order=created_at.desc' : `user_id=eq.${currentUser.id}&order=created_at.desc`;
     const tickets = await db.select('tickets', q);
     if (!tickets || !tickets.length) { list.innerHTML = '<div class="empty-state">No tickets yet.</div>'; return; }
     const uids = [...new Set(tickets.map(t => t.user_id))];
@@ -764,7 +764,7 @@ async function openTicket(ticket) {
       msgs.appendChild(b);
     });
     msgs.scrollTop = msgs.scrollHeight;
-    if (currentUser.role === 'admin') document.getElementById('close-ticket-btn').classList.toggle('hidden', ticket.status === 'closed');
+    if (currentUser.role === 'General') document.getElementById('close-ticket-btn').classList.toggle('hidden', ticket.status === 'closed');
   } catch (e) { msgs.innerHTML = e.message; }
 }
 
@@ -776,7 +776,7 @@ async function submitTicket() {
     const [ticket] = await db.insert('tickets', { user_id: currentUser.id, subject });
     await db.insert('ticket_messages', { ticket_id: ticket.id, sender_id: currentUser.id, body });
     try {
-      const admins = await db.select('profiles', 'role=eq.admin&select=id');
+      const admins = await db.select('profiles', 'role=eq.General&select=id');
       const userName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'User';
       for (const admin of (admins || [])) {
         await addNotification(admin.id, 'ticket', 'New support ticket', `${userName}: ${subject}`, `#tickets/${ticket.id}`);
@@ -798,11 +798,11 @@ async function sendReply() {
     if (tickets && tickets[0]) {
       const ticket = tickets[0];
       const senderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
-      if (currentUser.role === 'admin') {
+      if (currentUser.role === 'General') {
         await addNotification(ticket.user_id, 'ticket', 'New reply to your ticket', body.substring(0, 100), `#tickets/${openTicketId}`);
       } else {
         try {
-          const admins = await db.select('profiles', 'role=eq.admin&select=id');
+          const admins = await db.select('profiles', 'role=eq.General&select=id');
           for (const admin of (admins || [])) {
             await addNotification(admin.id, 'ticket', `Reply from ${senderName}`, body.substring(0, 100), `#tickets/${openTicketId}`);
           }
@@ -845,7 +845,7 @@ async function loadMessages() {
       const fromName = [from.first_name, from.last_name].filter(Boolean).join(' ') || from.username || 'Unknown';
       const toName = [to.first_name, to.last_name].filter(Boolean).join(' ') || to.username || 'Unknown';
       const card = document.createElement('div'); card.className = 'card';
-      card.innerHTML = `<div><div class="card-title">${esc(m.body.substring(0, 80))}${m.body.length > 80 ? '…' : ''}</div><div class="card-sub">From ${esc(fromName)} → ${esc(toName)} · ${fmtDate(m.created_at)}</div></div>${!m.read && currentUser.role !== 'admin' ? '<span class="badge badge-unread">New</span>' : ''}`;
+      card.innerHTML = `<div><div class="card-title">${esc(m.body.substring(0, 80))}${m.body.length > 80 ? '…' : ''}</div><div class="card-sub">From ${esc(fromName)} → ${esc(toName)} · ${fmtDate(m.created_at)}</div></div>${!m.read && currentUser.role !== 'General' ? '<span class="badge badge-unread">New</span>' : ''}`;
       if (!m.read && m.to_id === currentUser.id) db.update('messages', m.id, { read: true }).catch(() => {});
       list.appendChild(card);
     });
@@ -1142,7 +1142,7 @@ async function loadUsers() {
         <td>${esc(name)}</td>
         <td>${esc(u.username || '—')}</td>
         <td>${esc(u.email || '—')}</td>
-        <td><span class="badge ${u.role === 'admin' ? 'badge-accepted' : 'badge-open'}">${esc(u.role || 'user')}</span></td>
+        <td><span class="badge ${u.role === 'General' ? 'badge-accepted' : 'badge-open'}">${esc(u.role || 'Recruit')}</span></td>
         <td>${esc(u.telegram_id || '—')}</td>
         <td>${fmtDate(u.created_at)}</td>
         <td>${invitedCount}</td> <!-- ستون جدید -->
@@ -1162,7 +1162,7 @@ async function openEditUser(uid) {
     document.getElementById('edit-user-first-name').value = u.first_name || '';
     document.getElementById('edit-user-last-name').value = u.last_name || '';
     document.getElementById('edit-user-username').value = u.username || '';
-    document.getElementById('edit-user-role').value = u.role || 'user';
+    document.getElementById('edit-user-role').value = u.role || 'Recruit';
     document.getElementById('edit-user-telegram').value = u.telegram_id || '';
     document.getElementById('edit-user-modal').classList.remove('hidden');
   } catch (e) { alert(e.message); }
