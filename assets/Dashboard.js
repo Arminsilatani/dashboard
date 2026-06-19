@@ -340,6 +340,7 @@ async function createInviteConnection(referrerId, newUserId) {
     // ارسال اعلان‌ها
     await addNotification(newUserId, 'connection', 'New connection request',
       `${referrerName} wants to connect with you`, '#connections');
+      console.log('Notif for new user:', newUserId, 'current user:', currentUser?.id);
     await addNotification(referrerId, 'connection', 'Connection request sent',
       `Request sent to new user`, '#connections');
 
