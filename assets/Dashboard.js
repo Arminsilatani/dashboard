@@ -125,7 +125,7 @@ function updateSidebarUI() {
   document.getElementById('sidebar-name').textContent = name;
   document.getElementById('sidebar-role').textContent = currentUser.role || 'viewer';
   const av = document.getElementById('sidebar-avatar');
-  av.src = currentUser.photo_url || `av.src = currentUser.photo_url || generateAvatarUrl(name);`;
+  av.src = currentUser.photo_url || generateAvatarUrl(name);
   if (currentUser.role === 'admin') {
     document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
   }
