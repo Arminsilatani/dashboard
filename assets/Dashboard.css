@@ -1184,7 +1184,7 @@ td .btn-ghost {
    NOTIFICATIONS
    ================================================================= */
 .unread-notif {
-  padding-left: 6px;
+  padding-left: 1px;
 }
 
 .notif-dot-icon {
