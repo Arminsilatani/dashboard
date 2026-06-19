@@ -60,7 +60,10 @@ function hideLoader() {
 window.addEventListener('DOMContentLoaded', async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const connectToken = urlParams.get('connect');
-  
+  const refUserId = urlParams.get('ref');   // <-- جدید
+  if (refUserId) {
+    sessionStorage.setItem('pendingRef', refUserId);
+  }
   const { data: { session } } = await sb.auth.getSession();
   if (session?.user) {
     try {
@@ -170,8 +173,17 @@ function initAuthListeners() {
     currentUser = await fetchProfile(data.user);
     if (!currentUser) { errorEl.textContent = 'Unable to load profile.'; return; }
     showApp();
-    // پردازش توکن اتصال معلق پس از ورود موفق
-    const pendingToken = sessionStorage.getItem('pendingConnectToken');
+const pendingRef = sessionStorage.getItem('pendingRef');
+if (pendingRef && currentUser) {
+  // اگر کاربر لاگین کرده و هنوز referred_by نداره، آپدیتش کن
+  if (!currentUser.referred_by) {
+    await db.update('profiles', currentUser.id, { referred_by: pendingRef });
+    try {
+      await addNotification(pendingRef, 'system', 'Someone joined via your link', '', '#connections');
+    } catch(e) {}
+  }
+  sessionStorage.removeItem('pendingRef');
+}    const pendingToken = sessionStorage.getItem('pendingConnectToken');
     if (pendingToken) {
       sessionStorage.removeItem('pendingConnectToken');
       await processConnectToken(pendingToken);
@@ -214,8 +226,16 @@ function initAuthListeners() {
     showLoader();
     // نگهداری توکن اتصال در URL تأیید ایمیل
     const pendingToken = sessionStorage.getItem('pendingConnectToken') || '';
-    const redirectBase = window.location.origin + window.location.pathname;
-    const redirectUrl = pendingToken ? `${redirectBase}?connect=${pendingToken}` : redirectBase;
+const pendingRef = sessionStorage.getItem('pendingRef') || '';
+const redirectBase = window.location.origin + window.location.pathname;
+let redirectUrl = redirectBase;
+if (pendingToken && pendingRef) {
+  redirectUrl = `${redirectBase}?connect=${pendingToken}&ref=${pendingRef}`;
+} else if (pendingToken) {
+  redirectUrl = `${redirectBase}?connect=${pendingToken}`;
+} else if (pendingRef) {
+  redirectUrl = `${redirectBase}?ref=${pendingRef}`;
+}
     
     const { error } = await sb.auth.signUp({
       email: authEmail,
@@ -265,6 +285,7 @@ async function fetchProfile(authUser) {
   let profile = await db.select('profiles', `id=eq.${authUser.id}`);
   if (profile && profile.length) return profile[0];
   const meta = authUser.user_metadata || {};
+  const pendingRef = sessionStorage.getItem('pendingRef');
   const newProfile = {
     id: authUser.id,
     first_name: meta.first_name || '',
@@ -273,6 +294,13 @@ async function fetchProfile(authUser) {
     role: 'viewer',
     created_at: new Date().toISOString()
   };
+  if (pendingRef) {
+    newProfile.referred_by = pendingRef;
+    sessionStorage.removeItem('pendingRef');
+    try {
+      await addNotification(pendingRef, 'system', 'New user joined via your link', '', '#connections');
+    } catch(e) {}
+  }
   await db.insert('profiles', newProfile);
   return newProfile;
 }
@@ -476,7 +504,12 @@ function bindEvents() {
     }
     searchTimeout = setTimeout(() => searchProfiles(term), 300);
   });
-
+// دکمه بزرگ +
+document.getElementById('big-invite-btn')?.addEventListener('click', () => {
+  const link = `${window.location.origin}${window.location.pathname}?ref=${currentUser.id}`;
+  document.getElementById('conn-share-link').value = link;
+  document.getElementById('conn-link-modal').classList.remove('hidden');
+});
   // مخفی کردن نتایج با کلیک بیرون
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.conn-search-bar')) {
@@ -965,9 +998,12 @@ async function processConnectToken(requestId) {
 
 // بارگذاری لیست ارتباطات و درخواست‌ها
 async function loadConnections() {
-  const list = document.getElementById('connections-list'), reqList = document.getElementById('conn-requests-list');
+  const list = document.getElementById('connections-list');
+  const reqList = document.getElementById('conn-requests-list');
+  const bigBtn = document.getElementById('conn-invite-big-btn');   // <-- جدید
   list.innerHTML = '<div class="empty-state">Loading connections...</div>';
   reqList.innerHTML = '';
+
   try {
     const all = await db.select('dashboard_connectionrequests', `or=(from_id.eq.${currentUser.id},to_id.eq.${currentUser.id})&order=created_at.desc`);
     const ids = [...new Set((all || []).flatMap(r => [r.from_id, r.to_id]))];
@@ -979,6 +1015,14 @@ async function loadConnections() {
     const accepted = (all || []).filter(r => r.status === 'accepted');
     const pending = (all || []).filter(r => r.status === 'pending');
 
+    // اگر هیچ کانکشنی (تأییدشده یا در انتظار) نداشته باشیم، دکمه بزرگ رو نشون بده
+    if (accepted.length === 0 && pending.length === 0) {
+      if (bigBtn) bigBtn.style.display = 'block';
+    } else {
+      if (bigBtn) bigBtn.style.display = 'none';
+    }
+
+    // لیست کانکشن‌های تأییدشده
     if (!accepted.length) {
       list.innerHTML = '<div class="empty-state">No connections yet.</div>';
     } else {
@@ -993,6 +1037,7 @@ async function loadConnections() {
       });
     }
 
+    // درخواست‌های در انتظار
     if (pending.length) {
       const header = document.createElement('div');
       header.style.cssText = 'color:var(--muted);font-size:12px;margin:14px 0 6px';
@@ -1010,6 +1055,24 @@ async function loadConnections() {
     }
   } catch (e) {
     list.innerHTML = `<div class="empty-state">${e.message}</div>`;
+    if (bigBtn) bigBtn.style.display = 'none';
+  }
+
+  // نمایش تعداد دعوت‌شده‌ها
+  try {
+    const referrals = await db.select('profiles', `referred_by=eq.${currentUser.id}&select=id`);
+    const count = (referrals || []).length;
+    // ایجاد یا به‌روزرسانی المان referral-count
+    let refEl = document.getElementById('referral-count');
+    if (!refEl) {
+      refEl = document.createElement('div');
+      refEl.id = 'referral-count';
+      refEl.style.cssText = 'text-align:center; color:var(--muted); margin-top:16px;';
+      document.getElementById('section-connections').appendChild(refEl);
+    }
+    refEl.textContent = `👥 You've invited ${count} member${count !== 1 ? 's' : ''}`;
+  } catch(e) {
+    // ignore
   }
 }
 
