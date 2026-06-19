@@ -323,17 +323,26 @@ async function createInviteConnection(referrerId, newUserId) {
       status: 'pending'
     });
 
-    const referrerProf = await db.select('profiles',
-      `id=eq.${referrerId}&select=first_name,last_name`);
-    const referrerName = (referrerProf && referrerProf[0])
-      ? [referrerProf[0].first_name, referrerProf[0].last_name].filter(Boolean).join(' ')
-      : 'Someone';
+    let referrerName = 'Someone';
+    try {
+      const referrerProf = await db.select('profiles',
+        `id=eq.${referrerId}&select=first_name,last_name`);
+      if (referrerProf?.[0]) {
+        referrerName = [referrerProf[0].first_name, referrerProf[0].last_name]
+                        .filter(Boolean).join(' ') || 'Someone';
+      }
+    } catch (profileError) {
+      console.warn('Could not fetch referrer profile, using default name:', profileError);
+    }
 
+    // اعلان‌ها مستقل از خطای دریافت پروفایل
+    console.log('About to send notifications...'); // ← لاگ برای اطمینان
     await addNotification(newUserId, 'connection', 'New connection request',
       `${referrerName} wants to connect with you`, '#connections');
-
     await addNotification(referrerId, 'connection', 'Connection request sent',
       `Request sent to new user`, '#connections');
+    console.log('Notifications sent.');
+
   } catch (e) {
     console.error('Failed to create invite connection:', e);
   }
