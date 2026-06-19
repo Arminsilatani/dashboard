@@ -193,13 +193,6 @@ if (pendingToken) {
   sessionStorage.removeItem('pendingConnectToken');
   await processConnectToken(pendingToken);
 }
-
-    // پردازش توکن اتصال (برای connection request قدیمی)
-    const pendingToken = sessionStorage.getItem('pendingConnectToken');
-    if (pendingToken) {
-      sessionStorage.removeItem('pendingConnectToken');
-      await processConnectToken(pendingToken);
-    }
   });
 
   document.getElementById('auth-forgot-link')?.addEventListener('click', function (e) {
