@@ -216,59 +216,85 @@ if (pendingRef && currentUser) {
   });
 
   document.getElementById('auth-register-btn')?.addEventListener('click', async function () {
-    const firstname = document.getElementById('reg-firstname').value.trim(),
-          lastname = document.getElementById('reg-lastname').value.trim(),
-          password = document.getElementById('reg-password').value,
-          confirm = document.getElementById('reg-confirm').value,
-          errorEl = document.getElementById('auth-error-register');
-    if (!firstname || !lastname || !password || !confirm) { errorEl.textContent = 'All fields are required.'; return; }
-    if (password !== confirm) { errorEl.textContent = 'Passwords do not match.'; return; }
-    showLoader();
-    // نگهداری توکن اتصال در URL تأیید ایمیل
-    const pendingToken = sessionStorage.getItem('pendingConnectToken') || '';
-const pendingRef = sessionStorage.getItem('pendingRef') || '';
-const redirectBase = window.location.origin + window.location.pathname;
-let redirectUrl = redirectBase;
-if (pendingToken && pendingRef) {
-  redirectUrl = `${redirectBase}?connect=${pendingToken}&ref=${pendingRef}`;
-} else if (pendingToken) {
-  redirectUrl = `${redirectBase}?connect=${pendingToken}`;
-} else if (pendingRef) {
-  redirectUrl = `${redirectBase}?ref=${pendingRef}`;
-}
-    
-    const { error } = await sb.auth.signUp({
-      email: authEmail,
-      password,
-      options: {
-        data: { first_name: firstname, last_name: lastname },
-        emailRedirectTo: redirectUrl
-      }
-    });
-    hideLoader();
-    if (error) { errorEl.textContent = error.message; return; }
-    document.getElementById('reg-form-fields').style.display = 'none';
-    document.getElementById('reg-success').style.display = 'block';
-    errorEl.textContent = '';
-  });
+  const firstname = document.getElementById('reg-firstname').value.trim(),
+        lastname = document.getElementById('reg-lastname').value.trim(),
+        password = document.getElementById('reg-password').value,
+        confirm = document.getElementById('reg-confirm').value,
+        errorEl = document.getElementById('auth-error-register');
 
-  document.getElementById('reg-to-login-btn')?.addEventListener('click', () => {
-    document.getElementById('auth-user-email').textContent = authEmail;
-    showStep('step-2-login');
-  });
+  // ➕ اعتبارسنجی جدید: فقط حروف انگلیسی (بدون فاصله یا عدد)
+  const nameRegex = /^[A-Za-z]+$/;
+  if (!nameRegex.test(firstname)) {
+    errorEl.textContent = 'First name must contain only English letters.';
+    return;
+  }
+  if (!nameRegex.test(lastname)) {
+    errorEl.textContent = 'Last name must contain only English letters.';
+    return;
+  }
 
-  document.querySelectorAll('.auth-step').forEach(step => step.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const map = {
-        'step-1': 'auth-continue-btn',
-        'step-2-login': 'auth-signin-btn',
-        'step-2-register': 'auth-register-btn',
-        'step-forgot': 'auth-send-reset-btn'
-      };
-      document.getElementById(map[step.id])?.click();
+  if (!firstname || !lastname || !password || !confirm) {
+    errorEl.textContent = 'All fields are required.';
+    return;
+  }
+  if (password !== confirm) {
+    errorEl.textContent = 'Passwords do not match.';
+    return;
+  }
+
+  showLoader();
+
+  // نگهداری توکن اتصال و لینک دعوت در URL تأیید ایمیل
+  const pendingToken = sessionStorage.getItem('pendingConnectToken') || '';
+  const pendingRef = sessionStorage.getItem('pendingRef') || '';
+  const redirectBase = window.location.origin + window.location.pathname;
+  let redirectUrl = redirectBase;
+  if (pendingToken && pendingRef) {
+    redirectUrl = `${redirectBase}?connect=${pendingToken}&ref=${pendingRef}`;
+  } else if (pendingToken) {
+    redirectUrl = `${redirectBase}?connect=${pendingToken}`;
+  } else if (pendingRef) {
+    redirectUrl = `${redirectBase}?ref=${pendingRef}`;
+  }
+
+  const { error } = await sb.auth.signUp({
+    email: authEmail,
+    password,
+    options: {
+      data: { first_name: firstname, last_name: lastname },
+      emailRedirectTo: redirectUrl
     }
-  }));
+  });
+
+  hideLoader();
+
+  if (error) {
+    errorEl.textContent = error.message;
+    return;
+  }
+
+  document.getElementById('reg-form-fields').style.display = 'none';
+  document.getElementById('reg-success').style.display = 'block';
+  errorEl.textContent = '';
+});
+
+document.getElementById('reg-to-login-btn')?.addEventListener('click', () => {
+  document.getElementById('auth-user-email').textContent = authEmail;
+  showStep('step-2-login');
+});
+
+document.querySelectorAll('.auth-step').forEach(step => step.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const map = {
+      'step-1': 'auth-continue-btn',
+      'step-2-login': 'auth-signin-btn',
+      'step-2-register': 'auth-register-btn',
+      'step-forgot': 'auth-send-reset-btn'
+    };
+    document.getElementById(map[step.id])?.click();
+  }
+}));
 
   document.querySelectorAll('.toggle-password-btn').forEach(btn => btn.addEventListener('click', function () {
     const input = document.getElementById(this.dataset.target);
