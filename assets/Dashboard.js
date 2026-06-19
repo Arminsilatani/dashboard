@@ -311,66 +311,33 @@ function initAuthListeners() {
   }));
 }
 
-// ─────────────────────────────────────────────────────────
-// ✅ نسخه اصلاح شده createInviteConnection
-// ─────────────────────────────────────────────────────────
 async function createInviteConnection(referrerId, newUserId) {
-  console.log('🚀 [createInviteConnection] Started', { referrerId, newUserId });
-  
-  if (!referrerId || !newUserId) {
-    console.warn('⚠️ [createInviteConnection] Invalid IDs, aborting');
-    return;
-  }
-
   try {
-    // ─── چک کردن درخواست موجود ───
-    console.log('🔍 [createInviteConnection] Checking existing requests...');
     const existing = await db.select('dashboard_connectionrequests',
       `or=(and(from_id.eq.${referrerId},to_id.eq.${newUserId}),and(from_id.eq.${newUserId},to_id.eq.${referrerId}))`);
-    
-    console.log('📊 [createInviteConnection] Existing:', existing);
-    
-    if (existing && existing.length > 0) {
-      console.log('ℹ️ [createInviteConnection] Connection already exists, skipping insert');
-      return;  // ❌ این return باعث می‌شود نوتیفیکیشن ارسال نشود!
-    }
+    if (existing && existing.length > 0) return;
 
-    // ─── درج درخواست جدید ───
-    console.log('💾 [createInviteConnection] Inserting new connection request...');
-    const insertResult = await db.insert('dashboard_connectionrequests', {
+    await db.insert('dashboard_connectionrequests', {
       from_id: referrerId,
       to_id: newUserId,
       status: 'pending'
     });
-    console.log('✅ [createInviteConnection] Insert result:', insertResult);
 
-    // ─── دریافت نام دعوت‌کننده ───
-    console.log('👤 [createInviteConnection] Fetching referrer profile...');
     const referrerProf = await db.select('profiles',
       `id=eq.${referrerId}&select=first_name,last_name`);
     const referrerName = (referrerProf && referrerProf[0])
       ? [referrerProf[0].first_name, referrerProf[0].last_name].filter(Boolean).join(' ')
       : 'Someone';
-    console.log('📝 [createInviteConnection] Referrer name:', referrerName);
 
-    // ─── ارسال نوتیفیکیشن‌ها ───
-    console.log('📢 [createInviteConnection] Sending notifications...');
-    
     await addNotification(newUserId, 'connection', 'New connection request',
       `${referrerName} wants to connect with you`, '#connections');
-    console.log('✅ [createInviteConnection] Notification 1 sent to newUserId');
 
     await addNotification(referrerId, 'connection', 'Connection request sent',
       `Request sent to new user`, '#connections');
-    console.log('✅ [createInviteConnection] Notification 2 sent to referrerId');
-
-    console.log('🏁 [createInviteConnection] Completed successfully');
   } catch (e) {
-    console.error('❌ [createInviteConnection] ERROR:', e);
-    console.error('Stack trace:', e.stack);  // اضافه کردن stack trace برای دیباگ بهتر
+    console.error('Failed to create invite connection:', e);
   }
 }
-
 
 async function fetchProfile(authUser) {
   let profile = await db.select('profiles', `id=eq.${authUser.id}`);
