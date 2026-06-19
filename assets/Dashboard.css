@@ -1237,6 +1237,25 @@ td .btn-ghost {
   50% { opacity: 1; transform: scale(1.2); }
 }
 
+.conn-search-bar {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.conn-search-bar .auth-field {
+  width: 100%;
+}
+
+.copy-link-box {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.copy-link-box input {
+  flex: 1;
+}
+
 /* =================================================================
    RESPONSIVE
    ================================================================= */
