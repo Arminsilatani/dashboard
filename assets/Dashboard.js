@@ -1195,6 +1195,14 @@ async function addNotification(userId, type, title, body = '', link = '') {
   }
 }
 
+async function refreshNotificationUI() {
+  await updateNotificationBadge();
+  const dashSection = document.getElementById('section-dashboard');
+  if (dashSection && dashSection.classList.contains('active')) {
+    await loadNotifications();
+  }
+}
+
 // ── Notification Badge ──────────────────────────────────────
 async function updateNotificationBadge() {
   const badge = document.getElementById('notif-badge');
