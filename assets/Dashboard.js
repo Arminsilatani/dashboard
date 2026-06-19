@@ -125,7 +125,7 @@ function updateSidebarUI() {
   document.getElementById('sidebar-name').textContent = name;
   document.getElementById('sidebar-role').textContent = currentUser.role || 'viewer';
   const av = document.getElementById('sidebar-avatar');
-  av.src = currentUser.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4ECDC4&color=0d0d0d`;
+  av.src = currentUser.photo_url || `av.src = currentUser.photo_url || generateAvatarUrl(name);`;
   if (currentUser.role === 'admin') {
     document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
   }
@@ -421,8 +421,7 @@ function bindEvents() {
       document.getElementById('edit-email').value = currentUser.email || '';
       document.getElementById('edit-phone').value = currentUser.phone || '';
       document.getElementById('edit-website').value = currentUser.website || '';
-      document.getElementById('edit-avatar-preview').src = currentUser.photo_url
-        || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.first_name || 'U')}&background=4ECDC4&color=0d0d0d`;
+document.getElementById('edit-avatar-preview').src = currentUser.photo_url || generateAvatarUrl(currentUser.first_name || 'U');;
       document.getElementById('edit-photo-input').value = '';
       pendingPhotoFile = null;
       document.getElementById('edit-profile-modal').classList.remove('hidden');
@@ -611,8 +610,7 @@ async function loadDashboard() {
   document.getElementById('dash-email').textContent = currentUser.email || '—';
   document.getElementById('dash-phone').textContent = currentUser.phone || '—';
   document.getElementById('dash-website').textContent = currentUser.website || '—';
-  document.getElementById('dash-avatar').src = currentUser.photo_url
-    || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4ECDC4&color=0d0d0d`;
+document.getElementById('dash-avatar').src = currentUser.photo_url || generateAvatarUrl(name);;
   await Promise.all([loadMiniCalendar(), loadNotifications()]);
   updateNotificationBadge();
 }
