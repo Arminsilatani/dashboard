@@ -1096,19 +1096,6 @@ async function loadConnections() {
     list.innerHTML = `<div class="empty-state">${e.message}</div>`;
     if (bigBtn) bigBtn.style.display = 'none';
   }
-
-  try {
-    const referrals = await db.select('profiles', `referred_by=eq.${currentUser.id}&select=id`);
-    const count = (referrals || []).length;
-    let refEl = document.getElementById('referral-count');
-    if (!refEl) {
-      refEl = document.createElement('div');
-      refEl.id = 'referral-count';
-      refEl.style.cssText = 'text-align:center; color:var(--muted); margin-top:16px;';
-      document.getElementById('section-connections').appendChild(refEl);
-    }
-    refEl.textContent = `👥 You've invited ${count} member${count !== 1 ? 's' : ''}`;
-  } catch(e) {}
 }
 
 async function respondConn(id, status) {
@@ -1132,17 +1119,40 @@ async function respondConn(id, status) {
 // ── USERS (Admin) ────────────────────────────────────────────
 async function loadUsers() {
   const tbody = document.getElementById('users-tbody');
-  tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted)">Loading...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8" style="color:var(--muted)">Loading...</td></tr>'; // colspan = 8
+
   try {
     const users = await db.select('profiles', 'order=created_at.desc');
+
+    const referrals = await db.select('profiles', 'referred_by=neq.null&select=referred_by');
+    const countMap = {};
+    (referrals || []).forEach(r => {
+      if (r.referred_by) {
+        countMap[r.referred_by] = (countMap[r.referred_by] || 0) + 1;
+      }
+    });
+
     tbody.innerHTML = '';
     (users || []).forEach(u => {
       const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || '—';
+      const invitedCount = countMap[u.id] || 0;
+
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${esc(name)}</td><td>${esc(u.username || '—')}</td><td>${esc(u.email || '—')}</td><td><span class="badge ${u.role === 'admin' ? 'badge-accepted' : 'badge-open'}">${esc(u.role || 'user')}</span></td><td>${esc(u.telegram_id || '—')}</td><td>${fmtDate(u.created_at)}</td><td><button class="btn-ghost" onclick="openEditUser('${u.id}')">Edit</button></td>`;
+      tr.innerHTML = `
+        <td>${esc(name)}</td>
+        <td>${esc(u.username || '—')}</td>
+        <td>${esc(u.email || '—')}</td>
+        <td><span class="badge ${u.role === 'admin' ? 'badge-accepted' : 'badge-open'}">${esc(u.role || 'user')}</span></td>
+        <td>${esc(u.telegram_id || '—')}</td>
+        <td>${fmtDate(u.created_at)}</td>
+        <td>${invitedCount}</td> <!-- ستون جدید -->
+        <td><button class="btn-ghost" onclick="openEditUser('${u.id}')">Edit</button></td>
+      `;
       tbody.appendChild(tr);
     });
-  } catch (e) { tbody.innerHTML = `<tr><td colspan="7">${e.message}</td></tr>`; }
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="8">${e.message}</td></tr>`; // colspan = 8
+  }
 }
 
 async function openEditUser(uid) {
