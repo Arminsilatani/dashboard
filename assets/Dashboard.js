@@ -41,7 +41,7 @@ let currentUser = null;
 let editingUserId = null;
 let openTicketId = null;
 
-// ── Loader (shows both old and new loaders together) ────────
+// ── Loader ──────────────────────────────────────────────────
 function showLoader() {
   const globalLoader = document.getElementById('global-loader');
   if (globalLoader) globalLoader.classList.remove('hidden');
@@ -60,7 +60,7 @@ function hideLoader() {
 window.addEventListener('DOMContentLoaded', async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const connectToken = urlParams.get('connect');
-  const refUserId = urlParams.get('ref');   // <-- جدید
+  const refUserId = urlParams.get('ref');
   if (refUserId) {
     sessionStorage.setItem('pendingRef', refUserId);
   }
@@ -71,7 +71,6 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (profile && profile.length) {
         currentUser = profile[0];
         showApp();
-        // اگر پارامتر connect وجود داشت و کاربر لاگین بود، پردازش کن
         if (connectToken) {
           await processConnectToken(connectToken);
         }
@@ -132,7 +131,7 @@ function updateSidebarUI() {
   }
 }
 
-// ── Step‑based Email Auth Flow ──────────────────────────────
+// ── Auth Flow ────────────────────────────────────────────────
 let authEmail = '';
 
 function showStep(stepId) {
@@ -172,27 +171,27 @@ function initAuthListeners() {
     hideLoader();
     if (error) { errorEl.textContent = error.message; return; }
     currentUser = await fetchProfile(data.user);
-if (!currentUser) { errorEl.textContent = 'Unable to load profile.'; return; }
+    if (!currentUser) { errorEl.textContent = 'Unable to load profile.'; return; }
 
-const pendingRef = sessionStorage.getItem('pendingRef');
-if (pendingRef && currentUser) {
-  if (!currentUser.referred_by) {
-    await db.update('profiles', currentUser.id, { referred_by: pendingRef });
-    try {
-      await addNotification(pendingRef, 'system', 'Someone joined via your link', '', '#connections');
-    } catch(e) {}
-  }
-  await createInviteConnection(pendingRef, currentUser.id);
-  sessionStorage.removeItem('pendingRef');
-}
+    const pendingRef = sessionStorage.getItem('pendingRef');
+    if (pendingRef && currentUser) {
+      if (!currentUser.referred_by) {
+        await db.update('profiles', currentUser.id, { referred_by: pendingRef });
+        try {
+          await addNotification(pendingRef, 'system', 'Someone joined via your link', '', '#connections');
+        } catch(e) {}
+      }
+      await createInviteConnection(pendingRef, currentUser.id);
+      sessionStorage.removeItem('pendingRef');
+    }
 
-showApp();
+    showApp();
 
-const pendingToken = sessionStorage.getItem('pendingConnectToken');
-if (pendingToken) {
-  sessionStorage.removeItem('pendingConnectToken');
-  await processConnectToken(pendingToken);
-}
+    const pendingToken = sessionStorage.getItem('pendingConnectToken');
+    if (pendingToken) {
+      sessionStorage.removeItem('pendingConnectToken');
+      await processConnectToken(pendingToken);
+    }
   });
 
   document.getElementById('auth-forgot-link')?.addEventListener('click', function (e) {
@@ -229,7 +228,6 @@ if (pendingToken) {
           confirm = document.getElementById('reg-confirm').value,
           errorEl = document.getElementById('auth-error-register');
 
-    // اعتبارسنجی نام انگلیسی
     const nameRegex = /^[A-Za-z]+$/;
     if (!nameRegex.test(firstname)) {
       errorEl.textContent = 'First name must contain only English letters.';
@@ -251,7 +249,6 @@ if (pendingToken) {
 
     showLoader();
 
-    // نگهداری توکن اتصال و لینک دعوت در URL تأیید ایمیل
     const pendingToken = sessionStorage.getItem('pendingConnectToken') || '';
     const pendingRef = sessionStorage.getItem('pendingRef') || '';
     const redirectBase = window.location.origin + window.location.pathname;
@@ -413,7 +410,7 @@ function bindEvents() {
     loadSection('dashboard');
   });
 
-  // ── Profile Edit Modal ──────────────────────────────────
+  // Profile Edit Modal
   document.getElementById('open-edit-profile-btn')?.addEventListener('click', async () => {
     if (!currentUser) return;
     showLoader();
@@ -439,7 +436,6 @@ function bindEvents() {
   document.getElementById('cancel-edit-profile-btn')?.addEventListener('click', () =>
     document.getElementById('edit-profile-modal').classList.add('hidden'));
 
-  // Photo crop
   document.getElementById('edit-photo-input')?.addEventListener('change', function () {
     const file = this.files[0];
     if (!file) return;
@@ -478,7 +474,6 @@ function bindEvents() {
     }
   });
 
-  // Save profile
   document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
     const first = document.getElementById('edit-first-name').value.trim();
     const last = document.getElementById('edit-last-name').value.trim();
@@ -559,8 +554,7 @@ function bindEvents() {
   document.getElementById('cancel-contract-btn').addEventListener('click', () => document.getElementById('add-contract-modal').classList.add('hidden'));
   document.getElementById('submit-contract-btn').addEventListener('click', submitContract);
 
-  // ── Connections (New Flow) ──────────────────────────────
-  // جستجوی کاربران با debounce
+  // Connections
   let searchTimeout;
   const searchInput = document.getElementById('conn-search-input');
   const searchResults = document.getElementById('conn-search-results');
@@ -574,20 +568,19 @@ function bindEvents() {
     }
     searchTimeout = setTimeout(() => searchProfiles(term), 300);
   });
-// دکمه بزرگ +
-document.getElementById('big-invite-btn')?.addEventListener('click', () => {
-  const link = `${window.location.origin}${window.location.pathname}?ref=${currentUser.id}`;
-  document.getElementById('conn-share-link').value = link;
-  document.getElementById('conn-link-modal').classList.remove('hidden');
-});
-  // مخفی کردن نتایج با کلیک بیرون
+
+  document.getElementById('big-invite-btn')?.addEventListener('click', () => {
+    const link = `${window.location.origin}${window.location.pathname}?ref=${currentUser.id}`;
+    document.getElementById('conn-share-link').value = link;
+    document.getElementById('conn-link-modal').classList.remove('hidden');
+  });
+
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.conn-search-bar')) {
       searchResults.style.display = 'none';
     }
   });
 
-  // دکمه کپی لینک
   document.getElementById('copy-conn-link-btn')?.addEventListener('click', () => {
     const linkInput = document.getElementById('conn-share-link');
     linkInput.select();
@@ -595,7 +588,6 @@ document.getElementById('big-invite-btn')?.addEventListener('click', () => {
     alert('Link copied to clipboard!');
   });
 
-  // بستن مودال لینک
   document.getElementById('close-conn-link-modal-btn')?.addEventListener('click', () => {
     document.getElementById('conn-link-modal').classList.add('hidden');
   });
@@ -647,35 +639,6 @@ async function loadMiniCalendar() {
     html += `<div class="${cls}">${d}</div>`;
   }
   container.innerHTML = html;
-}
-
-async function loadRecentTickets() {
-  const c = document.getElementById('dash-tickets-list');
-  if (!c) return;
-  try {
-    const tickets = await db.select('tickets', `user_id=eq.${currentUser.id}&order=created_at.desc&limit=3`);
-    if (!tickets || !tickets.length) { c.innerHTML = '<p class="empty-state">No tickets yet</p>'; return; }
-    c.innerHTML = tickets.map(t => `<div class="mini-item"><div>${esc(t.subject)}</div><div class="mini-meta">${fmtDate(t.created_at)} · ${t.status}</div></div>`).join('');
-    c.querySelectorAll('.mini-item').forEach(el => el.addEventListener('click', () => loadSection('tickets')));
-  } catch (e) { c.innerHTML = '<p class="empty-state">Error loading tickets</p>'; }
-}
-
-async function loadRecentMessages() {
-  const c = document.getElementById('dash-messages-list');
-  if (!c) return;
-  try {
-    const msgs = await db.select('messages', `to_id=eq.${currentUser.id}&order=created_at.desc&limit=3`);
-    if (!msgs || !msgs.length) { c.innerHTML = '<p class="empty-state">No messages yet</p>'; return; }
-    const senderIds = [...new Set(msgs.map(m => m.from_id))];
-    const profiles = await db.select('profiles', `id=in.(${senderIds.join(',')})&select=id,first_name,last_name`);
-    const pMap = {}; (profiles || []).forEach(p => { pMap[p.id] = p; });
-    c.innerHTML = msgs.map(m => {
-      const s = pMap[m.from_id] || {};
-      const name = [s.first_name, s.last_name].filter(Boolean).join(' ') || 'Unknown';
-      return `<div class="mini-item"><div>${esc(name)}</div><div class="mini-meta">${esc(m.body.substring(0, 50))} · ${fmtDate(m.created_at)}</div></div>`;
-    }).join('');
-    c.querySelectorAll('.mini-item').forEach(el => el.addEventListener('click', () => loadSection('messages')));
-  } catch (e) { c.innerHTML = '<p class="empty-state">Error loading messages</p>'; }
 }
 
 async function loadNotifications() {
@@ -957,8 +920,7 @@ async function submitContract() {
   } catch (e) { alert(e.message); }
 }
 
-// ── CONNECTIONS (بازنویسی کامل با نام صحیح جدول) ─────────────
-// جستجوی کاربران
+// ── CONNECTIONS ─────────────────────────────────────────────
 async function searchProfiles(term) {
   const resultsDiv = document.getElementById('conn-search-results');
   resultsDiv.style.display = 'block';
@@ -970,7 +932,6 @@ async function searchProfiles(term) {
       resultsDiv.innerHTML = '<div class="empty-state">No users found.</div>';
       return;
     }
-    // دریافت ارتباطات تأیید شده کاربر جاری
     const connections = await db.select('dashboard_connectionrequests',
       `or=(from_id.eq.${currentUser.id},to_id.eq.${currentUser.id})&status=eq.accepted`);
     const connectedIds = new Set((connections || []).flatMap(r => [r.from_id, r.to_id]));
@@ -995,7 +956,6 @@ async function searchProfiles(term) {
       resultsDiv.appendChild(div);
     });
 
-    // اتصال رویداد به دکمه‌های "Send Request"
     document.querySelectorAll('.send-conn-btn').forEach(btn => {
       btn.addEventListener('click', () => sendConnectionRequest(btn.dataset.uid));
     });
@@ -1004,7 +964,6 @@ async function searchProfiles(term) {
   }
 }
 
-// ارسال درخواست اتصال و تولید لینک
 async function sendConnectionRequest(toUserId) {
   try {
     const [newReq] = await db.insert('dashboard_connectionrequests', {
@@ -1016,10 +975,8 @@ async function sendConnectionRequest(toUserId) {
     const link = `${base}?connect=${newReq.id}`;
     document.getElementById('conn-share-link').value = link;
     document.getElementById('conn-link-modal').classList.remove('hidden');
-    // اطلاع‌رسانی (اختیاری)
     const senderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
     await addNotification(toUserId, 'connection', 'New connection request', `${senderName} wants to connect`, '#connections');
-    // پاکسازی جستجو
     document.getElementById('conn-search-results').style.display = 'none';
     document.getElementById('conn-search-input').value = '';
     loadConnections();
@@ -1028,7 +985,6 @@ async function sendConnectionRequest(toUserId) {
   }
 }
 
-// پردازش توکن اتصال از URL
 async function processConnectToken(requestId) {
   try {
     const reqs = await db.select('dashboard_connectionrequests', `id=eq.${requestId}`);
@@ -1066,11 +1022,10 @@ async function processConnectToken(requestId) {
   }
 }
 
-// بارگذاری لیست ارتباطات و درخواست‌ها
 async function loadConnections() {
   const list = document.getElementById('connections-list');
   const reqList = document.getElementById('conn-requests-list');
-  const bigBtn = document.getElementById('conn-invite-big-btn');   // <-- جدید
+  const bigBtn = document.getElementById('conn-invite-big-btn');
   list.innerHTML = '<div class="empty-state">Loading connections...</div>';
   reqList.innerHTML = '';
 
@@ -1085,14 +1040,12 @@ async function loadConnections() {
     const accepted = (all || []).filter(r => r.status === 'accepted');
     const pending = (all || []).filter(r => r.status === 'pending');
 
-    // اگر هیچ کانکشنی (تأییدشده یا در انتظار) نداشته باشیم، دکمه بزرگ رو نشون بده
     if (accepted.length === 0 && pending.length === 0) {
       if (bigBtn) bigBtn.style.display = 'block';
     } else {
       if (bigBtn) bigBtn.style.display = 'none';
     }
 
-    // لیست کانکشن‌های تأییدشده
     if (!accepted.length) {
       list.innerHTML = '<div class="empty-state">No connections yet.</div>';
     } else {
@@ -1107,7 +1060,6 @@ async function loadConnections() {
       });
     }
 
-    // درخواست‌های در انتظار
     if (pending.length) {
       const header = document.createElement('div');
       header.style.cssText = 'color:var(--muted);font-size:12px;margin:14px 0 6px';
@@ -1128,11 +1080,9 @@ async function loadConnections() {
     if (bigBtn) bigBtn.style.display = 'none';
   }
 
-  // نمایش تعداد دعوت‌شده‌ها
   try {
     const referrals = await db.select('profiles', `referred_by=eq.${currentUser.id}&select=id`);
     const count = (referrals || []).length;
-    // ایجاد یا به‌روزرسانی المان referral-count
     let refEl = document.getElementById('referral-count');
     if (!refEl) {
       refEl = document.createElement('div');
@@ -1141,12 +1091,9 @@ async function loadConnections() {
       document.getElementById('section-connections').appendChild(refEl);
     }
     refEl.textContent = `👥 You've invited ${count} member${count !== 1 ? 's' : ''}`;
-  } catch(e) {
-    // ignore
-  }
+  } catch(e) {}
 }
 
-// پاسخ به درخواست (مستقیم از داخل لیست)
 async function respondConn(id, status) {
   try {
     await db.update('dashboard_connectionrequests', id, { status });
