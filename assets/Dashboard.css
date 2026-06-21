@@ -1379,13 +1379,17 @@ input[type="password"]::-webkit-textfield-decoration-container {
   padding: 0 8px;
   box-sizing: border-box;
 }
-.sidebar-user {
-  order: 3;
-  margin: 0 4px;          /* فاصلهٔ یکسان */
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-}
+
+  /* آواتار کاربر (موقتاً از sidebar-user می‌آید) */
+  .sidebar-user {
+    width: auto;
+    padding: 0;
+    margin: 0;
+    border: none;
+    order: 3;                   /* وسط قرار می‌گیرد */
+    position: relative;
+    cursor: pointer;
+  }
 
   .sidebar-user .avatar {
     width: 56px;                /* بزرگ‌تر */
