@@ -1359,7 +1359,6 @@ input[type="password"]::-webkit-textfield-decoration-container {
     display: none;
   }
 
-  
   /* آواتار کاربر (موقتاً از sidebar-user می‌آید) */
   .sidebar-user {
     width: auto;
