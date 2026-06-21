@@ -1369,16 +1369,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
   stroke: #0d0d0d;           /* رنگ آیکون فعال */
 }
 
-.sidebar {
-  height: 65px;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-around;  /* یا space-evenly */
-  align-items: center;
-  width: 100%;
-  padding: 0 8px;
-  box-sizing: border-box;
-}
+
   /* آواتار کاربر (موقتاً از sidebar-user می‌آید) */
   .sidebar-user {
     width: auto;
