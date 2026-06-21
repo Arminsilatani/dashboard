@@ -1352,6 +1352,12 @@ input[type="password"]::-webkit-textfield-decoration-container {
     background: none;   /* حذف باکس خاکستری */
     /* در صورت نیاز می‌توانید رنگ متن را هم تنظیم کنید */
   }
+
+
+    .sidebar-user:hover {
+    background: none;           /* حذف مستطیل خاکستری */
+    border-radius: 0;          /* حذف گردی احتمالی اگر بود */
+  }
   
   /* مخفی‌کردن متن‌ها */
   .nav-text,
