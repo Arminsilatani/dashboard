@@ -1079,7 +1079,7 @@ async function loadConnections() {
         const avatar = p.photo_url || generateAvatarUrl(name);
 card.innerHTML = `
   <div style="display:flex;align-items:center;gap:10px;">
-    <img src="${avatar}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" />
+    <img src="${avatar}" class="conn-avatar" />
     <div class="card-title">${esc(name)}</div>
   </div>
   <span class="badge badge-accepted">Connected</span>
