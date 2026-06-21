@@ -1490,5 +1490,4 @@ input[type="password"]::-webkit-textfield-decoration-container {
     border-radius: 50% 50% 0 0 / 100% 100% 0 0;
     z-index: -1;                /* پشت آیتم‌ها قرار بگیرد */
   }
-  
 }
