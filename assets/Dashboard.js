@@ -1027,7 +1027,11 @@ async function processConnectToken(requestId) {
     }
     const accept = confirm('You have a connection invitation. Do you want to accept?');
     const newStatus = accept ? 'accepted' : 'rejected';
-    await db.update('dashboard_connectionrequests', requestId, { status: newStatus });
+    if (newStatus === 'accepted') {
+  await db.update('dashboard_connectionrequests', requestId, { status: newStatus });
+} else {
+  await db.delete('dashboard_connectionrequests', requestId);
+}
 
     const responderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
     await addNotification(request.from_id, 'connection',
