@@ -390,8 +390,10 @@ html, body {
 }
 
 .nav-item.active {
-  background: none;          /* یا هر رنگ دلخواه */
-  font-weight: normal;
+  background: rgba(0,0,0,0.2);
+  color: #0d0d0d;
+  font-weight: 400;
+}
 
 .nav-icon {
   flex-shrink: 0;
