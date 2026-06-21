@@ -1359,6 +1359,16 @@ input[type="password"]::-webkit-textfield-decoration-container {
     display: none;
   }
 
+  .nav-item.active {
+  background: none;          /* یا هر رنگ دلخواه */
+  font-weight: normal;
+  /* اگر می‌خواهی نشانهٔ فعال بودن باشد، فقط opacity یا رنگ آیکون را تغییر بده */
+}
+.nav-item.active .nav-icon {
+  opacity: 1;
+  stroke: #0d0d0d;           /* رنگ آیکون فعال */
+}
+
   /* آواتار کاربر (موقتاً از sidebar-user می‌آید) */
   .sidebar-user {
     width: auto;
