@@ -58,6 +58,7 @@ function hideLoader() {
 
 // ── Boot ────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('initial-loader').classList.remove('hidden');
   const urlParams = new URLSearchParams(window.location.search);
   const connectToken = urlParams.get('connect');
   const refUserId = urlParams.get('ref');
@@ -93,6 +94,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 function showAuth() {
+  document.getElementById('initial-loader').classList.add('hidden');
   document.getElementById('auth-overlay').style.display = 'flex';
   document.getElementById('app-screen').classList.remove('active');
   showStep('step-1');
@@ -103,6 +105,7 @@ function showAuth() {
 }
 
 async function showApp() {
+    document.getElementById('initial-loader').classList.add('hidden');
   document.getElementById('auth-overlay').style.display = 'none';
   document.getElementById('app-screen').classList.add('active');
   await refreshCurrentUser();
@@ -609,17 +612,24 @@ function bindEvents() {
 
 // ── DASHBOARD ───────────────────────────────────────────────
 async function loadDashboard() {
-  if (!currentUser) return;
-  await refreshCurrentUser();
-  const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'User';
-  document.getElementById('dash-fullname').textContent = name;
-  document.getElementById('dash-role-badge').textContent = currentUser.role || 'Recruit';
-  document.getElementById('dash-email').textContent = currentUser.email || '—';
-  document.getElementById('dash-phone').textContent = currentUser.phone || '—';
-  document.getElementById('dash-website').textContent = currentUser.website || '—';
-  document.getElementById('dash-avatar').src = currentUser.photo_url || generateAvatarUrl(name);
-  await Promise.all([loadMiniCalendar(), loadNotifications()]);
-  updateNotificationBadge();
+  showLoader();
+  try {
+    if (!currentUser) return;
+    await refreshCurrentUser();
+    const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'User';
+    document.getElementById('dash-fullname').textContent = name;
+    document.getElementById('dash-role-badge').textContent = currentUser.role || 'Recruit';
+    document.getElementById('dash-email').textContent = currentUser.email || '—';
+    document.getElementById('dash-phone').textContent = currentUser.phone || '—';
+    document.getElementById('dash-website').textContent = currentUser.website || '—';
+    document.getElementById('dash-avatar').src = currentUser.photo_url || generateAvatarUrl(name);
+    await Promise.all([loadMiniCalendar(), loadNotifications()]);
+    updateNotificationBadge();
+  } catch (e) {
+    console.error(e);
+  } finally {
+    hideLoader();
+  }
 }
 
 async function loadMiniCalendar() {
