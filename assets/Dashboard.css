@@ -1348,6 +1348,11 @@ input[type="password"]::-webkit-textfield-decoration-container {
     flex: 0 0 auto;
   }
 
+    .nav-item.active {
+    background: none;   /* حذف باکس خاکستری */
+    /* در صورت نیاز می‌توانید رنگ متن را هم تنظیم کنید */
+  }
+  
   /* مخفی‌کردن متن‌ها */
   .nav-text,
   .sidebar-user-info {
