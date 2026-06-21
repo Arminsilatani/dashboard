@@ -1269,6 +1269,15 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
 input[type="password"]::-webkit-textfield-decoration-container {
   display: none;
 }
+
+.conn-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
 /* =================================================================
    RESPONSIVE
    ================================================================= */
