@@ -960,16 +960,20 @@ async function searchProfiles(term) {
       const isConnected = connectedIds.has(p.id);
       const div = document.createElement('div');
       div.className = 'card';
-      div.innerHTML = `
-        <div>
-          <div class="card-title">${esc(name)}</div>
-          <div class="card-sub">${esc(p.username || p.email || '')}</div>
-        </div>
-        ${isConnected
-          ? '<span class="badge badge-accepted">Connected</span>'
-          : `<button class="btn-accent send-conn-btn" data-uid="${p.id}">Send Request</button>`
-        }
-      `;
+      const avatar = p.photo_url || generateAvatarUrl(name);
+div.innerHTML = `
+  <div style="display:flex;align-items:center;gap:10px;">
+    <img src="${avatar}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" />
+    <div>
+      <div class="card-title">${esc(name)}</div>
+      <div class="card-sub">${esc(p.username || p.email || '')}</div>
+    </div>
+  </div>
+  ${isConnected
+    ? '<span class="badge badge-accepted">Connected</span>'
+    : `<button class="btn-accent send-conn-btn" data-uid="${p.id}">Send Request</button>`
+  }
+`;
       resultsDiv.appendChild(div);
     });
 
@@ -1051,7 +1055,7 @@ async function loadConnections() {
     const ids = [...new Set((all || []).flatMap(r => [r.from_id, r.to_id]))];
     let pMap = {};
     if (ids.length) {
-      const profs = await db.select('profiles', `id=in.(${ids.join(',')})&select=id,first_name,last_name,username`);
+      const profs = await db.select('profiles', `id=in.(${ids.join(',')})&select=id,first_name,last_name,username,photo_url`);
       (profs || []).forEach(p => { pMap[p.id] = p; });
     }
     const accepted = (all || []).filter(r => r.status === 'accepted');
@@ -1072,7 +1076,14 @@ async function loadConnections() {
         const p = pMap[otherId] || {};
         const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username || otherId;
         const card = document.createElement('div'); card.className = 'card';
-        card.innerHTML = `<div><div class="card-title">${esc(name)}</div></div><span class="badge badge-accepted">Connected</span>`;
+        const avatar = p.photo_url || generateAvatarUrl(name);
+card.innerHTML = `
+  <div style="display:flex;align-items:center;gap:10px;">
+    <img src="${avatar}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" />
+    <div class="card-title">${esc(name)}</div>
+  </div>
+  <span class="badge badge-accepted">Connected</span>
+`;
         list.appendChild(card);
       });
     }
@@ -1088,8 +1099,19 @@ async function loadConnections() {
         const p = pMap[otherId] || {};
         const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username || otherId;
         const card = document.createElement('div'); card.className = 'card'; card.style.flexWrap = 'wrap';
-        card.innerHTML = `<div><div class="card-title">${isIncoming ? 'From' : 'To'}: ${esc(name)}</div><div class="card-sub">${fmtDate(r.created_at)}</div></div><div style="display:flex;gap:8px">${isIncoming ? `<button class="btn-accent" onclick="respondConn('${r.id}','accepted')">Accept</button><button class="btn-ghost" onclick="respondConn('${r.id}','rejected')">Reject</button>` : `<span class="badge badge-pending">Pending</span>`}</div>`;
-        reqList.appendChild(card);
+const avatar = p.photo_url || generateAvatarUrl(name);
+card.innerHTML = `
+  <div style="display:flex;align-items:center;gap:10px;">
+    <img src="${avatar}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" />
+    <div>
+      <div class="card-title">${isIncoming ? 'From' : 'To'}: ${esc(name)}</div>
+      <div class="card-sub">${fmtDate(r.created_at)}</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px">
+    ${isIncoming ? `<button class="btn-accent" onclick="respondConn('${r.id}','accepted')">Accept</button><button class="btn-ghost" onclick="respondConn('${r.id}','rejected')">Reject</button>` : `<span class="badge badge-pending">Pending</span>`}
+  </div>
+`;        reqList.appendChild(card);
       });
     }
   } catch (e) {
