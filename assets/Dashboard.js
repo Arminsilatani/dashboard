@@ -1122,17 +1122,22 @@ card.innerHTML = `
 
 async function respondConn(id, status) {
   try {
-    await db.update('dashboard_connectionrequests', id, { status });
+    // ابتدا رکورد را واکشی کن تا بتوانیم نوتیفیکیشن بفرستیم
     const reqs = await db.select('dashboard_connectionrequests', `id=eq.${id}`);
-    if (reqs && reqs[0]) {
-      const req = reqs[0];
-      const responderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
-      const otherPerson = req.from_id === currentUser.id ? req.to_id : req.from_id;
-      if (status === 'accepted') {
-        await addNotification(otherPerson, 'connection', 'Connection accepted!', `${responderName} accepted your request`, '#connections');
-      } else {
-        await addNotification(otherPerson, 'connection', 'Connection declined', `${responderName} declined your request`, '#connections');
-      }
+    if (!reqs || !reqs.length) {
+      loadConnections();
+      return;
+    }
+    const req = reqs[0];
+    const responderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
+    const otherPerson = req.from_id === currentUser.id ? req.to_id : req.from_id;
+
+    if (status === 'accepted') {
+      await db.update('dashboard_connectionrequests', id, { status: 'accepted' });
+      await addNotification(otherPerson, 'connection', 'Connection accepted!', `${responderName} accepted your request`, '#connections');
+    } else {
+      await db.delete('dashboard_connectionrequests', id);
+      await addNotification(otherPerson, 'connection', 'Connection declined', `${responderName} declined your request`, '#connections');
     }
     loadConnections();
   } catch (e) { alert(e.message); }
