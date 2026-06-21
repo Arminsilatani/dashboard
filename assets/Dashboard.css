@@ -1286,18 +1286,11 @@ input[type="password"]::-webkit-textfield-decoration-container {
 }
 
 /* =================================================================
-   RESPONSIVE
+   RESPONSIVE (Mobile)
    ================================================================= */
 @media (max-width: 680px) {
-  .sidebar {
-    width: 100%;
-    height: auto;
-    position: relative;
-    top: 0;
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
 
+  /* ---------- ساختار اصلی صفحه ---------- */
   #app-screen {
     flex-direction: column;
   }
@@ -1305,9 +1298,10 @@ input[type="password"]::-webkit-textfield-decoration-container {
   .content {
     padding: 16px;
     max-height: unset;
+    margin-bottom: 75px;        /* فضای خالی برای نوار پایین */
   }
 
-  /* تغییر sidebar به نوار پایین */
+  /* ---------- نوار پایین (سایدبار) ---------- */
   .sidebar {
     position: fixed;
     bottom: 0;
@@ -1315,76 +1309,38 @@ input[type="password"]::-webkit-textfield-decoration-container {
     width: 100%;
     height: 50px;
     margin: 0;
-    border-radius: 0 0 0 0;
+    padding: 0 8px;
+    border-radius: 0;
+    background: var(--accent);
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.3);
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: space-around;
-    padding: 0 8px;
     z-index: 100;
-    background: var(--accent);
-    box-shadow: 0 -4px 15px rgba(0,0,0,0.3);
-    top: auto;                  /* حذف sticky قبلی */
-    overflow: visible;          /* برای بیرون‌زدگی آواتار */
+    top: auto;
+    overflow: visible;          /* اجازه‌ی بیرون‌زدگی آواتار و قوس‌ها */
+    transition: none !important; /* حذف transition های دسکتاپ */
   }
 
-    .sidebar:hover {
-    width: 100% !important;  /* یا width: 100% (بدون important) */
-    transition: none;
+  /* حذف تغییر عرض ناخواسته در هاور (موبایل) */
+  .sidebar:hover {
+    width: 100% !important;
   }
 
-  /* تبدیل nav به flex-item های مستقیم */
-  .sidebar-nav {
-    display: contents;          /* دکمه‌ها را مستقیم در sidebar قرار می‌دهد */
-  }
-
-  /* دکمه‌های ناوبری */
-  .nav-item {
-    width: auto;
-    padding: 8px 0;
-    margin: 0;
-    justify-content: center;
-    border-radius: 12px;
-    flex: 0 0 auto;
-  }
-
-    .nav-item.active {
-    background: none;   /* حذف باکس خاکستری */
-    /* در صورت نیاز می‌توانید رنگ متن را هم تنظیم کنید */
-  }
-
-
-    .sidebar-user:hover {
-    background: none;           /* حذف مستطیل خاکستری */
-    border-radius: 0;          /* حذف گردی احتمالی اگر بود */
-  }
-
-  /* مخفی‌کردن متن‌ها */
-  .nav-text,
-  .sidebar-user-info {
-    display: none !important;
-  }
-
-  /* آیکون‌ها */
-  .nav-icon {
-    width: 24px;
-    height: 24px;
-  }
-
-  /* دکمه signout را مخفی کن (یا می‌توانی در منوی دیگری بگذاری) */
-  .btn-signout {
-    display: none;
-  }
-
-  /* آواتار کاربر (موقتاً از sidebar-user می‌آید) */
+  /* ---------- بخش کاربر (آواتار وسط) ---------- */
   .sidebar-user {
     width: auto;
     padding: 0;
     margin: 0;
     border: none;
-    order: 3;                   /* وسط قرار می‌گیرد */
+    order: 3;                   /* وسط قرار می‌گیره */
     position: relative;
     cursor: pointer;
+  }
+
+  .sidebar-user:hover {
+    background: none;           /* حذف مستطیل خاکستری */
   }
 
   .sidebar-user .avatar {
@@ -1393,192 +1349,103 @@ input[type="password"]::-webkit-textfield-decoration-container {
     border-radius: 50%;
     border: 3px solid #0d0d0d;
     background: #0d0d0d;
-    margin-top: -14px;          /* 25% بیرون‌زدگی از بالا */
+    margin-top: -14px;          /* بیرون‌زدگی از بالا */
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
   }
 
-  /* تنظیم ترتیب دکمه‌ها با order (با استفاده از nth-child) */
-  /* Tickets (اولین دکمه) */
-  .nav-item:nth-child(1) { order: 1; }   /* Tickets */
-  /* Messages (دومین دکمه) */
-  .nav-item:nth-child(2) { order: 2; }   /* Messages */
-  /* Contracts (سومین دکمه) */
-  .nav-item:nth-child(3) { order: 4; }   /* Contracts */
-  /* Connections (چهارمین دکمه) */
-  .nav-item:nth-child(4) { order: 5; }   /* Connections */
-  /* Users (پنجمین دکمه – ادمین) */
-  .nav-item:nth-child(5) { order: 6; }   /* Users */
-
-  /* محتوای اصلی */
-  .content {
-    margin-bottom: 75px;       /* فضای خالی برای نوار پایین */
-    padding: 16px;
-    max-height: unset;
+  /* مخفی‌کردن اسم/نقش کاربر */
+  .sidebar-user-info {
+    display: none !important;
   }
 
-   /* =========================
-     انیمیشن کلیک آیتم‌ها
-     ========================= */
+  /* ---------- دکمه‌های ناوبری ---------- */
+  .sidebar-nav {
+    display: contents;          /* دکمه‌ها مستقیم توی sidebar قرار می‌گیرن */
+  }
+
   .nav-item {
-    flex-direction: column;      /* آیکون بالا، متن پایین */
+    position: relative;         /* برای قوس کوچک */
+    flex-direction: column;     /* آیکون بالا، اسم پایین */
     align-items: center;
     justify-content: center;
     padding: 6px 0;
-    position: relative;
-    transition: none;            /* از transition خودکار جلوگیری کنیم */
-  }
-
-  .nav-icon {
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    /* به‌صورت پیش‌فرض پایین است */
-  }
-
-  /* متن (اسم) آیتم – مخفی و بدون فضای اشغالی */
-  .nav-text {
-    display: block !important;   /* نمایش داده شود */
-    font-size: 10px;
-    color: #0d0d0d;
-    opacity: 0;
-    max-height: 0;
-    overflow: hidden;
-    transition: opacity 0.25s ease, max-height 0.25s ease;
-    margin-top: 2px;
-  }
-
-  /* وقتی آیتم فعال می‌شود */
-  .nav-item.active .nav-icon {
-    transform: translateY(-6px); /* آیکون بالا می‌رود */
-  }
-  .nav-item.active .nav-text {
-    opacity: 1;
-    max-height: 20px;            /* فضای کافی برای نمایش متن */
-  }
-
-  /* =========================
-     حذف باکس خاکستری فعال و hover
-     ========================= */
-  .nav-item.active {
-    background: none !important;
-  }
-  .sidebar-user:hover {
-    background: none;
-  }
-  .sidebar:hover {
-    width: 100% !important;
-  }
-
-  /* =========================
-     قوس بالای نوار منو
-     ========================= */
-  .sidebar {
-    border-radius: 0;
-    overflow: visible;           /* اجازه‌ی بیرون‌زدگی pseudo-element */
-    transition: none !important;
-    height: 50px;                /* ارتفاع اصلی */
-  }
-
-  /* ساختن قوس با یک شبه‌عنصر */
-  .sidebar::before {
-    content: '';
-    position: absolute;
-    top: -20px;                  /* ارتفاع بیرون‌زدگی قوس */
-    left: 0;
-    width: 100%;
-    height: 40px;
-    background: inherit;        /* هم‌رنگ نوار */
-    /* شکل قوس: یک بیضی افقی که لبه‌ی بالایی را گرد می‌کند */
-    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-    z-index: -1;                /* پشت آیتم‌ها قرار بگیرد */
-  }
-
-  /* =========================
-   تنظیمات کلی نوار در موبایل
-   ========================= */
-.sidebar {
-    overflow: visible;        /* اجازه‌ی بیرون‌زدگی قوس */
-    transition: none !important;
-    height: 50px;
-    border-radius: 0;
-}
-
-/* =========================
-   استایل آیتم‌های ناوبری
-   ========================= */
-.nav-item {
-    position: relative;        /* برای موقعیت‌دهی قوس */
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 6px 0;
+    margin: 0;
+    width: auto;
+    flex: 0 0 auto;
+    border-radius: 0;          /* حذف گردی اضافی */
     transition: none;
-}
+    background: none !important;/* حذف پس‌زمینه‌ی پیش‌فرض */
+  }
 
-/* آیکون – انیمیشن حرکت به بالا */
-.nav-icon {
+  /* ترتیب دکمه‌ها */
+  .nav-item:nth-child(1) { order: 1; }  /* Tickets */
+  .nav-item:nth-child(2) { order: 2; }  /* Messages */
+  .nav-item:nth-child(3) { order: 4; }  /* Contracts */
+  .nav-item:nth-child(4) { order: 5; }  /* Connections */
+  .nav-item:nth-child(5) { order: 6; }  /* Users (Admin) */
+
+  /* آیکون‌ها */
+  .nav-icon {
+    width: 24px;
+    height: 24px;
+    stroke: #0d0d0d;
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
+  }
 
-/* متن (نام) – مخفی در حالت عادی */
-.nav-text {
+  /* اسم (متن) دکمه‌ها – مخفی در حالت عادی */
+  .nav-text {
     display: block !important;
     font-size: 10px;
     color: #0d0d0d;
     opacity: 0;
     max-height: 0;
     overflow: hidden;
-    transition: opacity 0.25s ease, max-height 0.25s ease;
     margin-top: 2px;
-}
+    transition: opacity 0.25s ease, max-height 0.25s ease;
+  }
 
-/* =========================
-   حالت فعال (کلیک شده)
-   ========================= */
-.nav-item.active .nav-icon {
-    transform: translateY(-6px);   /* آیکون ۶px بالا می‌رود */
-}
-.nav-item.active .nav-text {
+  /* ---------- حالت فعال (کلیک شده) ---------- */
+  .nav-item.active {
+    background: none !important;  /* حذف باکس خاکستری فعال */
+  }
+
+  .nav-item.active .nav-icon {
+    transform: translateY(-6px);   /* آیکون بالا میره */
+  }
+
+  .nav-item.active .nav-text {
     opacity: 1;
-    max-height: 20px;              /* فضای کافی برای نمایش متن */
-}
+    max-height: 20px;             /* فضای نمایش اسم */
+  }
 
-/* حذف پس‌زمینه‌ی خاکستری فعال */
-.nav-item.active {
-    background: none !important;
-}
-
-/* =========================
-   قوس کوچک بالای آیتم فعال
-   ========================= */
-.nav-item.active::before {
+  /* قوس کوچک بالای آیتم فعال */
+  .nav-item.active::before {
     content: '';
     position: absolute;
-    bottom: 100%;                  /* درست بالای آیتم قرار می‌گیرد */
+    bottom: 100%;                 /* درست بالای دکمه */
     left: 50%;
     transform: translateX(-50%) scale(0);
-    width: 30px;
-    height: 12px;
-    background: var(--accent);     /* هم‌رنگ نوار */
-    border-radius: 50% 50% 0 0 / 100% 100% 0 0;   /* نیم‌بیضی */
+    width: 30px;                  /* عرض قوس */
+    height: 12px;                 /* ارتفاع قوس */
+    background: var(--accent);    /* هم‌رنگ نوار */
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
     transform-origin: bottom center;
     animation: archPopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
+  }
 
-/* انیمیشن ظاهر شدن قوس */
-@keyframes archPopIn {
+  /* انیمیشن ظاهر شدن قوس */
+  @keyframes archPopIn {
     from {
-        transform: translateX(-50%) scale(0);
+      transform: translateX(-50%) scale(0);
     }
     to {
-        transform: translateX(-50%) scale(1);
+      transform: translateX(-50%) scale(1);
     }
-}
+  }
 
-/* حذف hover مزاحم */
-.sidebar:hover {
-    width: 100% !important;
-}
-.sidebar-user:hover {
-    background: none;
-}
+  /* ---------- دکمه‌ی خروج (مخفی) ---------- */
+  .btn-signout {
+    display: none;
+  }
 
 }
