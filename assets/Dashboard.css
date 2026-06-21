@@ -1369,7 +1369,6 @@ input[type="password"]::-webkit-textfield-decoration-container {
   stroke: #0d0d0d;           /* رنگ آیکون فعال */
 }
 
-
   /* آواتار کاربر (موقتاً از sidebar-user می‌آید) */
   .sidebar-user {
     width: auto;
