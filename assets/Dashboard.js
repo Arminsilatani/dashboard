@@ -1306,6 +1306,6 @@ function generateAvatarUrl(name) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   const initials = name.split(' ').map(w => w[0]?.toUpperCase()).join('').slice(0, 2);
-  ctx.fillText(initials || '?', 50, 55);
+  ctx.fillText(initials || '?', 50, 57);
   return canvas.toDataURL();
 }
