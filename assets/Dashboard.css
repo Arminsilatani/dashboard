@@ -1289,12 +1289,12 @@ input[type="password"]::-webkit-textfield-decoration-container {
    RESPONSIVE
    ================================================================= */
 @media (max-width: 680px) {
-  /* تنظیم کلی صفحه */
+  /* تغییر حالت کلی صفحه */
   #app-screen {
     flex-direction: column;
   }
 
-  /* نوار پایین ثابت */
+  /* ===== نوار پایین ===== */
   .sidebar {
     position: fixed;
     bottom: 0;
@@ -1312,22 +1312,22 @@ input[type="password"]::-webkit-textfield-decoration-container {
     box-shadow: 0 -4px 15px rgba(0,0,0,0.3);
     z-index: 100;
     overflow: visible;
-    /* override hover effect */
-    transition: none;
-  }
-  .sidebar:hover {
-    width: 100%;  /* دیگر بزرگ نشود */
   }
 
-  /* navigation container: childs become direct flex items */
+  /* حذف hover بزرگ‌شونده */
+  .sidebar:hover {
+    width: 100%;
+  }
+
+  /* محتویات nav مستقیم در flex قرار می‌گیرند */
   .sidebar-nav {
     display: contents;
   }
 
-  /* دکمه‌های ناوبری */
+  /* ===== دکمه‌های آیکونی ===== */
   .nav-item {
     flex: 0 0 auto;
-    min-width: 44px;          /* عرض ثابت */
+    min-width: 44px;
     height: 100%;
     padding: 0;
     margin: 0;
@@ -1335,15 +1335,15 @@ input[type="password"]::-webkit-textfield-decoration-container {
     justify-content: center;
     align-items: center;
     border-radius: 12px;
-    cursor: pointer;
     background: none;
+    cursor: pointer;
     transition: background 0.15s;
   }
   .nav-item:active {
     background: rgba(0,0,0,0.15);
   }
   .nav-item.active {
-    background: none;        /* جلوی تغییر اندازه را می‌گیرد */
+    background: none;
     font-weight: normal;
   }
   .nav-item.active .nav-icon {
@@ -1363,12 +1363,12 @@ input[type="password"]::-webkit-textfield-decoration-container {
     display: none !important;
   }
 
-  /* دکمه خروج مخفی */
+  /* دکمه Sign out مخفی */
   .btn-signout {
     display: none;
   }
 
-  /* بخش کاربر (آواتار وسط) */
+  /* ===== آواتار وسط ===== */
   .sidebar-user {
     order: 3;
     margin: 0;
@@ -1381,12 +1381,12 @@ input[type="password"]::-webkit-textfield-decoration-container {
     position: relative;
     cursor: pointer;
     width: auto;
+    background: none;
   }
   .sidebar-user:hover {
     background: none;
   }
 
-  /* آواتار بزرگ با ۲۵٪ بیرون‌زدگی از بالا */
   .sidebar-user .avatar {
     width: 56px;
     height: 56px;
@@ -1394,26 +1394,26 @@ input[type="password"]::-webkit-textfield-decoration-container {
     border: 3px solid #0d0d0d;
     background: #0d0d0d;
     object-fit: cover;
-    margin-top: -14px;       /* 56px * 0.25 = 14px بیرون می‌زند */
+    margin-top: -14px;          /* 25% از 56px = 14px بیرون زده */
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
   }
 
-  /* Notification badge alongside avatar */
+  /* نشان اعلان کنار آواتار */
   .notif-badge {
     top: -5px;
     right: -5px;
   }
 
-  /* ترتیب دکمه‌ها با order */
+  /* ===== ترتیب دکمه‌ها ===== */
   .nav-item:nth-child(1) { order: 1; }  /* Tickets */
   .nav-item:nth-child(2) { order: 2; }  /* Messages */
   .nav-item:nth-child(3) { order: 4; }  /* Contracts */
   .nav-item:nth-child(4) { order: 5; }  /* Connections */
-  .nav-item:nth-child(5) { order: 6; }  /* Users (اگر دیده شود) */
+  .nav-item:nth-child(5) { order: 6; }  /* Users (اگر بود) */
 
-  /* محتوای اصلی فاصله برای نوار پایین */
+  /* ===== فضای محتوا ===== */
   .content {
-    margin-bottom: 75px;
+    margin-bottom: 75px;      /* نوار پایین را نپوشاند */
     padding: 16px;
     max-height: unset;
   }
