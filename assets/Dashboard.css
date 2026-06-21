@@ -1328,6 +1328,11 @@ input[type="password"]::-webkit-textfield-decoration-container {
     overflow: visible;          /* برای بیرون‌زدگی آواتار */
   }
 
+    .sidebar:hover {
+    width: 100% !important;  /* یا width: 100% (بدون important) */
+    transition: none;
+  }
+
   /* تبدیل nav به flex-item های مستقیم */
   .sidebar-nav {
     display: contents;          /* دکمه‌ها را مستقیم در sidebar قرار می‌دهد */
