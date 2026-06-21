@@ -1306,4 +1306,97 @@ input[type="password"]::-webkit-textfield-decoration-container {
     padding: 16px;
     max-height: unset;
   }
+
+  /* تغییر sidebar به نوار پایین */
+  .sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 65px;               /* ارتفاع نوار */
+    margin: 0;
+    border-radius: 18px 18px 0 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 8px;
+    z-index: 100;
+    background: var(--accent);
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.3);
+    top: auto;                  /* حذف sticky قبلی */
+    overflow: visible;          /* برای بیرون‌زدگی آواتار */
+  }
+
+  /* تبدیل nav به flex-item های مستقیم */
+  .sidebar-nav {
+    display: contents;          /* دکمه‌ها را مستقیم در sidebar قرار می‌دهد */
+  }
+
+  /* دکمه‌های ناوبری */
+  .nav-item {
+    width: auto;
+    padding: 8px 0;
+    margin: 0;
+    justify-content: center;
+    border-radius: 12px;
+    flex: 0 0 auto;
+  }
+
+  /* مخفی‌کردن متن‌ها */
+  .nav-text,
+  .sidebar-user-info {
+    display: none !important;
+  }
+
+  /* آیکون‌ها */
+  .nav-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* دکمه signout را مخفی کن (یا می‌توانی در منوی دیگری بگذاری) */
+  .btn-signout {
+    display: none;
+  }
+
+  /* آواتار کاربر (موقتاً از sidebar-user می‌آید) */
+  .sidebar-user {
+    width: auto;
+    padding: 0;
+    margin: 0;
+    border: none;
+    order: 3;                   /* وسط قرار می‌گیرد */
+    position: relative;
+    cursor: pointer;
+  }
+
+  .sidebar-user .avatar {
+    width: 56px;                /* بزرگ‌تر */
+    height: 56px;
+    border-radius: 50%;
+    border: 3px solid #0d0d0d;
+    background: #0d0d0d;
+    margin-top: -14px;          /* 25% بیرون‌زدگی از بالا */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  }
+
+  /* تنظیم ترتیب دکمه‌ها با order (با استفاده از nth-child) */
+  /* Tickets (اولین دکمه) */
+  .nav-item:nth-child(1) { order: 1; }   /* Tickets */
+  /* Messages (دومین دکمه) */
+  .nav-item:nth-child(2) { order: 2; }   /* Messages */
+  /* Contracts (سومین دکمه) */
+  .nav-item:nth-child(3) { order: 4; }   /* Contracts */
+  /* Connections (چهارمین دکمه) */
+  .nav-item:nth-child(4) { order: 5; }   /* Connections */
+  /* Users (پنجمین دکمه – ادمین) */
+  .nav-item:nth-child(5) { order: 6; }   /* Users */
+
+  /* محتوای اصلی */
+  .content {
+    margin-bottom: 75px;       /* فضای خالی برای نوار پایین */
+    padding: 16px;
+    max-height: unset;
+  }
 }
