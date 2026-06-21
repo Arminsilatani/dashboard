@@ -1102,7 +1102,7 @@ card.innerHTML = `
 const avatar = p.photo_url || generateAvatarUrl(name);
 card.innerHTML = `
   <div style="display:flex;align-items:center;gap:10px;">
-    <img src="${avatar}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" />
+    <img src="${avatar}" class="conn-avatar" />
     <div>
       <div class="card-title">${isIncoming ? 'From' : 'To'}: ${esc(name)}</div>
       <div class="card-sub">${fmtDate(r.created_at)}</div>
