@@ -658,9 +658,9 @@ async function loadDashboard() {
     document.getElementById('dash-phone').textContent = currentUser.phone || '—';
     document.getElementById('dash-website').textContent = currentUser.website || '—';
     document.getElementById('dash-avatar').src = currentUser.photo_url || generateAvatarUrl(name);
-// await Promise.all([loadMiniCalendar(), loadNotifications()]);
-
-if (currentUser.role.toLowerCase() === 'general') {
+    await Promise.all([loadMiniCalendar(), loadNotifications()]);
+    updateNotificationBadge();
+    if (currentUser.role === 'General') {
   loadDashboardUserList();
 } else {
   document.getElementById('dash-users-row').style.display = 'none';
@@ -1210,7 +1210,7 @@ async function loadUsers() {
   try {
     const users = await db.select('profiles', 'order=created_at.desc');
 
-    const referrals = await db.select('profiles', 'referred_by=neq.null&select=referred_by');
+    const referrals = await db.select('profiles', 'referred_by=not.is.null&select=referred_by');
     const countMap = {};
     (referrals || []).forEach(r => {
       if (r.referred_by) {
