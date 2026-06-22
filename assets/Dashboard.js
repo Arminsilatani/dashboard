@@ -71,21 +71,24 @@ document.addEventListener('click', async function (e) {
   const id = notifItem.dataset.id;
   if (!id) return;
 
-  // حذف از دیتابیس
+  const link = notifItem.dataset.link;
+  // اگر لینک خارجی بود، فقط در تب جدید باز کن و notification را حذف نکن
+  if (link && link.startsWith('http')) {
+    window.open(link, '_blank');
+    return;  // دیگر هیچ کاری (حذف یا loadSection) انجام نده
+  }
+
+  // حذف از دیتابیس (فقط برای لینک‌های داخلی)
   await deleteNotificationById(id);
   notifItem.remove();
   updateNotificationBadge();
-  const link = notifItem.dataset.link;
-if (link && link.trim()) {
-  if (link.startsWith('http')) {
-    window.open(link, '_blank');                 // باز کردن لینک خارجی در تب جدید
-  } else {
+
+  if (link && link.trim()) {
     const section = link.replace('#', '');
     if (section && typeof loadSection === 'function') {
-      loadSection(section);                      // هدایت به بخش داخلی
+      loadSection(section);
     }
   }
-}
 });
 
 // ── Boot ────────────────────────────────────────────────────
