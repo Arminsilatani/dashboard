@@ -1202,9 +1202,9 @@ td .btn-ghost {
 
 .notif-dot-calendar { background: #ff6f91; }
 .notif-dot-contract { background: var(--accent); }
-.notif-dot-message { background: #ffe76d; }
-.notif-dot-ticket { background: #ffe76d; }
-.notif-dot-connection { background: #ffe76d; }
+.notif-dot-message { background: var(--accent); }
+.notif-dot-ticket { background: var(--accent); }
+.notif-dot-connection { background: var(--accent); }
 .notif-dot-system { background: var(--accent); }
 
 /* Notification badge */
