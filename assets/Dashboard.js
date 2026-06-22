@@ -658,9 +658,9 @@ async function loadDashboard() {
     document.getElementById('dash-phone').textContent = currentUser.phone || '—';
     document.getElementById('dash-website').textContent = currentUser.website || '—';
     document.getElementById('dash-avatar').src = currentUser.photo_url || generateAvatarUrl(name);
-    await Promise.all([loadMiniCalendar(), loadNotifications()]);
-    updateNotificationBadge();
-    if (currentUser.role === 'General') {
+// await Promise.all([loadMiniCalendar(), loadNotifications()]);
+
+if (currentUser.role.toLowerCase() === 'general') {
   loadDashboardUserList();
 } else {
   document.getElementById('dash-users-row').style.display = 'none';
