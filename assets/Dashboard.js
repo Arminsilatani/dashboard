@@ -1242,16 +1242,7 @@ async function loadUsers() {
 }
 
 async function openEditUser(uid) {
-  editingUserId = uid;
-  try {
-    const [u] = await db.select('profiles', `id=eq.${uid}`);
-    document.getElementById('edit-user-first-name').value = u.first_name || '';
-    document.getElementById('edit-user-last-name').value = u.last_name || '';
-    document.getElementById('edit-user-username').value = u.username || '';
-    document.getElementById('edit-user-role').value = u.role || 'Recruit';
-    document.getElementById('edit-user-telegram').value = u.telegram_id || '';
-    document.getElementById('edit-user-modal').classList.remove('hidden');
-  } catch (e) { alert(e.message); }
+  openUserDetail(uid);  // به‌جای باز کردن مستقیم، جزئیات کامل نشان داده می‌شود
 }
 
 async function saveUser() {
