@@ -76,12 +76,16 @@ document.addEventListener('click', async function (e) {
   notifItem.remove();
   updateNotificationBadge();
   const link = notifItem.dataset.link;
-  if (link && link.trim()) {
+if (link && link.trim()) {
+  if (link.startsWith('http')) {
+    window.open(link, '_blank');                 // باز کردن لینک خارجی در تب جدید
+  } else {
     const section = link.replace('#', '');
     if (section && typeof loadSection === 'function') {
-      loadSection(section);
+      loadSection(section);                      // هدایت به بخش داخلی
     }
   }
+}
 });
 
 // ── Boot ────────────────────────────────────────────────────
@@ -705,7 +709,8 @@ async function loadNotifications() {
       title: ev.title || 'Calendar Event',
       body: ev.start_date ? fmtDate(ev.start_date) : '',
       created_at: ev.start_date,
-      is_read: true
+      is_read: true,
+      link: 'https://arminsilatani.github.io/ravlo/'
     }));
 
     const allNotifs = [...(notifs || []), ...calendarNotifs]
