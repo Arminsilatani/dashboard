@@ -1342,6 +1342,50 @@ async function loadDashboardUserList() {
   }
 }
 
+async function openUserDetail(uid) {
+  try {
+    // واکشی کامل پروفایل
+    const [user] = await db.select('profiles', `id=eq.${uid}`);
+    if (!user) return alert('User not found.');
+
+    // محاسبه تعداد دعوت‌شده‌ها
+    let invitedCount = 0;
+    try {
+      const referrals = await db.select('profiles', `referred_by=eq.${uid}&select=id`);
+      invitedCount = (referrals || []).length;
+    } catch (e) {}
+
+    // پر کردن فیلدهای نمایشی
+    const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'No Name';
+    document.getElementById('modal-user-name').textContent = fullName;
+    document.getElementById('modal-user-avatar').src = user.photo_url || generateAvatarUrl(fullName);
+    document.getElementById('modal-user-role-badge').textContent = user.role || 'Recruit';
+    document.getElementById('modal-user-role-badge').className = `badge ${user.role === 'General' ? 'badge-accepted' : 'badge-open'}`;
+    document.getElementById('modal-user-email').textContent = user.email || '—';
+    document.getElementById('modal-user-phone').textContent = user.phone || '—';
+    document.getElementById('modal-user-website').textContent = user.website || '—';
+    document.getElementById('modal-user-username').textContent = user.username || '—';
+    document.getElementById('modal-user-telegram').textContent = user.telegram_id || '—';
+    document.getElementById('modal-user-joined').textContent = fmtDate(user.created_at);
+    document.getElementById('modal-user-invited').textContent = invitedCount;
+
+    // فیلدهای ویرایشی
+    document.getElementById('edit-user-role').value = user.role || 'Recruit';
+    document.getElementById('edit-user-first-name').value = user.first_name || '';
+    document.getElementById('edit-user-last-name').value = user.last_name || '';
+    document.getElementById('edit-user-username').value = user.username || '';
+    document.getElementById('edit-user-telegram').value = user.telegram_id || '';
+
+    // ذخیره userId برای ذخیره
+    editingUserId = user.id;
+
+    // نمایش مودال
+    document.getElementById('edit-user-modal').classList.remove('hidden');
+  } catch (e) {
+    alert('Error loading user details: ' + e.message);
+  }
+}
+
 // ── Notification Helper ──────────────────────────────────────
 async function addNotification(userId, type, title, body = '', link = '') {
   console.log('addNotification called with:', { userId, type, title, body, link });
