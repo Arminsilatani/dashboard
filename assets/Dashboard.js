@@ -660,6 +660,11 @@ async function loadDashboard() {
     document.getElementById('dash-avatar').src = currentUser.photo_url || generateAvatarUrl(name);
     await Promise.all([loadMiniCalendar(), loadNotifications()]);
     updateNotificationBadge();
+    if (currentUser.role === 'General') {
+  loadDashboardUserList();
+} else {
+  document.getElementById('dash-users-row').style.display = 'none';
+}
   } catch (e) {
     console.error(e);
   } finally {
@@ -715,6 +720,49 @@ async function loadNotifications() {
   is_read: true,
   link: 'https://arminsilatani.github.io/ravlo/'
 }));
+
+async function loadDashboardUserList() {
+  const row = document.getElementById('dash-users-row');
+  const list = document.getElementById('dash-users-list');
+  row.style.display = ''; // show the row
+  list.innerHTML = '<div class="empty-state">Loading users...</div>';
+
+  try {
+    const users = await db.select('profiles', 'order=created_at.desc');
+    if (!users || !users.length) {
+      list.innerHTML = '<div class="empty-state">No users found.</div>';
+      return;
+    }
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    list.innerHTML = '';
+    users.forEach(u => {
+      const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || 'No Name';
+      const joinDate = new Date(u.created_at);
+      const isNew = joinDate >= sevenDaysAgo;
+
+      const item = document.createElement('div');
+      item.className = 'mini-item';
+      item.style.cursor = 'pointer';
+      item.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span>
+            ${esc(name)}
+            ${isNew ? '<span class="badge badge-unread" style="margin-left:6px;">New</span>' : ''}
+          </span>
+          <span class="badge badge-open" style="margin-left:auto;">${esc(u.role || 'Recruit')}</span>
+        </div>
+        <div class="mini-meta">Joined ${fmtDate(u.created_at)}</div>
+      `;
+      item.addEventListener('click', () => openEditUser(u.id));
+      list.appendChild(item);
+    });
+  } catch (e) {
+    list.innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+  }
+}
 
     const allNotifs = [...(notifs || []), ...calendarNotifs]
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
