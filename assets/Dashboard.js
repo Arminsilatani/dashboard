@@ -1275,42 +1275,68 @@ async function saveUser() {
 async function loadDashboardUserList() {
   const row = document.getElementById('dash-users-row');
   const list = document.getElementById('dash-users-list');
-  if (!row || !list) return; // اگر عنصر HTML وجود نداشت، کاری نکن
+  const searchInput = document.getElementById('dash-user-search');
+  if (!row || !list) return;
   row.style.display = '';
   list.innerHTML = '<div class="empty-state">Loading users...</div>';
 
+  let allUsers = [];
+
   try {
-    const users = await db.select('profiles', 'order=created_at.desc');
-    if (!users || !users.length) {
+    allUsers = await db.select('profiles', 'order=created_at.desc');
+    if (!allUsers || !allUsers.length) {
       list.innerHTML = '<div class="empty-state">No users found.</div>';
       return;
     }
 
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    function renderFilteredUsers(filterTerm = '') {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const term = filterTerm.toLowerCase().trim();
+      const filtered = allUsers.filter(u => {
+        if (!term) return true;
+        const fullName = [u.first_name, u.last_name].filter(Boolean).join(' ').toLowerCase();
+        return fullName.includes(term) || (u.username || '').toLowerCase().includes(term);
+      });
 
-    list.innerHTML = '';
-    users.forEach(u => {
-      const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || 'No Name';
-      const joinDate = new Date(u.created_at);
-      const isNew = joinDate >= sevenDaysAgo;
+      if (filtered.length === 0) {
+        list.innerHTML = '<div class="empty-state">No users match your search.</div>';
+        return;
+      }
 
-      const item = document.createElement('div');
-      item.className = 'mini-item';
-      item.style.cursor = 'pointer';
-      item.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <span>
-            ${esc(name)}
-            ${isNew ? '<span class="badge badge-unread" style="margin-left:6px;">New</span>' : ''}
-          </span>
-          <span class="badge badge-open" style="margin-left:auto;">${esc(u.role || 'Recruit')}</span>
-        </div>
-        <div class="mini-meta">Joined ${fmtDate(u.created_at)}</div>
-      `;
-      item.addEventListener('click', () => openEditUser(u.id));
-      list.appendChild(item);
-    });
+      list.innerHTML = '';
+      filtered.forEach(u => {
+        const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || 'No Name';
+        const joinDate = new Date(u.created_at);
+        const isNew = joinDate >= sevenDaysAgo;
+        const avatar = u.photo_url || generateAvatarUrl(name);
+
+        const item = document.createElement('div');
+        item.className = 'dash-user-card';
+        item.innerHTML = `
+          <img src="${avatar}" class="dash-user-avatar" onerror="this.src='${generateAvatarUrl(name)}'">
+          <div class="dash-user-info">
+            <div class="dash-user-name">
+              ${esc(name)}
+              ${isNew ? '<span class="badge badge-unread new-badge">New</span>' : ''}
+            </div>
+            <div class="dash-user-role">${esc(u.role || 'Recruit')}</div>
+          </div>
+          <span class="badge badge-open" style="flex-shrink:0;">${esc(u.role || 'Recruit')}</span>
+        `;
+        item.addEventListener('click', () => openUserDetail(u.id));
+        list.appendChild(item);
+      });
+    }
+
+    renderFilteredUsers();
+
+    // Search functionality
+    if (searchInput) {
+      searchInput.addEventListener('input', function () {
+        renderFilteredUsers(this.value);
+      });
+    }
   } catch (e) {
     list.innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
   }
