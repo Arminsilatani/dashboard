@@ -247,56 +247,60 @@
   </div>
 </section>
 
-      <section id="section-users" class="section">
+            <section id="section-users" class="section">
         <div class="section-header"><h2>User Management</h2></div>
-        <div class="table-wrap"><table><thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Telegram</th><th>Joined</th><th>Invited</th><th>Actions</th></tr></thead><tbody id="users-tbody"></tbody></table></div>
-        <div id="edit-user-modal" class="modal hidden">
-  <div class="modal-box" style="max-width:520px;">
-    <h3>User Details</h3>
-    <!-- نمایش اطلاعات به‌صورت کارتی -->
-    <div class="user-detail-card">
-      <div class="user-detail-avatar">
-        <img id="modal-user-avatar" src="" alt="avatar" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);">
-      </div>
-      <div class="user-detail-info">
-        <div class="user-detail-name" id="modal-user-name"></div>
-        <div class="user-detail-role"><span id="modal-user-role-badge" class="badge"></span></div>
-        <div class="user-detail-meta">
-          <div><span class="detail-label">Email</span><span id="modal-user-email">—</span></div>
-          <div><span class="detail-label">Phone</span><span id="modal-user-phone">—</span></div>
-          <div><span class="detail-label">Website</span><span id="modal-user-website">—</span></div>
-          <div><span class="detail-label">Username</span><span id="modal-user-username">—</span></div>
-          <div><span class="detail-label">Telegram</span><span id="modal-user-telegram">—</span></div>
-          <div><span class="detail-label">Joined</span><span id="modal-user-joined">—</span></div>
-          <div><span class="detail-label">Invited</span><span id="modal-user-invited">0</span></div>
+        
+        <!-- نوار جستجو -->
+        <div style="margin-bottom:16px;">
+          <input type="text" id="users-search-input" class="auth-field" placeholder="Search by name..." autocomplete="off">
         </div>
-      </div>
-    </div>
 
-    <!-- بخش ویرایش (فقط فیلدهای ضروری) -->
-    <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:16px;">
-      <label style="color:var(--muted); font-size:12px;">Edit Role</label>
-      <select id="edit-user-role" style="margin-bottom:12px;">
-        <option value="Recruit">Recruit</option>
-        <option value="Sergeant">Sergeant</option>
-        <option value="Commander">Commander</option>
-        <option value="General">General</option>
-      </select>
-      <input id="edit-user-first-name" type="text" placeholder="First name" />
-      <input id="edit-user-last-name" type="text" placeholder="Last name" />
-      <input id="edit-user-username" type="text" placeholder="Username" />
-      <input id="edit-user-telegram" type="text" placeholder="Telegram ID" />
-      <div class="modal-actions">
-        <button class="btn-accent" id="save-user-btn">Save Changes</button>
-        <button class="btn-ghost" id="cancel-edit-user-btn">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
+        <!-- لیست کارتی کاربران -->
+        <div id="users-cards-list" class="card-list"></div>
+
+        <!-- مودال جزئیات کاربر (همان که قبلاً اصلاح کردید - بدون تغییر) -->
+        <div id="edit-user-modal" class="modal hidden">
+          <div class="modal-box" style="max-width:520px;">
+            <h3>User Details</h3>
+            <div class="user-detail-card">
+              <div class="user-detail-avatar">
+                <img id="modal-user-avatar" src="" alt="avatar" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);">
+              </div>
+              <div class="user-detail-info">
+                <div class="user-detail-name" id="modal-user-name"></div>
+                <div class="user-detail-role"><span id="modal-user-role-badge" class="badge"></span></div>
+                <div class="user-detail-meta">
+                  <div><span class="detail-label">Email</span><span id="modal-user-email">—</span></div>
+                  <div><span class="detail-label">Phone</span><span id="modal-user-phone">—</span></div>
+                  <div><span class="detail-label">Website</span><span id="modal-user-website">—</span></div>
+                  <div><span class="detail-label">Username</span><span id="modal-user-username">—</span></div>
+                  <div><span class="detail-label">Telegram</span><span id="modal-user-telegram">—</span></div>
+                  <div><span class="detail-label">Joined</span><span id="modal-user-joined">—</span></div>
+                  <div><span class="detail-label">Invited</span><span id="modal-user-invited">0</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:16px;">
+              <label style="color:var(--muted); font-size:12px;">Edit Role</label>
+              <select id="edit-user-role" style="margin-bottom:12px;">
+                <option value="Recruit">Recruit</option>
+                <option value="Sergeant">Sergeant</option>
+                <option value="Commander">Commander</option>
+                <option value="General">General</option>
+              </select>
+              <input id="edit-user-first-name" type="text" placeholder="First name" />
+              <input id="edit-user-last-name" type="text" placeholder="Last name" />
+              <input id="edit-user-username" type="text" placeholder="Username" />
+              <input id="edit-user-telegram" type="text" placeholder="Telegram ID" />
+              <div class="modal-actions">
+                <button class="btn-accent" id="save-user-btn">Save Changes</button>
+                <button class="btn-ghost" id="cancel-edit-user-btn">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
-    </main>
-  </div>
-
   <!-- Edit Profile Modal -->
   <div id="edit-profile-modal" class="modal hidden">
     <div class="modal-box">
