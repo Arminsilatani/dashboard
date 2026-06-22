@@ -708,13 +708,13 @@ async function loadNotifications() {
     } catch (e) {}
 
     const calendarNotifs = (calendarEvents || []).map(ev => ({
-      type: 'calendar',
-      title: ev.title || 'Calendar Event',
-      body: ev.start_date ? fmtDate(ev.start_date) : '',
-      created_at: ev.start_date,
-      is_read: true,
-      link: 'https://arminsilatani.github.io/ravlo/'
-    }));
+  type: 'calendar',
+  title: ev.title || 'Calendar Event',
+  body: ev.start_date ? fmtDate(ev.start_date) : '',
+  created_at: ev.start_date,
+  is_read: true,
+  link: 'https://arminsilatani.github.io/ravlo/'
+}));
 
     const allNotifs = [...(notifs || []), ...calendarNotifs]
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
@@ -753,9 +753,13 @@ async function loadNotifications() {
     if (!item) return;
     const link = item.dataset.link;
     if (link) {
-      const section = link.replace('#', '');
-      if (section && typeof loadSection === 'function') {
-        loadSection(section);
+      if (link.startsWith('http')) {
+        window.open(link, '_blank');
+      } else {
+        const section = link.replace('#', '');
+        if (section && typeof loadSection === 'function') {
+          loadSection(section);
+        }
       }
     }
   });
