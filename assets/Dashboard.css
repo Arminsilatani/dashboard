@@ -1285,6 +1285,97 @@ input[type="password"]::-webkit-textfield-decoration-container {
   flex-shrink: 0;
 }
 
+/* User Detail Card */
+.user-detail-card {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.user-detail-avatar {
+  flex-shrink: 0;
+}
+
+.user-detail-info {
+  flex: 1;
+}
+
+.user-detail-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.user-detail-role {
+  margin: 6px 0 12px;
+}
+
+.user-detail-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.user-detail-meta > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+
+.user-detail-meta .detail-label {
+  min-width: 80px;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* User Card in dashboard list */
+.dash-user-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dash-user-card:hover {
+  background: var(--surface2);
+}
+
+.dash-user-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent);
+}
+
+.dash-user-info {
+  flex: 1;
+}
+
+.dash-user-name {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.dash-user-role {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.new-badge {
+  margin-left: 6px;
+}
+
 /* =================================================================
    RESPONSIVE
    ================================================================= */
