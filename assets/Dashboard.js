@@ -56,6 +56,34 @@ function hideLoader() {
   if (initialLoader) initialLoader.classList.add('hidden');
 }
 
+// ── Notification deletion on click ──────────────────────────
+async function deleteNotificationById(notificationId) {
+  try {
+    await db.delete('notifications', notificationId);
+  } catch (e) {
+    console.warn('Failed to delete notification:', e);
+  }
+}
+
+document.addEventListener('click', async function (e) {
+  const notifItem = e.target.closest('.mini-item');
+  if (!notifItem) return;
+  const id = notifItem.dataset.id;
+  if (!id) return;
+
+  // حذف از دیتابیس
+  await deleteNotificationById(id);
+  notifItem.remove();
+  updateNotificationBadge();
+  const link = notifItem.dataset.link;
+  if (link && link.trim()) {
+    const section = link.replace('#', '');
+    if (section && typeof loadSection === 'function') {
+      loadSection(section);
+    }
+  }
+});
+
 // ── Boot ────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('initial-loader').classList.remove('hidden');
@@ -699,7 +727,7 @@ async function loadNotifications() {
         system: 'notif-dot-system'
       }[n.type] || 'notif-dot-system';
 
-      return `<div class="mini-item ${n.is_read ? '' : 'unread-notif'}" data-link="${esc(n.link || '')}">
+      return `<div class="mini-item ${n.is_read ? '' : 'unread-notif'}" data-id="${n.id}" data-link="${esc(n.link || '')}">
         <div style="display:flex;align-items:center;">
           <span class="notif-dot-icon ${dotClass}"></span>
           ${esc(n.title)}
