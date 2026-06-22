@@ -1204,40 +1204,69 @@ async function respondConn(id, status) {
 
 // ── USERS (Admin) ────────────────────────────────────────────
 async function loadUsers() {
-  const tbody = document.getElementById('users-tbody');
-  tbody.innerHTML = '<tr><td colspan="8" style="color:var(--muted)">Loading...</td></tr>'; // colspan = 8
+  const container = document.getElementById('users-cards-list');
+  const searchInput = document.getElementById('users-search-input');
+  if (!container) return;
+
+  container.innerHTML = '<div class="empty-state">Loading users...</div>';
+  let allUsers = [];
 
   try {
-    const users = await db.select('profiles', 'order=created_at.desc');
+    allUsers = await db.select('profiles', 'order=created_at.desc');
+    if (!allUsers || !allUsers.length) {
+      container.innerHTML = '<div class="empty-state">No users found.</div>';
+      return;
+    }
 
-    const referrals = await db.select('profiles', 'referred_by=not.is.null&select=referred_by');
-    const countMap = {};
-    (referrals || []).forEach(r => {
-      if (r.referred_by) {
-        countMap[r.referred_by] = (countMap[r.referred_by] || 0) + 1;
+    function renderFilteredUsers(filterTerm = '') {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const term = filterTerm.toLowerCase().trim();
+      const filtered = allUsers.filter(u => {
+        if (!term) return true;
+        const fullName = [u.first_name, u.last_name].filter(Boolean).join(' ').toLowerCase();
+        return fullName.includes(term) || (u.username || '').toLowerCase().includes(term);
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-state">No users match your search.</div>';
+        return;
       }
-    });
 
-    tbody.innerHTML = '';
-    (users || []).forEach(u => {
-      const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || '—';
-      const invitedCount = countMap[u.id] || 0;
+      container.innerHTML = '';
+      filtered.forEach(u => {
+        const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || 'No Name';
+        const joinDate = new Date(u.created_at);
+        const isNew = joinDate >= sevenDaysAgo;
+        const avatar = u.photo_url || generateAvatarUrl(name);
 
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${esc(name)}</td>
-        <td>${esc(u.username || '—')}</td>
-        <td>${esc(u.email || '—')}</td>
-        <td><span class="badge ${u.role === 'General' ? 'badge-accepted' : 'badge-open'}">${esc(u.role || 'Recruit')}</span></td>
-        <td>${esc(u.telegram_id || '—')}</td>
-        <td>${fmtDate(u.created_at)}</td>
-        <td>${invitedCount}</td> <!-- ستون جدید -->
-        <td><button class="btn-ghost" onclick="openEditUser('${u.id}')">Edit</button></td>
-      `;
-      tbody.appendChild(tr);
-    });
+        const item = document.createElement('div');
+        item.className = 'dash-user-card';
+        item.innerHTML = `
+          <img src="${avatar}" class="dash-user-avatar" onerror="this.src='${generateAvatarUrl(name)}'">
+          <div class="dash-user-info">
+            <div class="dash-user-name">
+              ${esc(name)}
+              ${isNew ? '<span class="badge badge-unread new-badge">New</span>' : ''}
+            </div>
+            <div class="dash-user-role">${esc(u.role || 'Recruit')}</div>
+          </div>
+          <span class="badge badge-open" style="flex-shrink:0;">${esc(u.role || 'Recruit')}</span>
+        `;
+        item.addEventListener('click', () => openUserDetail(u.id));
+        container.appendChild(item);
+      });
+    }
+
+    renderFilteredUsers();
+
+    if (searchInput) {
+      searchInput.addEventListener('input', function () {
+        renderFilteredUsers(this.value);
+      });
+    }
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="8">${e.message}</td></tr>`; // colspan = 8
+    container.innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
   }
 }
 
