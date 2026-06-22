@@ -731,14 +731,19 @@ async function loadNotifications() {
     }
 
     c.innerHTML = allNotifs.map(n => {
-      const dotClass = {
-        calendar: 'notif-dot-calendar',
-        contract: 'notif-dot-contract',
-        message: 'notif-dot-message',
-        ticket: 'notif-dot-ticket',
-        connection: 'notif-dot-connection',
-        system: 'notif-dot-system'
-      }[n.type] || 'notif-dot-system';
+      let dotClass = {
+  calendar: 'notif-dot-calendar',
+  contract: 'notif-dot-contract',
+  message: 'notif-dot-message',
+  ticket: 'notif-dot-ticket',
+  connection: 'notif-dot-connection',
+  system: 'notif-dot-system'
+}[n.type] || 'notif-dot-system';
+
+// اگر لینک نوتیفیکیشن به Ravlo اشاره کند، نقطه را صورتی کن
+if (n.link && n.link.startsWith('https://arminsilatani.github.io/ravlo/')) {
+  dotClass = 'notif-dot-calendar';
+}
 
       return `<div class="mini-item ${n.is_read ? '' : 'unread-notif'}" data-id="${n.id}" data-link="${esc(n.link || '')}">
         <div style="display:flex;align-items:center;">
