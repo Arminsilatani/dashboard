@@ -1,4 +1,4 @@
-const SUPABASE_URL = 'https://vzqicidepdmraygulrey.supabase.co';
+const SUPABASE_URL = 'https://supabase-proxy.eynakii.workers.dev';
 const SUPABASE_ANON_KEY = 'sb_publishable_kqRWgOmLISOE2EuLL1s8fw_WN6FJRTI';
 
 const { createClient } = supabase;
