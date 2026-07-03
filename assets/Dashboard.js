@@ -148,6 +148,7 @@ async function showApp() {
 
   document.getElementById('section-dashboard').classList.add('active');
   loadSection('dashboard');
+  await cleanupOldNotifications();
   updateNotificationBadge();
 }
 
