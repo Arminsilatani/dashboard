@@ -702,26 +702,23 @@ async function loadNotifications() {
   if (!c) return;
 
   try {
-    // دریافت همه نوتیفیکیشن‌ها (نه فقط ۵ تا – چون اسکرول داریم)
     const rawNotifs = await db.select('notifications', `user_id=eq.${currentUser.id}&order=created_at.desc&limit=20`);
     
     const notifs = (rawNotifs || []).filter(n => {
-      // حذف نوتیفیکیشن‌های مربوط به کانکشن‌های ریجکت‌شده
       if (n.type === 'connection' && 
           (n.title?.includes('declined') || n.body?.includes('declined'))) {
         return false;
       }
-      // حذف نوتیفیکیشن‌های قدیمی‌تر از ۳۰ روز
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       if (new Date(n.created_at) < thirtyDaysAgo) {
         return false;
       }
-      // بقیه موارد رو نشون بده
       return true;
     });
 
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     const todayStr = today.toISOString().split('T')[0];
@@ -729,10 +726,26 @@ async function loadNotifications() {
     
     let calendarEvents = [];
     try {
-      calendarEvents = await db.select('ravlo', `user_id=eq.${currentUser.id}&start_date=gte.${todayStr}&start_date=lte.${tomorrowStr}&order=start_date.asc`);
-    } catch (e) {}
+      calendarEvents = await db.select('ravlo', 
+        `user_id=eq.${currentUser.id}&start_date=gte.${todayStr}&start_date=lte.${tomorrowStr}&status=neq.done&order=start_date.asc`
+      );
+    } catch (e) {
+      console.warn('Could not fetch calendar events:', e);
+    }
 
-    const calendarNotifs = (calendarEvents || []).map(ev => ({
+    const filteredCalendarEvents = (calendarEvents || []).filter(ev => {
+      if (ev.status === 'done' || ev.status === 'completed') {
+        return false;
+      }
+      
+      if (ev.status === 'pending' || !ev.status) {
+        return true;
+      }
+      
+      return false;
+    });
+
+    const calendarNotifs = filteredCalendarEvents.map(ev => ({
       type: 'calendar',
       title: ev.title || 'Calendar Event',
       body: ev.start_date ? fmtDate(ev.start_date) : '',
@@ -773,10 +786,10 @@ async function loadNotifications() {
     }).join('');
 
   } catch (e) {
+    console.error('Error loading notifications:', e);
     c.innerHTML = '<div class="mini-item"><div><span class="notif-dot-icon notif-dot-system"></span>Welcome to your dashboard!</div><div class="mini-meta">Just now</div></div>';
   }
 
-  // کلیک روی نوتیفیکیشن‌ها
   c.onclick = (e) => {
     const item = e.target.closest('.mini-item');
     if (!item) return;
@@ -800,13 +813,11 @@ async function cleanupOldNotifications() {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const dateStr = thirtyDaysAgo.toISOString();
     
-    // حذف نوتیفیکیشن‌های قدیمی‌تر از ۳۰ روز
     const oldNotifs = await db.select('notifications', `user_id=eq.${currentUser.id}&created_at=lt.${dateStr}&select=id`);
     for (const n of (oldNotifs || [])) {
       await db.delete('notifications', n.id);
     }
     
-    // حذف نوتیفیکیشن‌های declined
     const declinedNotifs = await db.select('notifications', `user_id=eq.${currentUser.id}&or=(title.ilike.*declined*,body.ilike.*declined*)&select=id`);
     for (const n of (declinedNotifs || [])) {
       await db.delete('notifications', n.id);
