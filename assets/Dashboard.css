@@ -1407,6 +1407,9 @@ input[type="password"]::-webkit-textfield-decoration-container {
   background: #6ee7de;
 }
 
+.mini-item .mini-meta {
+  padding-left: 24px;  /* فاصلهٔ دلخواه از چپ */
+}
 /* =================================================================
    RESPONSIVE
    ================================================================= */
