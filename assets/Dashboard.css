@@ -1413,7 +1413,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
 
 .notif-dot-icon {
   position: relative;
-  top: -1px;
+  top: -3px;
 }
 /* =================================================================
    RESPONSIVE
