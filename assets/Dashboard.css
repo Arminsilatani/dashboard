@@ -1415,6 +1415,18 @@ input[type="password"]::-webkit-textfield-decoration-container {
   position: relative;
   top: -2px;
 }
+
+#dash-notif-list .mini-item {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+#dash-notif-list .mini-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
 /* =================================================================
    RESPONSIVE
    ================================================================= */
