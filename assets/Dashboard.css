@@ -1369,7 +1369,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
 .dash-user-role {
   font-size: 12px;
   color: var(--muted);
-  margin-top: -4px;
+  margin-top: -5px;
 }
 
 .new-badge {
