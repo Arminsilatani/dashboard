@@ -1430,8 +1430,8 @@ input[type="password"]::-webkit-textfield-decoration-container {
 
 /* Footer powered by Ravlo at bottom right of calendar card */
 .dash-calendar-card {
-  position: relative;   /* تا فرزند position:absolute نسبت به آن قرار بگیرد */
-  padding-bottom: 40px; /* فضای خالی برای footer */
+  position: relative;
+  padding-bottom: 40px;
 }
 
 .mini-cal-footer {
