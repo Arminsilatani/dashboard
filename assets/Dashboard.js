@@ -701,29 +701,47 @@ async function loadNotifications() {
   if (!c) return;
 
   try {
-    const notifs = await db.select('notifications', `user_id=eq.${currentUser.id}&order=created_at.desc&limit=5`);
+    // دریافت همه نوتیفیکیشن‌ها (نه فقط ۵ تا – چون اسکرول داریم)
+    const rawNotifs = await db.select('notifications', `user_id=eq.${currentUser.id}&order=created_at.desc&limit=20`);
+    
+    const notifs = (rawNotifs || []).filter(n => {
+      // حذف نوتیفیکیشن‌های مربوط به کانکشن‌های ریجکت‌شده
+      if (n.type === 'connection' && 
+          (n.title?.includes('declined') || n.body?.includes('declined'))) {
+        return false;
+      }
+      // حذف نوتیفیکیشن‌های قدیمی‌تر از ۳۰ روز
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      if (new Date(n.created_at) < thirtyDaysAgo) {
+        return false;
+      }
+      // بقیه موارد رو نشون بده
+      return true;
+    });
+
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     const todayStr = today.toISOString().split('T')[0];
     const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    
     let calendarEvents = [];
     try {
       calendarEvents = await db.select('ravlo', `user_id=eq.${currentUser.id}&start_date=gte.${todayStr}&start_date=lte.${tomorrowStr}&order=start_date.asc`);
     } catch (e) {}
 
     const calendarNotifs = (calendarEvents || []).map(ev => ({
-  type: 'calendar',
-  title: ev.title || 'Calendar Event',
-  body: ev.start_date ? fmtDate(ev.start_date) : '',
-  created_at: ev.start_date,
-  is_read: true,
-  link: 'https://arminsilatani.github.io/ravlo/'
-}));
+      type: 'calendar',
+      title: ev.title || 'Calendar Event',
+      body: ev.start_date ? fmtDate(ev.start_date) : '',
+      created_at: ev.start_date,
+      is_read: true,
+      link: 'https://arminsilatani.github.io/ravlo/'
+    }));
 
-    const allNotifs = [...(notifs || []), ...calendarNotifs]
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .slice(0, 5);
+    const allNotifs = [...notifs, ...calendarNotifs]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     if (!allNotifs.length) {
       c.innerHTML = '<p class="empty-state">No notifications</p>';
@@ -732,18 +750,17 @@ async function loadNotifications() {
 
     c.innerHTML = allNotifs.map(n => {
       let dotClass = {
-  calendar: 'notif-dot-calendar',
-  contract: 'notif-dot-contract',
-  message: 'notif-dot-message',
-  ticket: 'notif-dot-ticket',
-  connection: 'notif-dot-connection',
-  system: 'notif-dot-system'
-}[n.type] || 'notif-dot-system';
+        calendar: 'notif-dot-calendar',
+        contract: 'notif-dot-contract',
+        message: 'notif-dot-message',
+        ticket: 'notif-dot-ticket',
+        connection: 'notif-dot-connection',
+        system: 'notif-dot-system'
+      }[n.type] || 'notif-dot-system';
 
-// اگر لینک نوتیفیکیشن به Ravlo اشاره کند، نقطه را صورتی کن
-if (n.link && n.link.startsWith('https://arminsilatani.github.io/ravlo/')) {
-  dotClass = 'notif-dot-calendar';
-}
+      if (n.link && n.link.startsWith('https://arminsilatani.github.io/ravlo/')) {
+        dotClass = 'notif-dot-calendar';
+      }
 
       return `<div class="mini-item ${n.is_read ? '' : 'unread-notif'}" data-id="${n.id}" data-link="${esc(n.link || '')}">
         <div style="display:flex;align-items:center;">
@@ -758,7 +775,8 @@ if (n.link && n.link.startsWith('https://arminsilatani.github.io/ravlo/')) {
     c.innerHTML = '<div class="mini-item"><div><span class="notif-dot-icon notif-dot-system"></span>Welcome to your dashboard!</div><div class="mini-meta">Just now</div></div>';
   }
 
-  c.addEventListener('click', (e) => {
+  // کلیک روی نوتیفیکیشن‌ها
+  c.onclick = (e) => {
     const item = e.target.closest('.mini-item');
     if (!item) return;
     const link = item.dataset.link;
@@ -772,7 +790,29 @@ if (n.link && n.link.startsWith('https://arminsilatani.github.io/ravlo/')) {
         }
       }
     }
-  });
+  };
+}
+
+async function cleanupOldNotifications() {
+  try {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const dateStr = thirtyDaysAgo.toISOString();
+    
+    // حذف نوتیفیکیشن‌های قدیمی‌تر از ۳۰ روز
+    const oldNotifs = await db.select('notifications', `user_id=eq.${currentUser.id}&created_at=lt.${dateStr}&select=id`);
+    for (const n of (oldNotifs || [])) {
+      await db.delete('notifications', n.id);
+    }
+    
+    // حذف نوتیفیکیشن‌های declined
+    const declinedNotifs = await db.select('notifications', `user_id=eq.${currentUser.id}&or=(title.ilike.*declined*,body.ilike.*declined*)&select=id`);
+    for (const n of (declinedNotifs || [])) {
+      await db.delete('notifications', n.id);
+    }
+  } catch (e) {
+    console.warn('Cleanup failed:', e);
+  }
 }
 
 // ── TICKETS ─────────────────────────────────────────────────
