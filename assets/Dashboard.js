@@ -702,110 +702,33 @@ async function loadNotifications() {
   if (!c) return;
 
   try {
-    // دریافت همه نوتیفیکیشن‌ها
-    const rawNotifs = await db.select('notifications', `user_id=eq.${currentUser.id}&order=created_at.desc&limit=20`);
-    
-    const notifs = (rawNotifs || []).filter(n => {
-      if (n.type === 'connection' && 
-          (n.title?.includes('declined') || n.body?.includes('declined'))) {
-        return false;
-      }
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      if (new Date(n.created_at) < thirtyDaysAgo) {
+    // فقط از جدول notifications بخون – بدون هیچ ترکیبی با ravlo
+    const notifications = await db.select('notifications',
+      `user_id=eq.${currentUser.id}&order=created_at.desc&limit=20`
+    );
+
+    if (!notifications || !notifications.length) {
+      c.innerHTML = '<p class="empty-state">No notifications</p>';
+      return;
+    }
+
+    // حذف نوتیفیکیشن‌های declined (محض اطمینان)
+    const cleanNotifs = notifications.filter(n => {
+      if (n.type === 'connection' &&
+          (n.title?.toLowerCase().includes('declined') ||
+           n.body?.toLowerCase().includes('declined') ||
+           n.title?.toLowerCase().includes('rejected'))) {
         return false;
       }
       return true;
     });
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const todayStr = today.toISOString().split('T')[0];
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
-    
-    // 🔍 DEBUG: Fetch ALL events for today (بدون فیلتر status)
-    let allRavloEvents = [];
-    try {
-      allRavloEvents = await db.select('ravlo', 
-        `user_id=eq.${currentUser.id}&start_date=gte.${todayStr}&start_date=lte.${tomorrowStr}&order=start_date.asc`
-      );
-      
-      // 🔍 DEBUG: console log to see what's coming
-      console.log('🔍 ALL Ravlo events for today:', allRavloEvents);
-      console.log('🔍 Event details:', allRavloEvents.map(ev => ({
-        id: ev.id,
-        title: ev.title,
-        status: ev.status,
-        is_done: ev.is_done,
-        is_completed: ev.is_completed,
-        start_date: ev.start_date,
-        all_fields: Object.keys(ev)
-      })));
-    } catch (e) {
-      console.warn('Could not fetch calendar events:', e);
-    }
-
-    // حالا فیلتر می‌کنیم - همه status هایی که done نیستن
-    const calendarEvents = (allRavloEvents || []).filter(ev => {
-      // همه status های ممکن برای done بودن
-      const isDone = 
-        ev.status === 'done' || 
-        ev.status === 'completed' ||
-        ev.status === 'Done' ||
-        ev.status === 'Completed' ||
-        ev.is_done === true ||
-        ev.is_completed === true ||
-        ev.done === true;
-      
-      return !isDone;
-    });
-
-    console.log('🔍 Filtered events (not done):', calendarEvents);
-
-    // حذف تکراری‌ها بر اساس id
-    const uniqueCalendarEvents = [];
-    const seenIds = new Set();
-    
-    for (const ev of calendarEvents) {
-      if (!seenIds.has(ev.id)) {
-        seenIds.add(ev.id);
-        uniqueCalendarEvents.push(ev);
-      }
-    }
-
-    console.log('🔍 Unique events:', uniqueCalendarEvents);
-
-    const calendarNotifs = uniqueCalendarEvents.map(ev => ({
-      type: 'calendar',
-      title: ev.title || 'Calendar Event',
-      body: ev.start_date ? fmtDate(ev.start_date) : '',
-      created_at: ev.start_date,
-      is_read: true,
-      link: 'https://arminsilatani.github.io/ravlo/'
-    }));
-
-    // حذف تکراری‌های نوتیفیکیشن‌های معمولی هم
-    const uniqueNotifs = [];
-    const seenNotifIds = new Set();
-    
-    for (const n of notifs) {
-      if (!seenNotifIds.has(n.id)) {
-        seenNotifIds.add(n.id);
-        uniqueNotifs.push(n);
-      }
-    }
-
-    const allNotifs = [...uniqueNotifs, ...calendarNotifs]
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-    if (!allNotifs.length) {
+    if (!cleanNotifs.length) {
       c.innerHTML = '<p class="empty-state">No notifications</p>';
       return;
     }
 
-    c.innerHTML = allNotifs.map(n => {
+    c.innerHTML = cleanNotifs.map(n => {
       let dotClass = {
         calendar: 'notif-dot-calendar',
         contract: 'notif-dot-contract',
@@ -815,11 +738,9 @@ async function loadNotifications() {
         system: 'notif-dot-system'
       }[n.type] || 'notif-dot-system';
 
-      if (n.link && n.link.startsWith('https://arminsilatani.github.io/ravlo/')) {
-        dotClass = 'notif-dot-calendar';
-      }
-
-      return `<div class="mini-item ${n.is_read ? '' : 'unread-notif'}" data-id="${n.id}" data-link="${esc(n.link || '')}">
+      return `<div class="mini-item ${n.is_read ? '' : 'unread-notif'}"
+                   data-id="${n.id}"
+                   data-link="${esc(n.link || '')}">
         <div style="display:flex;align-items:center;">
           <span class="notif-dot-icon ${dotClass}"></span>
           ${esc(n.title)}
@@ -830,21 +751,19 @@ async function loadNotifications() {
 
   } catch (e) {
     console.error('Error loading notifications:', e);
-    c.innerHTML = '<div class="mini-item"><div><span class="notif-dot-icon notif-dot-system"></span>Welcome to your dashboard!</div><div class="mini-meta">Just now</div></div>';
+    c.innerHTML = '<div class="mini-item">…</div>';
   }
 
+  // کلیک روی نوتیفیکیشن‌ها
   c.onclick = (e) => {
     const item = e.target.closest('.mini-item');
     if (!item) return;
     const link = item.dataset.link;
     if (link) {
-      if (link.startsWith('http')) {
-        window.open(link, '_blank');
-      } else {
+      if (link.startsWith('http')) window.open(link, '_blank');
+      else {
         const section = link.replace('#', '');
-        if (section && typeof loadSection === 'function') {
-          loadSection(section);
-        }
+        if (section && typeof loadSection === 'function') loadSection(section);
       }
     }
   };
