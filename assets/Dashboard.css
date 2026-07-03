@@ -1408,7 +1408,12 @@ input[type="password"]::-webkit-textfield-decoration-container {
 }
 
 .mini-item .mini-meta {
-  padding-left: 17px;  /* فاصلهٔ دلخواه از چپ */
+  padding-left: 17px;
+}
+
+.notif-dot-icon {
+  position: relative;
+  top: -1px;
 }
 /* =================================================================
    RESPONSIVE
