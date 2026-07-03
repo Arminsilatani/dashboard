@@ -1466,6 +1466,9 @@ input[type="password"]::-webkit-textfield-decoration-container {
 .mini-cal-day.today:hover.has-event::after {
   background: #0d0d0d;
 }
+#dash-users-list .dash-user-card:last-child {
+  border-bottom: none;
+}
 /* =================================================================
    RESPONSIVE
    ================================================================= */
