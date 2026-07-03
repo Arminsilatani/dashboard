@@ -695,6 +695,12 @@ async function loadMiniCalendar() {
     html += `<div class="${cls}">${d}</div>`;
   }
   container.innerHTML = html;
+    container.onclick = function(e) {
+    const dayEl = e.target.closest('.mini-cal-day');
+    if (dayEl && dayEl.classList.contains('today')) {
+      window.open('https://arminsilatani.github.io/ravlo/', '_blank');
+    }
+  };
 }
 
 async function loadNotifications() {
@@ -702,7 +708,6 @@ async function loadNotifications() {
   if (!c) return;
 
   try {
-    // فقط از جدول notifications بخون – بدون هیچ ترکیبی با ravlo
     const notifications = await db.select('notifications',
       `user_id=eq.${currentUser.id}&order=created_at.desc&limit=20`
     );
