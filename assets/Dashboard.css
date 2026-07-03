@@ -1377,6 +1377,37 @@ input[type="password"]::-webkit-textfield-decoration-container {
 }
 
 /* =================================================================
+   NOTIFICATIONS LIST WITH SCROLL
+   ================================================================= */
+#dash-notif-list {
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) rgba(255,255,255,0.03);
+}
+
+/* برای WebKit (Chrome/Safari/Edge) */
+#dash-notif-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+#dash-notif-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 3px;
+}
+
+#dash-notif-list::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 3px;
+  box-shadow: 0 0 4px var(--accent);
+}
+
+#dash-notif-list::-webkit-scrollbar-thumb:hover {
+  background: #6ee7de;
+}
+
+/* =================================================================
    RESPONSIVE
    ================================================================= */
 @media (max-width: 680px) {
