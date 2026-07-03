@@ -702,6 +702,7 @@ async function loadNotifications() {
   if (!c) return;
 
   try {
+    // دریافت همه نوتیفیکیشن‌ها
     const rawNotifs = await db.select('notifications', `user_id=eq.${currentUser.id}&order=created_at.desc&limit=20`);
     
     const notifs = (rawNotifs || []).filter(n => {
@@ -724,28 +725,59 @@ async function loadNotifications() {
     const todayStr = today.toISOString().split('T')[0];
     const tomorrowStr = tomorrow.toISOString().split('T')[0];
     
-    let calendarEvents = [];
+    // 🔍 DEBUG: Fetch ALL events for today (بدون فیلتر status)
+    let allRavloEvents = [];
     try {
-      calendarEvents = await db.select('ravlo', 
-        `user_id=eq.${currentUser.id}&start_date=gte.${todayStr}&start_date=lte.${tomorrowStr}&status=neq.done&order=start_date.asc`
+      allRavloEvents = await db.select('ravlo', 
+        `user_id=eq.${currentUser.id}&start_date=gte.${todayStr}&start_date=lte.${tomorrowStr}&order=start_date.asc`
       );
+      
+      // 🔍 DEBUG: console log to see what's coming
+      console.log('🔍 ALL Ravlo events for today:', allRavloEvents);
+      console.log('🔍 Event details:', allRavloEvents.map(ev => ({
+        id: ev.id,
+        title: ev.title,
+        status: ev.status,
+        is_done: ev.is_done,
+        is_completed: ev.is_completed,
+        start_date: ev.start_date,
+        all_fields: Object.keys(ev)
+      })));
     } catch (e) {
       console.warn('Could not fetch calendar events:', e);
     }
 
-    const filteredCalendarEvents = (calendarEvents || []).filter(ev => {
-      if (ev.status === 'done' || ev.status === 'completed') {
-        return false;
-      }
+    // حالا فیلتر می‌کنیم - همه status هایی که done نیستن
+    const calendarEvents = (allRavloEvents || []).filter(ev => {
+      // همه status های ممکن برای done بودن
+      const isDone = 
+        ev.status === 'done' || 
+        ev.status === 'completed' ||
+        ev.status === 'Done' ||
+        ev.status === 'Completed' ||
+        ev.is_done === true ||
+        ev.is_completed === true ||
+        ev.done === true;
       
-      if (ev.status === 'pending' || !ev.status) {
-        return true;
-      }
-      
-      return false;
+      return !isDone;
     });
 
-    const calendarNotifs = filteredCalendarEvents.map(ev => ({
+    console.log('🔍 Filtered events (not done):', calendarEvents);
+
+    // حذف تکراری‌ها بر اساس id
+    const uniqueCalendarEvents = [];
+    const seenIds = new Set();
+    
+    for (const ev of calendarEvents) {
+      if (!seenIds.has(ev.id)) {
+        seenIds.add(ev.id);
+        uniqueCalendarEvents.push(ev);
+      }
+    }
+
+    console.log('🔍 Unique events:', uniqueCalendarEvents);
+
+    const calendarNotifs = uniqueCalendarEvents.map(ev => ({
       type: 'calendar',
       title: ev.title || 'Calendar Event',
       body: ev.start_date ? fmtDate(ev.start_date) : '',
@@ -754,7 +786,18 @@ async function loadNotifications() {
       link: 'https://arminsilatani.github.io/ravlo/'
     }));
 
-    const allNotifs = [...notifs, ...calendarNotifs]
+    // حذف تکراری‌های نوتیفیکیشن‌های معمولی هم
+    const uniqueNotifs = [];
+    const seenNotifIds = new Set();
+    
+    for (const n of notifs) {
+      if (!seenNotifIds.has(n.id)) {
+        seenNotifIds.add(n.id);
+        uniqueNotifs.push(n);
+      }
+    }
+
+    const allNotifs = [...uniqueNotifs, ...calendarNotifs]
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     if (!allNotifs.length) {
