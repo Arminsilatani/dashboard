@@ -1463,6 +1463,9 @@ input[type="password"]::-webkit-textfield-decoration-container {
   color: #0d0d0d;
   box-shadow: 0 0 12px var(--accent-dim);
 }
+.mini-cal-day.today:hover.has-event::after {
+  background: #0d0d0d;
+}
 /* =================================================================
    RESPONSIVE
    ================================================================= */
