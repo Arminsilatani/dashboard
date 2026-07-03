@@ -745,7 +745,10 @@ async function loadNotifications() {
           <span class="notif-dot-icon ${dotClass}"></span>
           ${esc(n.title)}
         </div>
-        <div class="mini-meta">${esc(n.body || '')} · ${fmtDate(n.created_at)}</div>
+        <div class="mini-meta">
+  ${esc(n.body || '')}<br>
+  <span class="notif-date">${fmtDate(n.created_at)}</span>
+</div>
       </div>`;
     }).join('');
 
@@ -754,7 +757,6 @@ async function loadNotifications() {
     c.innerHTML = '<div class="mini-item">…</div>';
   }
 
-  // کلیک روی نوتیفیکیشن‌ها
   c.onclick = (e) => {
     const item = e.target.closest('.mini-item');
     if (!item) return;
