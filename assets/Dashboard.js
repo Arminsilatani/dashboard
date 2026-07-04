@@ -5,6 +5,35 @@ const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ── Helpers ─────────────────────────────────────────────────
+function isEventActiveOnDate(event, date) {
+  const toLocalDateString = (d) => {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  const isCompleted = event.status === 'done' || event.status === 'completed';
+  const hasRecurrence = event.recurrence_type && event.recurrence_type !== 'none';
+
+  if (isCompleted && !hasRecurrence) return false;
+
+  const start = new Date(event.start_date);
+
+  if (!hasRecurrence) {
+    return start.getFullYear() === date.getFullYear() &&
+           start.getMonth() === date.getMonth() &&
+           start.getDate() === date.getDate();
+  }
+
+  if (date < start) return false;
+
+  const recType = event.recurrence_type.toLowerCase();
+  if (recType === 'daily') return true;
+  if (recType === 'weekly') return start.getDay() === date.getDay();
+  if (recType === 'monthly') return start.getDate() === date.getDate();
+  if (recType === 'yearly') return start.getMonth() === date.getMonth() && start.getDate() === date.getDate();
+
+  return false;
+}
+
 async function getToken() {
   const { data: { session } } = await sb.auth.getSession();
   return session?.access_token || null;
