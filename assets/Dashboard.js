@@ -717,7 +717,6 @@ async function loadNotifications() {
       return;
     }
 
-    // حذف نوتیفیکیشن‌های declined (محض اطمینان)
     const cleanNotifs = notifications.filter(n => {
       if (n.type === 'connection' &&
           (n.title?.toLowerCase().includes('declined') ||
