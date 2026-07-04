@@ -732,9 +732,48 @@ async function loadMiniCalendar() {
   };
 }
 
+async function cleanupStaleNotifications() {
+  if (!currentUser) return;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const { data: notifs } = await sb
+    .from('notifications')
+    .select('id, event_id')
+    .eq('user_id', currentUser.id)
+    .eq('type', 'event');
+
+  if (!notifs) return;
+
+  for (const n of notifs) {
+    if (!n.event_id) {
+      await sb.from('notifications').delete().eq('id', n.id);
+      continue;
+    }
+
+    const { data: events } = await sb
+      .from('ravlo')
+      .select('start_date, status, recurrence_type, completed_occurrences')
+      .eq('id', n.event_id)
+      .eq('user_id', currentUser.id)
+      .limit(1);
+
+    if (!events || events.length === 0) {
+      await sb.from('notifications').delete().eq('id', n.id);
+      continue;
+    }
+
+    if (!isEventActiveOnDate(events[0], today)) {
+      await sb.from('notifications').delete().eq('id', n.id);
+    }
+  }
+}
+
 async function loadNotifications() {
   const c = document.getElementById('dash-notif-list');
   if (!c) return;
+  await cleanupStaleNotifications();
 
   try {
     const notifications = await db.select('notifications',
