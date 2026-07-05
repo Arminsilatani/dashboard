@@ -732,6 +732,45 @@ async function loadMiniCalendar() {
   };
 }
 
+async function ensureTodayNotifications() {
+  if (!currentUser) return;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const { data: events } = await sb
+    .from('ravlo')
+    .select('*')
+    .eq('user_id', currentUser.id);
+
+  if (!events || events.length === 0) return;
+
+  const activeToday = events.filter(ev => isEventActiveOnDate(ev, today));
+
+  for (const ev of activeToday) {
+    const { data: existing } = await sb
+      .from('notifications')
+      .select('id')
+      .eq('user_id', currentUser.id)
+      .eq('type', 'event')
+      .eq('event_id', ev.id)
+      .maybeSingle();
+
+    if (!existing) {
+      await sb.from('notifications').insert({
+        user_id: currentUser.id,
+        type: 'event',
+        title: 'Event Today',
+        body: `${ev.title || 'Untitled'} is today!`,
+        link: '#',
+        event_id: ev.id,
+        is_read: false,
+        created_at: new Date().toISOString()
+      });
+    }
+  }
+}
+
 async function cleanupStaleNotifications() {
   if (!currentUser) return;
 
@@ -774,6 +813,7 @@ async function loadNotifications() {
   const c = document.getElementById('dash-notif-list');
   if (!c) return;
   await cleanupStaleNotifications();
+  await ensureTodayNotifications();
 
   try {
     const notifications = await db.select('notifications',
