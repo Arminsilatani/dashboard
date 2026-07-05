@@ -793,7 +793,7 @@ async function cleanupStaleNotifications() {
 
     const { data: events } = await sb
       .from('ravlo')
-      .select('start_date, status, recurrence_type, completed_occurrences')
+      .select('start_date, status, recurrence_type, recurrence_days, recurrence_interval, completed_occurrences')
       .eq('id', n.event_id)
       .eq('user_id', currentUser.id)
       .limit(1);
