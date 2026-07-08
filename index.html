@@ -191,20 +191,29 @@
 
         <!-- ردیف چهارم: Time Overview -->
         <div class="dash-row">
-          <div class="time-overview-card">
-            <h3 class="card-heading">
-              Time Overview
-              <span class="time-overview-total" id="time-overview-total">--:--</span>
-            </h3>
-            <div class="time-overview-content">
-              <div class="time-overview-chart">
-                <div id="time-overview-chart-area"></div>
+          <!-- ردیف چهارم: Time Overview + My Notes -->
+          <div class="dash-row">
+            <div class="time-overview-card">
+              <h3 class="card-heading">
+                Time Overview
+                <span class="time-overview-total" id="time-overview-total">--:--</span>
+              </h3>
+              <div class="time-overview-content">
+                <div class="time-overview-chart">
+                  <div id="time-overview-chart-area"></div>
+                </div>
+                <div class="time-overview-breakdown-row" id="time-overview-breakdown-list"></div>
               </div>
-              <div class="time-overview-breakdown-row" id="time-overview-breakdown-list"></div>
+              <div class="tempozio-footer">
+                <img src="assets/Te.svg" alt="Tempozio" class="tempozio-footer-logo">
+                <span>powered by Tempozio</span>
+              </div>
             </div>
-            <div class="tempozio-footer">
-              <img src="assets/Te.svg" alt="Tempozio" class="tempozio-footer-logo">
-              <span>powered by Tempozio</span>
+
+            <!-- ستون جدید: My Notes -->
+            <div class="notes-card">
+              <h3 class="card-heading">My Notes</h3>
+              <textarea id="my-notes-textarea" placeholder="Write your notes here..." rows="6"></textarea>
             </div>
           </div>
         </div>
