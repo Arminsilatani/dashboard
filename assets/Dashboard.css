@@ -303,7 +303,7 @@ html, body {
   white-space: nowrap;
   width: calc(100% - 16px);
   transition: background 0.15s;
-  position: relative; /* for notification badge */
+  position: relative;
 }
 
 .sidebar:hover .sidebar-user {
@@ -1166,6 +1166,7 @@ td .btn-ghost {
 .cropper-face {
   border-radius: 50%;
 }
+
 /* =================================================================
    SCROLLBAR
    ================================================================= */
@@ -1190,7 +1191,6 @@ td .btn-ghost {
 /* =================================================================
    NOTIFICATIONS
    ================================================================= */
-
 .notif-dot-icon {
   width: 8px;
   height: 8px;
@@ -1264,6 +1264,7 @@ td .btn-ghost {
   flex-direction: column;
   gap: 12px;
 }
+
 ::-ms-reveal {
   display: none;
 }
@@ -1387,7 +1388,6 @@ input[type="password"]::-webkit-textfield-decoration-container {
   scrollbar-color: var(--accent) rgba(255,255,255,0.03);
 }
 
-/* برای WebKit (Chrome/Safari/Edge) */
 #dash-notif-list::-webkit-scrollbar {
   width: 5px;
 }
@@ -1466,6 +1466,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
 .mini-cal-day.today:hover.has-event::after {
   background: #0d0d0d;
 }
+
 #dash-users-list .dash-user-card:last-child {
   border-bottom: none;
 }
@@ -1478,14 +1479,16 @@ input[type="password"]::-webkit-textfield-decoration-container {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px 20px;       /* قبلاً 20px بود */
+  padding: 16px 20px;
   margin: 0;
+  position: relative;       /* for footer positioning */
+  padding-bottom: 35px;    /* space for footer */
 }
 
 .time-overview-content {
   display: flex;
   flex-direction: column;
-  gap: 12px;                /* قبلاً 20px بود */
+  gap: 12px;
 }
 
 .time-overview-chart {
@@ -1559,12 +1562,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
   font-size: 14px;
 }
 
-/* فوتر Tempozio در کارت Time Overview */
-.time-overview-card {
-  position: relative;   /* برای موقعیت‌دهی فوتر */
-  padding-bottom: 35px; /* فضای کافی برای فوتر */
-}
-
+/* Tempozio footer inside Time Overview card */
 .tempozio-footer {
   position: absolute;
   bottom: 8px;
@@ -1584,6 +1582,23 @@ input[type="password"]::-webkit-textfield-decoration-container {
   height: 14px;
   object-fit: contain;
 }
+
+/* =================================================================
+   GROUP OF CARDS WITH VERTICAL SPACING
+   ================================================================= */
+.dash-group-spaced {
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-group-spaced .dash-row {
+  margin-bottom: 50px;
+}
+
+.dash-group-spaced .dash-row:last-child {
+  margin-bottom: 0;
+}
+
 /* =================================================================
    RESPONSIVE
    ================================================================= */
@@ -1606,7 +1621,6 @@ input[type="password"]::-webkit-textfield-decoration-container {
     max-height: unset;
   }
 
-  /* تغییر sidebar به نوار پایین */
   .sidebar {
     position: fixed;
     bottom: 0;
@@ -1614,7 +1628,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
     width: 100%;
     height: 50px;
     margin: 0;
-    border-radius: 0 0 0 0;
+    border-radius: 0;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -1623,21 +1637,19 @@ input[type="password"]::-webkit-textfield-decoration-container {
     z-index: 100;
     background: var(--accent);
     box-shadow: 0 -4px 15px rgba(0,0,0,0.3);
-    top: auto;                  /* حذف sticky قبلی */
-    overflow: visible;          /* برای بیرون‌زدگی آواتار */
+    top: auto;
+    overflow: visible;
   }
 
-    .sidebar:hover {
-    width: 100% !important;  /* یا width: 100% (بدون important) */
+  .sidebar:hover {
+    width: 100% !important;
     transition: none;
   }
 
-  /* تبدیل nav به flex-item های مستقیم */
   .sidebar-nav {
-    display: contents;          /* دکمه‌ها را مستقیم در sidebar قرار می‌دهد */
+    display: contents;
   }
 
-  /* دکمه‌های ناوبری */
   .nav-item {
     width: auto;
     padding: 8px 0;
@@ -1647,72 +1659,66 @@ input[type="password"]::-webkit-textfield-decoration-container {
     flex: 0 0 auto;
   }
 
-    .nav-item.active {
-    background: none;   /* حذف باکس خاکستری */
-    /* در صورت نیاز می‌توانید رنگ متن را هم تنظیم کنید */
+  .nav-item.active {
+    background: none;
   }
 
-
-    .sidebar-user:hover {
-    background: none;           /* حذف مستطیل خاکستری */
-    border-radius: 0;          /* حذف گردی احتمالی اگر بود */
+  .sidebar-user:hover {
+    background: none;
+    border-radius: 0;
   }
 
-  /* مخفی‌کردن متن‌ها */
   .nav-text,
   .sidebar-user-info {
     display: none !important;
   }
 
-  /* آیکون‌ها */
   .nav-icon {
     width: 24px;
     height: 24px;
   }
 
-  /* دکمه signout را مخفی کن (یا می‌توانی در منوی دیگری بگذاری) */
   .btn-signout {
     display: none;
   }
 
-  /* آواتار کاربر (موقتاً از sidebar-user می‌آید) */
   .sidebar-user {
     width: auto;
     padding: 0;
     margin: 0;
     border: none;
-    order: 3;                   /* وسط قرار می‌گیرد */
+    order: 3;
     position: relative;
     cursor: pointer;
   }
 
   .sidebar-user .avatar {
-    width: 56px;                /* بزرگ‌تر */
+    width: 56px;
     height: 56px;
     border-radius: 50%;
     border: 3px solid #0d0d0d;
     background: #0d0d0d;
-    margin-top: -14px;          /* 25% بیرون‌زدگی از بالا */
+    margin-top: -14px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
   }
 
-  /* تنظیم ترتیب دکمه‌ها با order (با استفاده از nth-child) */
-  /* Tickets (اولین دکمه) */
-  .nav-item:nth-child(1) { order: 1; }   /* Tickets */
-  /* Messages (دومین دکمه) */
-  .nav-item:nth-child(2) { order: 2; }   /* Messages */
-  /* Contracts (سومین دکمه) */
-  .nav-item:nth-child(3) { order: 4; }   /* Contracts */
-  /* Connections (چهارمین دکمه) */
-  .nav-item:nth-child(4) { order: 5; }   /* Connections */
-  /* Users (پنجمین دکمه – ادمین) */
-  .nav-item:nth-child(5) { order: 6; }   /* Users */
+  .nav-item:nth-child(1) { order: 1; }
+  .nav-item:nth-child(2) { order: 2; }
+  .nav-item:nth-child(3) { order: 4; }
+  .nav-item:nth-child(4) { order: 5; }
+  .nav-item:nth-child(5) { order: 6; }
 
-  /* محتوای اصلی */
   .content {
-    margin-bottom: 75px;       /* فضای خالی برای نوار پایین */
+    margin-bottom: 75px;
     padding: 16px;
     max-height: unset;
   }
   
+  .time-overview-card {
+    width: 100%;
+  }
+
+  .time-overview-breakdown-row {
+    gap: 30px;
+  }
 }
