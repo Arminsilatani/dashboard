@@ -1543,6 +1543,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 120px;
+  line-height: 1.2;
 }
 
 .time-overview-breakdown-row .breakdown-time {
