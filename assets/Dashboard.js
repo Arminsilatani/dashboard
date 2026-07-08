@@ -689,6 +689,7 @@ async function loadDashboard() {
     document.getElementById('dash-website').textContent = currentUser.website || '—';
     document.getElementById('dash-avatar').src = currentUser.photo_url || generateAvatarUrl(name);
     await Promise.all([loadMiniCalendar(), loadNotifications()]);
+    await loadTimeOverview();
     updateNotificationBadge();
     if (currentUser.role === 'General') {
   loadDashboardUserList();
@@ -700,6 +701,169 @@ async function loadDashboard() {
   } finally {
     hideLoader();
   }
+}
+
+function getProjectWeekDurations(project) {
+  const now = Date.now();
+  const dayMs = 86400000;
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const windowStart = todayStart - (6 * dayMs);
+  const durations = new Array(7).fill(0);
+
+  function addSession(start, end) {
+    if (end <= start) return;
+    for (let i = 0; i < 7; i++) {
+      const dayStart = windowStart + i * dayMs;
+      const dayEnd = dayStart + dayMs;
+      const overlapStart = Math.max(start, dayStart);
+      const overlapEnd = Math.min(end, dayEnd);
+      if (overlapEnd > overlapStart) durations[i] += overlapEnd - overlapStart;
+    }
+  }
+
+  /**
+ * رسم Donut Chart و Project Breakdown در کارت Time Overview
+ */
+async function loadTimeOverview() {
+  const svg = document.getElementById('time-overview-donut');
+  const breakdownList = document.getElementById('time-overview-breakdown-list');
+  const centerTotal = document.getElementById('chart-center-total');
+  if (!svg || !breakdownList || !centerTotal) return;
+
+  // حالت loading
+  svg.innerHTML = '';
+  breakdownList.innerHTML = '<p class="empty-state">Loading...</p>';
+  centerTotal.textContent = '--:--';
+
+  try {
+    // دریافت همه پروژه‌های کاربر از جدول tempozio
+    const projects = await db.select('tempozio', `user_id=eq.${currentUser.id}`);
+    if (!projects || projects.length === 0) {
+      svg.innerHTML = '<text x="150" y="150" text-anchor="middle" fill="#888" font-size="14">No projects this week</text>';
+      breakdownList.innerHTML = '<p class="empty-state">No data</p>';
+      return;
+    }
+
+    // محاسبه مجموع زمان هر پروژه در این هفته
+    const projectData = projects.map(p => {
+      const weekDurations = getProjectWeekDurations(p);
+      const totalMs = weekDurations.reduce((a, b) => a + b, 0);
+      return {
+        id: p.id,
+        name: p.name,
+        color: p.color || '#4ECDC4',
+        totalMs
+      };
+    }).filter(p => p.totalMs > 0);
+
+    if (projectData.length === 0) {
+      svg.innerHTML = '<text x="150" y="150" text-anchor="middle" fill="#888" font-size="14">No time tracked this week</text>';
+      breakdownList.innerHTML = '<p class="empty-state">No time recorded</p>';
+      return;
+    }
+
+    const totalWeekMs = projectData.reduce((sum, p) => sum + p.totalMs, 0);
+    const hours = Math.floor(totalWeekMs / 3600000);
+    const minutes = Math.floor((totalWeekMs % 3600000) / 60000);
+    centerTotal.textContent = `${hours}h ${minutes}m`;
+
+    // محاسبه درصد
+    projectData.forEach(p => {
+      p.percent = (p.totalMs / totalWeekMs) * 100;
+    });
+
+    // ---------- رسم Donut Chart ----------
+    svg.innerHTML = ''; // پاک‌سازی
+    const width = 300, height = 300;
+    const centerX = width / 2, centerY = height / 2;
+    const outerR = 110;
+    const innerR = 55;
+
+    let startAngle = -Math.PI / 2; // شروع از بالا
+
+    projectData.forEach(p => {
+      const sliceAngle = (p.percent / 100) * 2 * Math.PI;
+      const endAngle = startAngle + sliceAngle;
+
+      const x1Out = centerX + outerR * Math.cos(startAngle);
+      const y1Out = centerY + outerR * Math.sin(startAngle);
+      const x2Out = centerX + outerR * Math.cos(endAngle);
+      const y2Out = centerY + outerR * Math.sin(endAngle);
+      const x1In = centerX + innerR * Math.cos(startAngle);
+      const y1In = centerY + innerR * Math.sin(startAngle);
+      const x2In = centerX + innerR * Math.cos(endAngle);
+      const y2In = centerY + innerR * Math.sin(endAngle);
+
+      const largeArc = sliceAngle > Math.PI ? 1 : 0;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', `
+        M ${x1Out} ${y1Out}
+        A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2Out} ${y2Out}
+        L ${x2In} ${y2In}
+        A ${innerR} ${innerR} 0 ${largeArc} 0 ${x1In} ${y1In}
+        Z
+      `);
+      path.setAttribute('fill', p.color);
+      path.setAttribute('stroke', '#0d0d0d');
+      path.setAttribute('stroke-width', '2');
+      svg.appendChild(path);
+
+      // نوشتن نام پروژه روی برش (اگر بزرگ باشد)
+      if (p.percent >= 8) {
+        const midAngle = startAngle + sliceAngle / 2;
+        const labelR = (outerR + innerR) / 2;
+        const labelX = centerX + labelR * Math.cos(midAngle);
+        const labelY = centerY + labelR * Math.sin(midAngle);
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', labelX);
+        text.setAttribute('y', labelY);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'central');
+        text.setAttribute('fill', '#0d0d0d');
+        text.setAttribute('font-size', '10');
+        text.setAttribute('font-weight', 'bold');
+        text.textContent = p.name.length > 10 ? p.name.slice(0, 10) + '…' : p.name;
+        svg.appendChild(text);
+      }
+
+      startAngle = endAngle;
+    });
+
+    // ---------- ساخت لیست Breakdown ----------
+    breakdownList.innerHTML = projectData.map(p => {
+      const percentStr = p.percent.toFixed(1);
+      return `
+        <div class="breakdown-item">
+          <svg class="progress-ring" viewBox="0 0 36 36">
+            <circle class="bg" cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="3"/>
+            <circle class="fill" cx="18" cy="18" r="15" fill="none"
+                    stroke="${p.color}" stroke-width="3" stroke-linecap="round"
+                    stroke-dasharray="${percentStr} 100"
+                    transform="rotate(-90 18 18)" />
+            <text x="18" y="18" dy="0.3em" text-anchor="middle" fill="#f5f5f5" font-size="8">${percentStr}%</text>
+          </svg>
+          <div class="breakdown-info">
+            <div class="breakdown-name">${esc(p.name)}</div>
+            <div class="breakdown-time">${formatDuration(p.totalMs)}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (e) {
+    console.error('Time Overview Error:', e);
+    breakdownList.innerHTML = '<p class="empty-state">Error loading data</p>';
+  }
+}
+
+  if (project.history && Array.isArray(project.history)) {
+    project.history.forEach(s => addSession(s.start, s.end));
+  }
+  if (project.is_running && project.last_start_time) {
+    addSession(project.last_start_time, now);
+  }
+  return durations;
 }
 
 async function loadMiniCalendar() {
@@ -1605,6 +1769,15 @@ function fmtDate(iso) {
   if (!iso) return '';
   const d = new Date(iso);
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function formatDuration(ms) {
+  if (!ms || ms <= 0) return '0m';
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
 }
 
 function generateAvatarUrl(name) {
