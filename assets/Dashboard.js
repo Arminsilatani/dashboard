@@ -733,17 +733,17 @@ function getProjectWeekDurations(project) {
 async function loadTimeOverview() {
   const container = document.getElementById('time-overview-chart-area');
   const breakdownList = document.getElementById('time-overview-breakdown-list');
-  const centerTotal = document.getElementById('chart-center-total');
-  if (!container || !breakdownList || !centerTotal) return;
+  const totalDisplay = document.getElementById('time-overview-total');
+  if (!container || !breakdownList || !totalDisplay) return;
 
   container.innerHTML = '';
   breakdownList.innerHTML = '<p class="empty-state">Loading...</p>';
-  centerTotal.textContent = '--:--';
+  totalDisplay.textContent = '--:--';
 
   try {
     const projects = await db.select('tempozio', `user_id=eq.${currentUser.id}`);
     if (!projects || projects.length === 0) {
-      container.innerHTML = '<p class="empty-state" style="text-align:center;padding-top:40px;">No projects this week</p>';
+      container.innerHTML = '<div class="chart-empty-message">No projects this week</div>';
       breakdownList.innerHTML = '<p class="empty-state">No data</p>';
       return;
     }
@@ -756,7 +756,7 @@ async function loadTimeOverview() {
 
     const activeProjects = projectDurations.filter(p => p.weekDurations.reduce((a,b)=>a+b,0) > 0);
     if (activeProjects.length === 0) {
-      container.innerHTML = '<p class="empty-state" style="text-align:center;padding-top:40px;">No time tracked this week</p>';
+      container.innerHTML = '<div class="chart-empty-message">No time tracked this week</div>';
       breakdownList.innerHTML = '<p class="empty-state">No time recorded</p>';
       return;
     }
@@ -765,7 +765,7 @@ async function loadTimeOverview() {
     const totalWeekMs = activeProjects.reduce((sum, p) => sum + p.weekDurations.reduce((a,b)=>a+b,0), 0);
     const hours = Math.floor(totalWeekMs / 3600000);
     const minutes = Math.floor((totalWeekMs % 3600000) / 60000);
-    centerTotal.textContent = `${hours}h ${minutes}m`;
+    totalDisplay.textContent = `${hours}h ${minutes}m`;
 
     // حداکثر روزانه برای مقیاس محور Y
     const dailySums = Array(7).fill(0);
