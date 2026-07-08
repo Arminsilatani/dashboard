@@ -783,7 +783,7 @@ async function loadTimeOverview() {
     // SVG
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     const vbWidth = 700;
-    const vbHeight = 220;                  // ارتفاع جدید
+    const vbHeight = 220;
     svg.setAttribute('viewBox', `0 0 ${vbWidth} ${vbHeight}`);
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     svg.style.width = '100%';
@@ -791,7 +791,7 @@ async function loadTimeOverview() {
 
     const margin = { top: 20, right: 20, bottom: 20, left: 60 };
     const width = vbWidth - margin.left - margin.right;
-    const height = vbHeight - margin.top - margin.bottom;   // حالا درست محاسبه میشه
+    const height = vbHeight - margin.top - margin.bottom;
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     g.setAttribute('transform', `translate(${margin.left},${margin.top})`);
 
@@ -847,6 +847,7 @@ async function loadTimeOverview() {
       areaPath.setAttribute('fill', color);
       areaPath.setAttribute('opacity', '0.2');
       areaPath.setAttribute('stroke', 'none');
+      areaPath.setAttribute('data-project-id', project.id);   // ← اضافه شد
       g.appendChild(areaPath);
 
       // خط بیرونی پررنگ
@@ -862,6 +863,7 @@ async function loadTimeOverview() {
       linePath.setAttribute('stroke', color);
       linePath.setAttribute('stroke-width', '2');
       linePath.setAttribute('opacity', '1');
+      linePath.setAttribute('data-project-id', project.id);   // ← اضافه شد
       g.appendChild(linePath);
     });
 
@@ -870,13 +872,13 @@ async function loadTimeOverview() {
     container.appendChild(svg);
 
     // Project Breakdown افقی (بدون عنوان)
-    const circumference = 2 * Math.PI * 15; // ≈ 94.25
+    const circumference = 2 * Math.PI * 15;
     breakdownList.innerHTML = activeProjects.map(p => {
       const totalMs = p.weekDurations.reduce((a,b)=>a+b,0);
-      const percent = Math.round((totalMs / totalWeekMs) * 100); // عدد صحیح
+      const percent = Math.round((totalMs / totalWeekMs) * 100);
       const fillDash = (percent / 100) * circumference;
       return `
-        <div class="breakdown-item">
+        <div class="breakdown-item" data-project-id="${p.id}" data-project-color="${p.color || '#4ECDC4'}">
           <svg class="progress-ring" viewBox="0 0 36 36">
             <circle class="bg" cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="3"/>
             <circle class="fill" cx="18" cy="18" r="15" fill="none"
@@ -892,6 +894,66 @@ async function loadTimeOverview() {
         </div>
       `;
     }).join('');
+
+    // ── Hover effect: highlight related chart area ──────────
+    const svgEl = container.querySelector('svg');
+    const allItems = breakdownList.querySelectorAll('.breakdown-item');
+
+    function resetAllHighlights() {
+      allItems.forEach(item => item.style.backgroundColor = '');
+      if (!svgEl) return;
+      const allPaths = svgEl.querySelectorAll('path[data-project-id]');
+      allPaths.forEach(path => {
+        const fill = path.getAttribute('fill');
+        if (fill && fill !== 'none') {
+          path.setAttribute('opacity', '0.2');    // مساحت
+        } else {
+          path.setAttribute('opacity', '1');      // خط
+        }
+      });
+    }
+
+    breakdownList.addEventListener('mouseover', (e) => {
+      const item = e.target.closest('.breakdown-item');
+      resetAllHighlights();   // همه را به حالت عادی برگردان
+
+      if (!item) return;
+
+      const projectId = item.dataset.projectId;
+      const color = item.dataset.projectColor;
+
+      // باکس پشت آیتم
+      item.style.backgroundColor = hexToRgba(color, 0.1);
+
+      if (!svgEl) return;
+
+      // مسیرهای پروژهٔ hover شده → وضوح کامل
+      const projectPaths = svgEl.querySelectorAll(`path[data-project-id="${projectId}"]`);
+      projectPaths.forEach(path => {
+        const fill = path.getAttribute('fill');
+        if (fill && fill !== 'none') {
+          path.setAttribute('opacity', '0.2');   // مساحت
+        } else {
+          path.setAttribute('opacity', '1');     // خط
+        }
+      });
+
+      // بقیهٔ پروژه‌ها → خیلی کمرنگ
+      const otherPaths = svgEl.querySelectorAll(`path[data-project-id]:not([data-project-id="${projectId}"])`);
+      otherPaths.forEach(path => {
+        const fill = path.getAttribute('fill');
+        if (fill && fill !== 'none') {
+          path.setAttribute('opacity', '0.05');  // مساحت خیلی کم‌رنگ
+        } else {
+          path.setAttribute('opacity', '0.2');   // خط خیلی کم‌رنگ
+        }
+      });
+    });
+
+    // وقتی موس کاملاً از لیست خارج می‌شود، همه ریست شوند
+    breakdownList.addEventListener('mouseleave', () => {
+      resetAllHighlights();
+    });
 
   } catch (e) {
     console.error('Time Overview Error:', e);
@@ -1753,6 +1815,13 @@ function formatDuration(ms) {
   const minutes = Math.floor((totalSeconds % 3600) / 60000);
   if (hours > 0) return `${hours}h ${minutes}m`;
   return `${minutes}m`;
+}
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
 }
 
 function generateAvatarUrl(name) {
