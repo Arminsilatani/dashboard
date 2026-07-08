@@ -783,7 +783,7 @@ async function loadTimeOverview() {
 
     // SVG
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 700 350');
+    svg.setAttribute('viewBox', '0 0 700 220');
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     svg.style.width = '100%';
     svg.style.height = 'auto';
