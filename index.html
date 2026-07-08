@@ -137,6 +137,7 @@
     <main class="content">
       <!-- SECTIONS (exactly the same as before) -->
       <section id="section-dashboard" class="section">
+        <!-- ردیف اول: Time Overview -->
         <div class="dash-row">
           <div class="time-overview-card">
             <h3 class="card-heading">
@@ -144,15 +145,15 @@
               <span class="time-overview-total" id="time-overview-total">--:--</span>
             </h3>
             <div class="time-overview-content">
-              <!-- نمودار تمام‌عرض -->
               <div class="time-overview-chart">
                 <div id="time-overview-chart-area"></div>
               </div>
-              <!-- Project Breakdown افقی (بدون عنوان) -->
               <div class="time-overview-breakdown-row" id="time-overview-breakdown-list"></div>
             </div>
           </div>
         </div>
+
+        <!-- ردیف دوم: Calendar -->
         <div class="dash-row">
           <div class="dash-calendar-card">
             <h3 class="card-heading">Calendar</h3>
@@ -163,6 +164,8 @@
             </div>
           </div>
         </div>
+
+        <!-- ردیف سوم: Recent Tickets + Messages -->
         <div class="dash-row">
           <div class="dash-list-card">
             <h3 class="card-heading clickable" data-nav="tickets">Recent Tickets →</h3>
@@ -173,37 +176,17 @@
             <div id="dash-messages-list" class="mini-list"></div>
           </div>
         </div>
-                <div class="dash-row" id="dash-users-row" style="display:none;">
-                  <div class="dash-list-card" style="flex:1;">
-                    <h3 class="card-heading">All Users</h3>
-                    <!-- نوار جستجو -->
-                    <div style="margin-bottom:16px;">
-                      <input type="text" id="dash-user-search" class="auth-field" placeholder="Search by name..." autocomplete="off">
-                    </div>
-                    <!-- لیست کاربران -->
-                    <div id="dash-users-list" class="mini-list"></div>
-                  </div>
-                </div>
-            <!-- Time Overview Card -->
-            <div class="dash-row">
-              <div class="time-overview-card">
-                <h3 class="card-heading">
-                  Time Overview
-                  <span class="time-overview-total" id="time-overview-total">--:--</span>
-                </h3>
-                <div class="time-overview-content" id="time-overview-content">
-                  <!-- سمت چپ: نمودار مساحتی -->
-                  <div class="time-overview-chart">
-                    <div id="time-overview-chart-area"></div>
-                  </div>
-                  <!-- سمت راست: Project Breakdown -->
-                  <div class="time-overview-breakdown">
-                    <h4 class="breakdown-title">Project Breakdown</h4>
-                    <div class="breakdown-list" id="time-overview-breakdown-list"></div>
-                  </div>
-                </div>
-              </div>
+
+        <!-- ردیف چهارم: Users (admin only) -->
+        <div class="dash-row" id="dash-users-row" style="display:none;">
+          <div class="dash-list-card" style="flex:1;">
+            <h3 class="card-heading">All Users</h3>
+            <div style="margin-bottom:16px;">
+              <input type="text" id="dash-user-search" class="auth-field" placeholder="Search by name..." autocomplete="off">
             </div>
+            <div id="dash-users-list" class="mini-list"></div>
+          </div>
+        </div>
       </section>
 
       <section id="section-tickets" class="section">
