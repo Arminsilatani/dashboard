@@ -1549,6 +1549,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
 .time-overview-breakdown-row .breakdown-time {
   font-size: 12px;
   color: var(--muted);
+  line-height: 1;
 }
 
 .time-overview-empty {
