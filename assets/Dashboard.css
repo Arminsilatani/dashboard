@@ -1469,6 +1469,26 @@ input[type="password"]::-webkit-textfield-decoration-container {
 #dash-users-list .dash-user-card:last-child {
   border-bottom: none;
 }
+
+/* =================================================================
+   TIME OVERVIEW CARD
+   ================================================================= */
+.time-overview-card {
+  width: 70%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin: 0 auto; /* وسط‌چین افقی */
+}
+
+/* برای واکنش‌گرایی (موبایل) عرض را بیشتر کن */
+@media (max-width: 680px) {
+  .time-overview-card {
+    width: 100%;
+  }
+}
+
 /* =================================================================
    RESPONSIVE
    ================================================================= */
