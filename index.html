@@ -137,57 +137,84 @@
     <main class="content">
       <!-- SECTIONS (exactly the same as before) -->
       <section id="section-dashboard" class="section">
-        <!-- ردیف اول: Time Overview -->
-        <div class="dash-row">
-          <div class="time-overview-card">
-            <h3 class="card-heading">
-              Time Overview
-              <span class="time-overview-total" id="time-overview-total">--:--</span>
-            </h3>
-            <div class="time-overview-content">
-              <div class="time-overview-chart">
-                <div id="time-overview-chart-area"></div>
-              </div>
-              <div class="time-overview-breakdown-row" id="time-overview-breakdown-list"></div>
-            </div>
-          </div>
+  <!-- ردیف اول: پروفایل + نوتیفیکیشن‌ها -->
+  <div class="dash-row">
+    <div class="dash-profile-card">
+      <div class="profile-header">
+        <div class="profile-avatar-wrap">
+          <img id="dash-avatar" src="" alt="avatar" class="dash-avatar" />
+          <button class="dash-edit-btn dash-avatar-edit-btn" id="open-edit-profile-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+          </button>
         </div>
+        <div class="profile-header-text">
+          <h2 id="dash-fullname"></h2>
+          <span id="dash-role-badge" class="badge badge-open"></span>
+        </div>
+      </div>
+      <div class="profile-details">
+        <div class="detail-item"><span class="detail-label">Email</span><span class="detail-value" id="dash-email">—</span></div>
+        <div class="detail-item"><span class="detail-label">Phone</span><span class="detail-value" id="dash-phone">—</span></div>
+        <div class="detail-item"><span class="detail-label">Website</span><span class="detail-value" id="dash-website">—</span></div>
+      </div>
+    </div>
+    <div class="dash-notif-card">
+      <h3 class="card-heading">Notifications</h3>
+      <div id="dash-notif-list"><p class="empty-state">No new notifications</p></div>
+    </div>
+  </div>
 
-        <!-- ردیف دوم: Calendar -->
-        <div class="dash-row">
-          <div class="dash-calendar-card">
-            <h3 class="card-heading">Calendar</h3>
-            <div id="dash-mini-calendar"></div>
-            <div class="mini-cal-footer">
-              <img src="assets/Ra.svg" alt="Ravlo" class="ravlo-footer-logo">
-              <span>powered by Ravlo</span>
-            </div>
-          </div>
+  <!-- ردیف دوم: Time Overview -->
+  <div class="dash-row">
+    <div class="time-overview-card">
+      <h3 class="card-heading">
+        Time Overview
+        <span class="time-overview-total" id="time-overview-total">--:--</span>
+      </h3>
+      <div class="time-overview-content">
+        <div class="time-overview-chart">
+          <div id="time-overview-chart-area"></div>
         </div>
+        <div class="time-overview-breakdown-row" id="time-overview-breakdown-list"></div>
+      </div>
+    </div>
+  </div>
 
-        <!-- ردیف سوم: Recent Tickets + Messages -->
-        <div class="dash-row">
-          <div class="dash-list-card">
-            <h3 class="card-heading clickable" data-nav="tickets">Recent Tickets →</h3>
-            <div id="dash-tickets-list" class="mini-list"></div>
-          </div>
-          <div class="dash-list-card">
-            <h3 class="card-heading clickable" data-nav="messages">Recent Messages →</h3>
-            <div id="dash-messages-list" class="mini-list"></div>
-          </div>
-        </div>
+  <!-- ردیف سوم: Calendar -->
+  <div class="dash-row">
+    <div class="dash-calendar-card">
+      <h3 class="card-heading">Calendar</h3>
+      <div id="dash-mini-calendar"></div>
+      <div class="mini-cal-footer">
+        <img src="assets/Ra.svg" alt="Ravlo" class="ravlo-footer-logo">
+        <span>powered by Ravlo</span>
+      </div>
+    </div>
+  </div>
 
-        <!-- ردیف چهارم: Users (admin only) -->
-        <div class="dash-row" id="dash-users-row" style="display:none;">
-          <div class="dash-list-card" style="flex:1;">
-            <h3 class="card-heading">All Users</h3>
-            <div style="margin-bottom:16px;">
-              <input type="text" id="dash-user-search" class="auth-field" placeholder="Search by name..." autocomplete="off">
-            </div>
-            <div id="dash-users-list" class="mini-list"></div>
-          </div>
-        </div>
-      </section>
+  <!-- ردیف چهارم: Recent Tickets + Messages -->
+  <div class="dash-row">
+    <div class="dash-list-card">
+      <h3 class="card-heading clickable" data-nav="tickets">Recent Tickets →</h3>
+      <div id="dash-tickets-list" class="mini-list"></div>
+    </div>
+    <div class="dash-list-card">
+      <h3 class="card-heading clickable" data-nav="messages">Recent Messages →</h3>
+      <div id="dash-messages-list" class="mini-list"></div>
+    </div>
+  </div>
+
+  <!-- ردیف پنجم: Users (admin only) -->
+  <div class="dash-row" id="dash-users-row" style="display:none;">
+    <div class="dash-list-card" style="flex:1;">
+      <h3 class="card-heading">All Users</h3>
+      <div style="margin-bottom:16px;">
+        <input type="text" id="dash-user-search" class="auth-field" placeholder="Search by name..." autocomplete="off">
+      </div>
+      <div id="dash-users-list" class="mini-list"></div>
+    </div>
+  </div>
+</section>
 
       <section id="section-tickets" class="section">
         <div class="section-header"><h2>Tickets</h2><button class="btn-accent" id="new-ticket-btn">+ New Ticket</button></div>
