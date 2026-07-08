@@ -1473,9 +1473,6 @@ input[type="password"]::-webkit-textfield-decoration-container {
 /* =================================================================
    TIME OVERVIEW CARD
    ================================================================= */
-/* =================================================================
-   TIME OVERVIEW CARD
-   ================================================================= */
 .time-overview-card {
   width: 70%;
   background: var(--surface);
@@ -1522,6 +1519,9 @@ input[type="password"]::-webkit-textfield-decoration-container {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  transition: background-color 0.2s ease;
+  padding: 6px 10px;
+  border-radius: 8px;
 }
 
 .time-overview-breakdown-row .progress-ring {
