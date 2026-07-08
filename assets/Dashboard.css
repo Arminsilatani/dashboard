@@ -1629,6 +1629,10 @@ input[type="password"]::-webkit-textfield-decoration-container {
 .notes-card textarea:focus {
   border-color: var(--accent);
 }
+
+.dash-row-nowrap {
+  flex-wrap: nowrap;
+}
 /* =================================================================
    RESPONSIVE
    ================================================================= */
