@@ -686,7 +686,7 @@ async function loadDashboard() {
     document.getElementById('dash-website').textContent = currentUser.website || '—';
     document.getElementById('dash-avatar').src = currentUser.photo_url || generateAvatarUrl(name);
     await Promise.all([loadMiniCalendar(), loadNotifications()]);
-    await loadTimeOverview(); // ← اکنون در دسترس است
+    await loadTimeOverview();
     updateNotificationBadge();
     if (currentUser.role === 'General') {
       loadDashboardUserList();
@@ -701,8 +701,6 @@ async function loadDashboard() {
 }
 
 /* ── Time Overview Helpers ────────────────────────────────── */
-
-// محاسبه زمان یک پروژه در ۷ روز اخیر
 function getProjectWeekDurations(project) {
   const now = Date.now();
   const dayMs = 86400000;
@@ -731,123 +729,167 @@ function getProjectWeekDurations(project) {
   return durations;
 }
 
-// رسم Donut Chart و Project Breakdown
+// رسم Stacked Area Chart و Project Breakdown
 async function loadTimeOverview() {
-  const svg = document.getElementById('time-overview-donut');
+  const container = document.getElementById('time-overview-chart-area');
   const breakdownList = document.getElementById('time-overview-breakdown-list');
   const centerTotal = document.getElementById('chart-center-total');
-  if (!svg || !breakdownList || !centerTotal) return;
+  if (!container || !breakdownList || !centerTotal) return;
 
-  svg.innerHTML = '';
+  container.innerHTML = '';
   breakdownList.innerHTML = '<p class="empty-state">Loading...</p>';
   centerTotal.textContent = '--:--';
 
   try {
     const projects = await db.select('tempozio', `user_id=eq.${currentUser.id}`);
     if (!projects || projects.length === 0) {
-      svg.innerHTML = '<text x="150" y="150" text-anchor="middle" fill="#888" font-size="14">No projects this week</text>';
+      container.innerHTML = '<p class="empty-state" style="text-align:center;padding-top:40px;">No projects this week</p>';
       breakdownList.innerHTML = '<p class="empty-state">No data</p>';
       return;
     }
 
-    const projectData = projects.map(p => {
-      const weekDurations = getProjectWeekDurations(p);
-      const totalMs = weekDurations.reduce((a, b) => a + b, 0);
-      return {
-        id: p.id,
-        name: p.name,
-        color: p.color || '#4ECDC4',
-        totalMs
-      };
-    }).filter(p => p.totalMs > 0);
+    // زمان هر پروژه در ۷ روز
+    const projectDurations = projects.map(p => ({
+      ...p,
+      weekDurations: getProjectWeekDurations(p)
+    }));
 
-    if (projectData.length === 0) {
-      svg.innerHTML = '<text x="150" y="150" text-anchor="middle" fill="#888" font-size="14">No time tracked this week</text>';
+    const activeProjects = projectDurations.filter(p => p.weekDurations.reduce((a,b)=>a+b,0) > 0);
+    if (activeProjects.length === 0) {
+      container.innerHTML = '<p class="empty-state" style="text-align:center;padding-top:40px;">No time tracked this week</p>';
       breakdownList.innerHTML = '<p class="empty-state">No time recorded</p>';
       return;
     }
 
-    const totalWeekMs = projectData.reduce((sum, p) => sum + p.totalMs, 0);
+    // مجموع زمان کل
+    const totalWeekMs = activeProjects.reduce((sum, p) => sum + p.weekDurations.reduce((a,b)=>a+b,0), 0);
     const hours = Math.floor(totalWeekMs / 3600000);
     const minutes = Math.floor((totalWeekMs % 3600000) / 60000);
     centerTotal.textContent = `${hours}h ${minutes}m`;
 
-    projectData.forEach(p => {
-      p.percent = (p.totalMs / totalWeekMs) * 100;
-    });
+    // حداکثر روزانه برای مقیاس محور Y
+    const dailySums = Array(7).fill(0);
+    activeProjects.forEach(p => p.weekDurations.forEach((v,i) => dailySums[i] += v));
+    const maxDailyMs = Math.max(...dailySums, 1);
+    const maxHours = Math.ceil(maxDailyMs / 3600000);
+    const yMaxMs = maxHours * 3600000;
 
-    // رسم Donut
-    svg.innerHTML = '';
-    const width = 300, height = 300;
-    const centerX = width / 2, centerY = height / 2;
-    const outerR = 110;
-    const innerR = 55;
+    // روزهای هفته (از امروز به عقب)
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const dayMs = 86400000;
+    const windowStart = todayStart - 6 * dayMs;
+    const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-    let startAngle = -Math.PI / 2;
+    // SVG
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 700 350');
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    svg.style.width = '100%';
+    svg.style.height = 'auto';
 
-    projectData.forEach(p => {
-      const sliceAngle = (p.percent / 100) * 2 * Math.PI;
-      const endAngle = startAngle + sliceAngle;
+    const margin = { top: 20, right: 20, bottom: 30, left: 60 };
+    const width = 700 - margin.left - margin.right;
+    const height = 350 - margin.top - margin.bottom;
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('transform', `translate(${margin.left},${margin.top})`);
 
-      const x1Out = centerX + outerR * Math.cos(startAngle);
-      const y1Out = centerY + outerR * Math.sin(startAngle);
-      const x2Out = centerX + outerR * Math.cos(endAngle);
-      const y2Out = centerY + outerR * Math.sin(endAngle);
-      const x1In = centerX + innerR * Math.cos(startAngle);
-      const y1In = centerY + innerR * Math.sin(startAngle);
-      const x2In = centerX + innerR * Math.cos(endAngle);
-      const y2In = centerY + innerR * Math.sin(endAngle);
+    // خطوط راهنما
+    for (let h = 1; h <= maxHours; h++) {
+      const y = height - (h / maxHours) * height;
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', 0); line.setAttribute('y1', y);
+      line.setAttribute('x2', width); line.setAttribute('y2', y);
+      line.setAttribute('stroke', 'rgba(255,255,255,0.07)');
+      line.setAttribute('stroke-width', '1');
+      g.appendChild(line);
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', -10); text.setAttribute('y', y+4);
+      text.setAttribute('text-anchor', 'end');
+      text.setAttribute('fill', '#888'); text.setAttribute('font-size', '10');
+      text.textContent = h + 'h';
+      g.appendChild(text);
+    }
 
-      const largeArc = sliceAngle > Math.PI ? 1 : 0;
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', `
-        M ${x1Out} ${y1Out}
-        A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2Out} ${y2Out}
-        L ${x2In} ${y2In}
-        A ${innerR} ${innerR} 0 ${largeArc} 0 ${x1In} ${y1In}
-        Z
-      `);
-      path.setAttribute('fill', p.color);
-      path.setAttribute('stroke', '#0d0d0d');
-      path.setAttribute('stroke-width', '2');
-      svg.appendChild(path);
+    // برچسب روزهای هفته
+    for (let i = 0; i < 7; i++) {
+      const x = (i / 6) * width;
+      const day = new Date(windowStart + i * dayMs).getDay();
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', x); text.setAttribute('y', height + 20);
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('fill', '#888'); text.setAttribute('font-size', '10');
+      text.textContent = dayNames[day];
+      g.appendChild(text);
+    }
 
-      if (p.percent >= 8) {
-        const midAngle = startAngle + sliceAngle / 2;
-        const labelR = (outerR + innerR) / 2;
-        const labelX = centerX + labelR * Math.cos(midAngle);
-        const labelY = centerY + labelR * Math.sin(midAngle);
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        text.setAttribute('x', labelX);
-        text.setAttribute('y', labelY);
-        text.setAttribute('text-anchor', 'middle');
-        text.setAttribute('dominant-baseline', 'central');
-        text.setAttribute('fill', '#0d0d0d');
-        text.setAttribute('font-size', '10');
-        text.setAttribute('font-weight', 'bold');
-        text.textContent = p.name.length > 10 ? p.name.slice(0, 10) + '…' : p.name;
-        svg.appendChild(text);
+    // رسم مساحت‌های انباشته
+    const cumulative = Array(7).fill(0);
+    activeProjects.forEach(project => {
+      const color = project.color || '#4ECDC4';
+      const durations = project.weekDurations;
+
+      let pathD = `M 0 ${height}`;
+      // بالا
+      for (let i = 0; i < 7; i++) {
+        const x = (i / 6) * width;
+        const y = height - ((cumulative[i] + durations[i]) / yMaxMs) * height;
+        pathD += ` L ${x} ${y}`;
       }
+      // برگشت به پایین
+      for (let i = 6; i >= 0; i--) {
+        const x = (i / 6) * width;
+        const y = height - (cumulative[i] / yMaxMs) * height;
+        pathD += ` L ${x} ${y}`;
+      }
+      pathD += ' Z';
 
-      startAngle = endAngle;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', pathD);
+      path.setAttribute('fill', color);
+      path.setAttribute('opacity', '0.75');
+      g.appendChild(path);
+
+      // به‌روزرسانی cumulative
+      for (let i = 0; i < 7; i++) cumulative[i] += durations[i];
     });
 
-    // Breakdown
-    breakdownList.innerHTML = projectData.map(p => {
-      const percentStr = p.percent.toFixed(1);
+    // خط بالایی (مجموع)
+    let lineD = '';
+    for (let i = 0; i < 7; i++) {
+      const x = (i / 6) * width;
+      const y = height - (cumulative[i] / yMaxMs) * height;
+      lineD += `${i===0 ? 'M' : 'L'} ${x} ${y} `;
+    }
+    const topLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    topLine.setAttribute('d', lineD);
+    topLine.setAttribute('fill', 'none');
+    topLine.setAttribute('stroke', '#fff');
+    topLine.setAttribute('stroke-width', '1.5');
+    topLine.setAttribute('opacity', '0.5');
+    g.appendChild(topLine);
+
+    svg.appendChild(g);
+    container.innerHTML = '';
+    container.appendChild(svg);
+
+    // Project Breakdown
+    breakdownList.innerHTML = activeProjects.map(p => {
+      const totalMs = p.weekDurations.reduce((a,b)=>a+b,0);
+      const percent = (totalMs / totalWeekMs * 100).toFixed(1);
       return `
         <div class="breakdown-item">
           <svg class="progress-ring" viewBox="0 0 36 36">
             <circle class="bg" cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="3"/>
             <circle class="fill" cx="18" cy="18" r="15" fill="none"
-                    stroke="${p.color}" stroke-width="3" stroke-linecap="round"
-                    stroke-dasharray="${percentStr} 100"
+                    stroke="${p.color || '#4ECDC4'}" stroke-width="3" stroke-linecap="round"
+                    stroke-dasharray="${percent} 100"
                     transform="rotate(-90 18 18)" />
-            <text x="18" y="18" dy="0.3em" text-anchor="middle" fill="#f5f5f5" font-size="8">${percentStr}%</text>
+            <text x="18" y="18" dy="0.3em" text-anchor="middle" fill="#f5f5f5" font-size="8">${percent}%</text>
           </svg>
           <div class="breakdown-info">
             <div class="breakdown-name">${esc(p.name)}</div>
-            <div class="breakdown-time">${formatDuration(p.totalMs)}</div>
+            <div class="breakdown-time">${formatDuration(totalMs)}</div>
           </div>
         </div>
       `;
