@@ -1755,4 +1755,45 @@ input[type="password"]::-webkit-textfield-decoration-container {
   .time-overview-breakdown-row {
     gap: 30px;
   }
+  /* اطمینان از اینکه ردیف Time Overview + Notes در موبایل عمودی شود */
+  .dash-row-nowrap {
+    flex-wrap: wrap;
+  }
+
+  /* کارت Time Overview عرض کامل بگیرد (احتمالاً از قبل دارید، ولی برای اطمینان) */
+  .time-overview-card {
+    width: 100%;
+  }
+
+  /* My Notes هم عرض کامل */
+  .notes-card {
+    width: 100%;
+    min-width: unset;   /* حذف محدودیت حداقل عرض */
+    margin-top: 20px;   /* فاصله مناسب از کارت بالایی */
+  }
+
+  /* بهبود فاصله و چیدمان نمودار و breakdown در موبایل */
+  .time-overview-content {
+    gap: 10px;
+  }
+
+  .time-overview-breakdown-row {
+    gap: 15px;          /* فاصله کمتر برای جا شدن آیتم‌ها */
+    justify-content: flex-start;
+  }
+
+  .time-overview-breakdown-row .breakdown-name {
+    font-size: 13px;
+    max-width: 100px;   /* جلوگیری از overflow */
+  }
+
+  .time-overview-breakdown-row .breakdown-time {
+    font-size: 11px;
+  }
+
+  /* فاصلهٔ بین Calendar و Tickets/Messages را در موبایل کاهش دهید (اختیاری) */
+  .dash-group-spaced .dash-row {
+    margin-bottom: 30px;
+  }
+
 }
