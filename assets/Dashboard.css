@@ -1586,7 +1586,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
   color: var(--accent);
   margin-left: 10px;
   font-size: 0.9em;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.3px;
 }
 
