@@ -783,17 +783,18 @@ async function loadTimeOverview() {
 
     // SVG
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 700 220');
+    const vbWidth = 700;
+    const vbHeight = 220;                  // ارتفاع جدید
+    svg.setAttribute('viewBox', `0 0 ${vbWidth} ${vbHeight}`);
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     svg.style.width = '100%';
     svg.style.height = 'auto';
 
-    const margin = { top: 20, right: 20, bottom: 30, left: 60 };
-    const width = 700 - margin.left - margin.right;
-    const height = 350 - margin.top - margin.bottom;
+    const margin = { top: 20, right: 20, bottom: 20, left: 60 };
+    const width = vbWidth - margin.left - margin.right;
+    const height = vbHeight - margin.top - margin.bottom;   // حالا درست محاسبه میشه
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     g.setAttribute('transform', `translate(${margin.left},${margin.top})`);
-
     // خطوط راهنما
     for (let h = 1; h <= maxHours; h++) {
       const y = height - (h / maxHours) * height;
