@@ -1557,9 +1557,6 @@ input[type="password"]::-webkit-textfield-decoration-container {
   font-size: 14px;
 }
 
-.time-overview-breakdown-row .breakdown-item {
-  transition: background-color 0.2s ease;
-}
 /* =================================================================
    RESPONSIVE
    ================================================================= */
