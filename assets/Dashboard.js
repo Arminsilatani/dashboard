@@ -873,8 +873,8 @@ async function loadTimeOverview() {
     const circumference = 2 * Math.PI * 15; // ≈ 94.25
     breakdownList.innerHTML = activeProjects.map(p => {
       const totalMs = p.weekDurations.reduce((a,b)=>a+b,0);
-      const percent = (totalMs / totalWeekMs * 100).toFixed(1);
-      const fillDash = (parseFloat(percent) / 100) * circumference;
+      const percent = Math.round((totalMs / totalWeekMs) * 100); // عدد صحیح
+      const fillDash = (percent / 100) * circumference;
       return `
         <div class="breakdown-item">
           <svg class="progress-ring" viewBox="0 0 36 36">
