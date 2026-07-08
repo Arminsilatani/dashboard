@@ -138,28 +138,19 @@
       <!-- SECTIONS (exactly the same as before) -->
       <section id="section-dashboard" class="section">
         <div class="dash-row">
-          <div class="dash-profile-card">
-            <div class="profile-header">
-              <div class="profile-avatar-wrap">
-                <img id="dash-avatar" src="" alt="avatar" class="dash-avatar" />
-                <button class="dash-edit-btn dash-avatar-edit-btn" id="open-edit-profile-btn">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                </button>
+          <div class="time-overview-card">
+            <h3 class="card-heading">
+              Time Overview
+              <span class="time-overview-total" id="time-overview-total">--:--</span>
+            </h3>
+            <div class="time-overview-content">
+              <!-- نمودار تمام‌عرض -->
+              <div class="time-overview-chart">
+                <div id="time-overview-chart-area"></div>
               </div>
-              <div class="profile-header-text">
-                <h2 id="dash-fullname"></h2>
-                <span id="dash-role-badge" class="badge badge-open"></span>
-              </div>
+              <!-- Project Breakdown افقی (بدون عنوان) -->
+              <div class="time-overview-breakdown-row" id="time-overview-breakdown-list"></div>
             </div>
-            <div class="profile-details">
-              <div class="detail-item"><span class="detail-label">Email</span><span class="detail-value" id="dash-email">—</span></div>
-              <div class="detail-item"><span class="detail-label">Phone</span><span class="detail-value" id="dash-phone">—</span></div>
-              <div class="detail-item"><span class="detail-label">Website</span><span class="detail-value" id="dash-website">—</span></div>
-            </div>
-          </div>
-          <div class="dash-notif-card">
-            <h3 class="card-heading">Notifications</h3>
-            <div id="dash-notif-list"><p class="empty-state">No new notifications</p></div>
           </div>
         </div>
         <div class="dash-row">
