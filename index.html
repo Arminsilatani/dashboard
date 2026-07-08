@@ -91,10 +91,9 @@
     </div>
   </div>
 
-  <!-- MAIN APP (no changes from here onward, exactly as before) -->
+  <!-- MAIN APP -->
   <div id="app-screen" class="screen">
     <aside class="sidebar" id="sidebar">
-      <!-- sidebar content unchanged -->
       <div class="sidebar-user" id="sidebar-profile-trigger">
         <div style="position: relative; display: inline-flex; flex-shrink: 0;">
           <img id="sidebar-avatar" src="" alt="avatar" class="avatar" />
@@ -106,7 +105,6 @@
         </div>
       </div>
       <nav class="sidebar-nav">
-        <!-- all buttons same as before -->
         <button class="nav-item active" data-section="tickets">
           <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
           <span class="nav-text">Tickets</span>
@@ -135,91 +133,95 @@
     </aside>
 
     <main class="content">
-      <!-- SECTIONS (exactly the same as before) -->
+      <!-- ==================== DASHBOARD SECTION ==================== -->
       <section id="section-dashboard" class="section">
-  <!-- ردیف اول: پروفایل + نوتیفیکیشن‌ها -->
-  <div class="dash-row">
-    <div class="dash-profile-card">
-      <div class="profile-header">
-        <div class="profile-avatar-wrap">
-          <img id="dash-avatar" src="" alt="avatar" class="dash-avatar" />
-          <button class="dash-edit-btn dash-avatar-edit-btn" id="open-edit-profile-btn">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-          </button>
+        <!-- ردیف اول: پروفایل + نوتیفیکیشن -->
+        <div class="dash-row">
+          <div class="dash-profile-card">
+            <div class="profile-header">
+              <div class="profile-avatar-wrap">
+                <img id="dash-avatar" src="" alt="avatar" class="dash-avatar" />
+                <button class="dash-edit-btn dash-avatar-edit-btn" id="open-edit-profile-btn">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                </button>
+              </div>
+              <div class="profile-header-text">
+                <h2 id="dash-fullname"></h2>
+                <span id="dash-role-badge" class="badge badge-open"></span>
+              </div>
+            </div>
+            <div class="profile-details">
+              <div class="detail-item"><span class="detail-label">Email</span><span class="detail-value" id="dash-email">—</span></div>
+              <div class="detail-item"><span class="detail-label">Phone</span><span class="detail-value" id="dash-phone">—</span></div>
+              <div class="detail-item"><span class="detail-label">Website</span><span class="detail-value" id="dash-website">—</span></div>
+            </div>
+          </div>
+          <div class="dash-notif-card">
+            <h3 class="card-heading">Notifications</h3>
+            <div id="dash-notif-list"><p class="empty-state">No new notifications</p></div>
+          </div>
         </div>
-        <div class="profile-header-text">
-          <h2 id="dash-fullname"></h2>
-          <span id="dash-role-badge" class="badge badge-open"></span>
+
+        <!-- گروه Calendar + Tickets/Messages با فاصله ۵۰px -->
+        <div class="dash-group-spaced">
+          <!-- ردیف دوم: Calendar -->
+          <div class="dash-row">
+            <div class="dash-calendar-card">
+              <h3 class="card-heading">Calendar</h3>
+              <div id="dash-mini-calendar"></div>
+              <div class="mini-cal-footer">
+                <img src="assets/Ra.svg" alt="Ravlo" class="ravlo-footer-logo">
+                <span>powered by Ravlo</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ردیف سوم: Recent Tickets + Recent Messages -->
+          <div class="dash-row">
+            <div class="dash-list-card">
+              <h3 class="card-heading clickable" data-nav="tickets">Recent Tickets →</h3>
+              <div id="dash-tickets-list" class="mini-list"></div>
+            </div>
+            <div class="dash-list-card">
+              <h3 class="card-heading clickable" data-nav="messages">Recent Messages →</h3>
+              <div id="dash-messages-list" class="mini-list"></div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="profile-details">
-        <div class="detail-item"><span class="detail-label">Email</span><span class="detail-value" id="dash-email">—</span></div>
-        <div class="detail-item"><span class="detail-label">Phone</span><span class="detail-value" id="dash-phone">—</span></div>
-        <div class="detail-item"><span class="detail-label">Website</span><span class="detail-value" id="dash-website">—</span></div>
-      </div>
-    </div>
-    <div class="dash-notif-card">
-      <h3 class="card-heading">Notifications</h3>
-      <div id="dash-notif-list"><p class="empty-state">No new notifications</p></div>
-    </div>
-  </div>
 
-  <!-- ردیف دوم: Time Overview -->
-  <div class="dash-row">
-    <div class="time-overview-card">
-      <h3 class="card-heading">
-        Time Overview
-        <span class="time-overview-total" id="time-overview-total">--:--</span>
-      </h3>
-      <div class="time-overview-content">
-        <div class="time-overview-chart">
-          <div id="time-overview-chart-area"></div>
+        <!-- ردیف چهارم: Time Overview -->
+        <div class="dash-row">
+          <div class="time-overview-card">
+            <h3 class="card-heading">
+              Time Overview
+              <span class="time-overview-total" id="time-overview-total">--:--</span>
+            </h3>
+            <div class="time-overview-content">
+              <div class="time-overview-chart">
+                <div id="time-overview-chart-area"></div>
+              </div>
+              <div class="time-overview-breakdown-row" id="time-overview-breakdown-list"></div>
+            </div>
+            <div class="tempozio-footer">
+              <img src="assets/Te.svg" alt="Tempozio" class="tempozio-footer-logo">
+              <span>powered by Tempozio</span>
+            </div>
+          </div>
         </div>
-        <div class="time-overview-breakdown-row" id="time-overview-breakdown-list"></div>
-        <div class="tempozio-footer">
-          <img src="assets/Te.svg" alt="Tempozio" class="tempozio-footer-logo">
-          <span>powered by Tempozio</span>
+
+        <!-- ردیف پنجم: Users (admin only) -->
+        <div class="dash-row" id="dash-users-row" style="display:none;">
+          <div class="dash-list-card" style="flex:1;">
+            <h3 class="card-heading">All Users</h3>
+            <div style="margin-bottom:16px;">
+              <input type="text" id="dash-user-search" class="auth-field" placeholder="Search by name..." autocomplete="off">
+            </div>
+            <div id="dash-users-list" class="mini-list"></div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
+      </section>
 
-  <!-- ردیف سوم: Calendar -->
-  <div class="dash-row">
-    <div class="dash-calendar-card">
-      <h3 class="card-heading">Calendar</h3>
-      <div id="dash-mini-calendar"></div>
-      <div class="mini-cal-footer">
-        <img src="assets/Ra.svg" alt="Ravlo" class="ravlo-footer-logo">
-        <span>powered by Ravlo</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ردیف چهارم: Recent Tickets + Messages -->
-  <div class="dash-row">
-    <div class="dash-list-card">
-      <h3 class="card-heading clickable" data-nav="tickets">Recent Tickets →</h3>
-      <div id="dash-tickets-list" class="mini-list"></div>
-    </div>
-    <div class="dash-list-card">
-      <h3 class="card-heading clickable" data-nav="messages">Recent Messages →</h3>
-      <div id="dash-messages-list" class="mini-list"></div>
-    </div>
-  </div>
-
-  <!-- ردیف پنجم: Users (admin only) -->
-  <div class="dash-row" id="dash-users-row" style="display:none;">
-    <div class="dash-list-card" style="flex:1;">
-      <h3 class="card-heading">All Users</h3>
-      <div style="margin-bottom:16px;">
-        <input type="text" id="dash-user-search" class="auth-field" placeholder="Search by name..." autocomplete="off">
-      </div>
-      <div id="dash-users-list" class="mini-list"></div>
-    </div>
-  </div>
-</section>
-
+      <!-- ==================== TICKETS SECTION ==================== -->
       <section id="section-tickets" class="section">
         <div class="section-header"><h2>Tickets</h2><button class="btn-accent" id="new-ticket-btn">+ New Ticket</button></div>
         <div id="ticket-list" class="card-list"></div>
@@ -227,12 +229,14 @@
         <div id="ticket-thread" class="hidden"><button class="btn-ghost back-btn" id="back-tickets-btn">← Back</button><div id="thread-subject" class="thread-title"></div><div id="thread-messages" class="thread-msgs"></div><div class="thread-reply"><textarea id="reply-body" placeholder="Write a reply..."></textarea><button class="btn-accent" id="send-reply-btn">Send</button></div><div class="admin-only hidden"><button class="btn-ghost" id="close-ticket-btn">Close Ticket</button></div></div>
       </section>
 
+      <!-- ==================== MESSAGES SECTION ==================== -->
       <section id="section-messages" class="section">
         <div class="section-header"><h2>Messages</h2><button class="btn-accent admin-only hidden" id="new-message-btn">+ Send Message</button></div>
         <div id="message-list" class="card-list"></div>
         <div id="send-message-modal" class="modal hidden"><div class="modal-box"><h3>Send Message</h3><select id="msg-to-select"></select><textarea id="msg-body" placeholder="Message..."></textarea><div class="modal-actions"><button class="btn-accent" id="submit-msg-btn">Send</button><button class="btn-ghost" id="cancel-msg-btn">Cancel</button></div></div></div>
       </section>
 
+      <!-- ==================== CONTRACTS SECTION ==================== -->
       <section id="section-contracts" class="section">
         <div class="section-header"><h2>Contracts &amp; Files</h2><div class="admin-only hidden"><button class="btn-accent" id="new-section-btn">+ Section</button><button class="btn-accent" id="new-contract-btn">+ File</button></div></div>
         <div id="contracts-list" class="contracts-tree"></div>
@@ -240,54 +244,39 @@
         <div id="add-contract-modal" class="modal hidden"><div class="modal-box"><h3>New File</h3><select id="contract-section-select"></select><input id="contract-title-input" type="text" placeholder="File title" /><input id="contract-url-input" type="url" placeholder="File URL" /><div class="modal-actions"><button class="btn-accent" id="submit-contract-btn">Add</button><button class="btn-ghost" id="cancel-contract-btn">Cancel</button></div></div></div>
       </section>
 
-<section id="section-connections" class="section">
-  <div class="section-header"><h2>Connections</h2></div>
-  
-  <!-- نوار جستجوی کاربران موجود -->
-  <div class="conn-search-bar">
-    <input type="text" id="conn-search-input" class="auth-field" placeholder="Search by name..." autocomplete="off">
-    <div id="conn-search-results" class="card-list" style="margin-top:8px; display:none;"></div>
-  </div>
+      <!-- ==================== CONNECTIONS SECTION ==================== -->
+      <section id="section-connections" class="section">
+        <div class="section-header"><h2>Connections</h2></div>
+        <div class="conn-search-bar">
+          <input type="text" id="conn-search-input" class="auth-field" placeholder="Search by name..." autocomplete="off">
+          <div id="conn-search-results" class="card-list" style="margin-top:8px; display:none;"></div>
+        </div>
+        <div id="conn-invite-big-btn" style="display:none; text-align:center; margin:20px 0;">
+          <button id="big-invite-btn" style="background:var(--accent); color:#0d0d0d; border:none; border-radius:50%; width:80px; height:80px; font-size:40px; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.3); transition:0.2s;">+</button>
+          <p style="color:var(--muted); margin-top:8px;">Invite a new member</p>
+        </div>
+        <div id="connections-list" class="card-list"></div>
+        <div id="conn-requests-list" class="card-list"></div>
+        <div id="conn-link-modal" class="modal hidden">
+          <div class="modal-box">
+            <h3>🔗 Your Invite Link</h3>
+            <p style="color:var(--muted); font-size:13px;">Share this link to invite others. They’ll be connected to you automatically after signing up.</p>
+            <div class="copy-link-box">
+              <input type="text" id="conn-share-link" class="auth-field" readonly>
+              <button id="copy-conn-link-btn" class="btn-accent">Copy</button>
+            </div>
+            <button class="btn-ghost" id="close-conn-link-modal-btn">Close</button>
+          </div>
+        </div>
+      </section>
 
-  <!-- دکمه بزرگ + (فقط وقتی کانکشنی نیست) -->
-  <div id="conn-invite-big-btn" style="display:none; text-align:center; margin:20px 0;">
-    <button id="big-invite-btn" style="background:var(--accent); color:#0d0d0d; border:none; border-radius:50%; width:80px; height:80px; font-size:40px; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.3); transition:0.2s;">
-      +
-    </button>
-    <p style="color:var(--muted); margin-top:8px;">Invite a new member</p>
-  </div>
-
-  <!-- لیست کانکشن‌ها -->
-  <div id="connections-list" class="card-list"></div>
-  <!-- درخواست‌های در انتظار -->
-  <div id="conn-requests-list" class="card-list"></div>
-  
-  <!-- مودال نمایش لینک دعوت -->
-  <div id="conn-link-modal" class="modal hidden">
-    <div class="modal-box">
-      <h3>🔗 Your Invite Link</h3>
-      <p style="color:var(--muted); font-size:13px;">Share this link to invite others. They’ll be connected to you automatically after signing up.</p>
-      <div class="copy-link-box">
-        <input type="text" id="conn-share-link" class="auth-field" readonly>
-        <button id="copy-conn-link-btn" class="btn-accent">Copy</button>
-      </div>
-      <button class="btn-ghost" id="close-conn-link-modal-btn">Close</button>
-    </div>
-  </div>
-</section>
-
-            <section id="section-users" class="section">
+      <!-- ==================== USERS SECTION ==================== -->
+      <section id="section-users" class="section">
         <div class="section-header"><h2>User Management</h2></div>
-        
-        <!-- نوار جستجو -->
         <div style="margin-bottom:16px;">
           <input type="text" id="users-search-input" class="auth-field" placeholder="Search by name..." autocomplete="off">
         </div>
-
-        <!-- لیست کارتی کاربران -->
         <div id="users-cards-list" class="card-list"></div>
-
-        <!-- مودال جزئیات کاربر (همان که قبلاً اصلاح کردید - بدون تغییر) -->
         <div id="edit-user-modal" class="modal hidden">
           <div class="modal-box" style="max-width:520px;">
             <h3>User Details</h3>
@@ -309,7 +298,6 @@
                 </div>
               </div>
             </div>
-
             <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:16px;">
               <label style="color:var(--muted); font-size:12px;">Edit Role</label>
               <select id="edit-user-role" style="margin-bottom:12px;">
@@ -330,6 +318,9 @@
           </div>
         </div>
       </section>
+    </main>
+  </div>
+
   <!-- Edit Profile Modal -->
   <div id="edit-profile-modal" class="modal hidden">
     <div class="modal-box">
