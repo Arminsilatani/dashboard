@@ -1481,20 +1481,19 @@ input[type="password"]::-webkit-textfield-decoration-container {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 20px;
-  margin: 0;                /* چپ‌چین */
+  padding: 16px 20px;       /* قبلاً 20px بود */
+  margin: 0;
 }
 
 .time-overview-content {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;                /* قبلاً 20px بود */
 }
 
-/* نمودار تمام عرض با padding از طرفین */
 .time-overview-chart {
   width: 100%;
-  padding: 0 10px;          /* فاصله از گوشه‌ها */
+  padding: 0 10px;
 }
 
 #time-overview-chart-area {
@@ -1502,7 +1501,6 @@ input[type="password"]::-webkit-textfield-decoration-container {
   height: auto;
 }
 
-/* تایم داخل عنوان */
 .time-overview-total {
   color: var(--accent);
   font-size: 0.9em;
@@ -1511,16 +1509,14 @@ input[type="password"]::-webkit-textfield-decoration-container {
   letter-spacing: 0.3px;
 }
 
-/* ردیف Project Breakdown (افقی) */
 .time-overview-breakdown-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 16px;
   align-items: center;
   padding: 0 10px;
 }
 
-/* هر آیتم در ردیف */
 .time-overview-breakdown-row .breakdown-item {
   display: flex;
   align-items: center;
@@ -1546,7 +1542,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 120px;       /* می‌تونی تغییر بدی */
+  max-width: 120px;
 }
 
 .time-overview-breakdown-row .breakdown-time {
@@ -1554,13 +1550,13 @@ input[type="password"]::-webkit-textfield-decoration-container {
   color: var(--muted);
 }
 
-/* پیام‌های خالی */
 .time-overview-empty {
   text-align: center;
-  padding-top: 40px;
+  padding-top: 20px;
   color: var(--muted);
   font-size: 14px;
 }
+
 
 /* =================================================================
    RESPONSIVE
