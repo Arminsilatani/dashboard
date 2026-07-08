@@ -1,10 +1,19 @@
+/* =========================== APPLICATION SCRIPT ============================ */
+
+/*
+Author: Armin Silatani
+Date: 2026-07-08
+Version: 0.0.0
+*/
+
+/* =========================== CONFIGURATION ============================ */
 const SUPABASE_URL = 'https://vzqicidepdmraygulrey.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_kqRWgOmLISOE2EuLL1s8fw_WN6FJRTI';
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ── Helpers ─────────────────────────────────────────────────
+/* :::::::::::::::::::::::::: HELPERS :::::::::::::::::::::::::: */
 function isEventActiveOnDate(event, date) {
   const toLocalDateString = (d) => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -65,12 +74,12 @@ const db = {
   delete: (table, id) => sbFetch(`${table}?id=eq.${id}`, { method: 'DELETE', prefer: 'return=minimal' })
 };
 
-// ── State ───────────────────────────────────────────────────
+/* :::::::::::::::::::::::::: STATE :::::::::::::::::::::::::: */
 let currentUser = null;
 let editingUserId = null;
 let openTicketId = null;
 
-// ── Loader ──────────────────────────────────────────────────
+/* :::::::::::::::::::::::::: LOADER :::::::::::::::::::::::::: */
 function showLoader() {
   const globalLoader = document.getElementById('global-loader');
   if (globalLoader) globalLoader.classList.remove('hidden');
@@ -85,7 +94,7 @@ function hideLoader() {
   if (initialLoader) initialLoader.classList.add('hidden');
 }
 
-// ── Notification deletion on click ──────────────────────────
+/* :::::::::::::::::::::::::: NOTIFICATION DELETION :::::::::::::::::::::::::: */
 async function deleteNotificationById(notificationId) {
   try {
     await db.delete('notifications', notificationId);
@@ -118,87 +127,7 @@ document.addEventListener('click', async function (e) {
   }
 });
 
-// ── Boot ────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', async () => {
-  document.getElementById('initial-loader').classList.remove('hidden');
-  const urlParams = new URLSearchParams(window.location.search);
-  const connectToken = urlParams.get('connect');
-  const refUserId = urlParams.get('ref');
-  if (refUserId) {
-    sessionStorage.setItem('pendingRef', refUserId);
-  }
-  const { data: { session } } = await sb.auth.getSession();
-  if (session?.user) {
-    try {
-      let profile = await db.select('profiles', `id=eq.${session.user.id}`);
-      if (profile && profile.length) {
-        currentUser = profile[0];
-        showApp();
-        if (connectToken) {
-          await processConnectToken(connectToken);
-        }
-      } else {
-        await sb.auth.signOut();
-        showAuth();
-        if (connectToken) sessionStorage.setItem('pendingConnectToken', connectToken);
-      }
-    } catch (e) {
-      console.error('Boot error:', e);
-      showAuth();
-      if (connectToken) sessionStorage.setItem('pendingConnectToken', connectToken);
-    }
-  } else {
-    showAuth();
-    if (connectToken) sessionStorage.setItem('pendingConnectToken', connectToken);
-  }
-  bindEvents();
-  initAuthListeners();
-});
-
-function showAuth() {
-  document.getElementById('initial-loader').classList.add('hidden');
-  document.getElementById('auth-overlay').style.display = 'flex';
-  document.getElementById('app-screen').classList.remove('active');
-  showStep('step-1');
-  document.getElementById('auth-email').value = '';
-  document.getElementById('auth-error').textContent = '';
-  const successMsg = document.getElementById('auth-success-msg');
-  if (successMsg) successMsg.style.display = 'none';
-}
-
-async function showApp() {
-    document.getElementById('initial-loader').classList.add('hidden');
-  document.getElementById('auth-overlay').style.display = 'none';
-  document.getElementById('app-screen').classList.add('active');
-  await refreshCurrentUser();
-  updateSidebarUI();
-
-  document.getElementById('section-dashboard').classList.add('active');
-  loadSection('dashboard');
-  await cleanupOldNotifications();
-  updateNotificationBadge();
-}
-
-async function refreshCurrentUser() {
-  if (!currentUser?.id) return;
-  const res = await db.select('profiles', `id=eq.${currentUser.id}`);
-  if (res && res.length) currentUser = res[0];
-  const { data: { user } } = await sb.auth.getUser();
-  if (user?.email) currentUser.email = user.email;
-}
-
-function updateSidebarUI() {
-  const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'User';
-  document.getElementById('sidebar-name').textContent = name;
-  document.getElementById('sidebar-role').textContent = currentUser.role || 'Recruit';
-  const av = document.getElementById('sidebar-avatar');
-  av.src = currentUser.photo_url || generateAvatarUrl(name);
-  if (currentUser.role === 'General') {
-    document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
-  }
-}
-
-// ── Auth Flow ────────────────────────────────────────────────
+/* =========================== AUTH FLOW ============================ */
 let authEmail = '';
 
 function showStep(stepId) {
@@ -374,7 +303,49 @@ function initAuthListeners() {
   }));
 }
 
-// ── createInviteConnection ──────────────────────────────────
+/* ------------------------- PROFILE & AUTH HELPERS ------------------------- */
+function showAuth() {
+  document.getElementById('initial-loader').classList.add('hidden');
+  document.getElementById('auth-overlay').style.display = 'flex';
+  document.getElementById('app-screen').classList.remove('active');
+  showStep('step-1');
+  document.getElementById('auth-email').value = '';
+  document.getElementById('auth-error').textContent = '';
+  const successMsg = document.getElementById('auth-success-msg');
+  if (successMsg) successMsg.style.display = 'none';
+}
+
+async function showApp() {
+  document.getElementById('initial-loader').classList.add('hidden');
+  document.getElementById('auth-overlay').style.display = 'none';
+  document.getElementById('app-screen').classList.add('active');
+  await refreshCurrentUser();
+  updateSidebarUI();
+  document.getElementById('section-dashboard').classList.add('active');
+  loadSection('dashboard');
+  await cleanupOldNotifications();
+  updateNotificationBadge();
+}
+
+async function refreshCurrentUser() {
+  if (!currentUser?.id) return;
+  const res = await db.select('profiles', `id=eq.${currentUser.id}`);
+  if (res && res.length) currentUser = res[0];
+  const { data: { user } } = await sb.auth.getUser();
+  if (user?.email) currentUser.email = user.email;
+}
+
+function updateSidebarUI() {
+  const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'User';
+  document.getElementById('sidebar-name').textContent = name;
+  document.getElementById('sidebar-role').textContent = currentUser.role || 'Recruit';
+  const av = document.getElementById('sidebar-avatar');
+  av.src = currentUser.photo_url || generateAvatarUrl(name);
+  if (currentUser.role === 'General') {
+    document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+  }
+}
+
 async function createInviteConnection(referrerId, newUserId) {
   try {
     const existing = await db.select('dashboard_connectionrequests',
@@ -410,7 +381,6 @@ async function createInviteConnection(referrerId, newUserId) {
   }
 }
 
-// ── fetchProfile ────────────────────────────────────────────
 async function fetchProfile(authUser) {
   let profile = await db.select('profiles', `id=eq.${authUser.id}`);
   if (profile && profile.length) return profile[0];
@@ -450,7 +420,7 @@ async function signOut() {
   showAuth();
 }
 
-// ── Navigation ──────────────────────────────────────────────
+/* =========================== NAVIGATION ============================ */
 function loadSection(name) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -464,7 +434,7 @@ function loadSection(name) {
   if (name === 'users') loadUsers();
 }
 
-// ── Events ──────────────────────────────────────────────────
+/* =========================== EVENT BINDINGS ============================ */
 let cropper = null, pendingPhotoFile = null;
 
 function bindEvents() {
@@ -672,7 +642,44 @@ function bindEvents() {
   document.getElementById('save-user-btn').addEventListener('click', saveUser);
 }
 
-// ── DASHBOARD ───────────────────────────────────────────────
+/* =========================== BOOT SEQUENCE ============================ */
+window.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('initial-loader').classList.remove('hidden');
+  const urlParams = new URLSearchParams(window.location.search);
+  const connectToken = urlParams.get('connect');
+  const refUserId = urlParams.get('ref');
+  if (refUserId) {
+    sessionStorage.setItem('pendingRef', refUserId);
+  }
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) {
+    try {
+      let profile = await db.select('profiles', `id=eq.${session.user.id}`);
+      if (profile && profile.length) {
+        currentUser = profile[0];
+        showApp();
+        if (connectToken) {
+          await processConnectToken(connectToken);
+        }
+      } else {
+        await sb.auth.signOut();
+        showAuth();
+        if (connectToken) sessionStorage.setItem('pendingConnectToken', connectToken);
+      }
+    } catch (e) {
+      console.error('Boot error:', e);
+      showAuth();
+      if (connectToken) sessionStorage.setItem('pendingConnectToken', connectToken);
+    }
+  } else {
+    showAuth();
+    if (connectToken) sessionStorage.setItem('pendingConnectToken', connectToken);
+  }
+  bindEvents();
+  initAuthListeners();
+});
+
+/* =========================== DASHBOARD ============================ */
 async function loadDashboard() {
   showLoader();
   try {
@@ -700,7 +707,7 @@ async function loadDashboard() {
   }
 }
 
-/* ── Time Overview Helpers ────────────────────────────────── */
+/* ------------------------- TIME OVERVIEW ------------------------- */
 function getProjectWeekDurations(project) {
   const now = Date.now();
   const dayMs = 86400000;
@@ -735,7 +742,6 @@ async function loadTimeOverview() {
   const totalDisplay = document.getElementById('time-overview-total');
   if (!container || !breakdownList || !totalDisplay) return;
 
-  // پاک‌سازی و حالت بارگذاری
   container.innerHTML = '';
   breakdownList.innerHTML = '<p class="empty-state">Loading...</p>';
   totalDisplay.textContent = '--:--';
@@ -748,7 +754,6 @@ async function loadTimeOverview() {
       return;
     }
 
-    // محاسبه زمان هر پروژه در ۷ روز
     const projectDurations = projects.map(p => ({
       ...p,
       weekDurations: getProjectWeekDurations(p)
@@ -761,26 +766,22 @@ async function loadTimeOverview() {
       return;
     }
 
-    // مجموع زمان کل (برای تایتل)
     const totalWeekMs = activeProjects.reduce((sum, p) => sum + p.weekDurations.reduce((a,b)=>a+b,0), 0);
     const hours = Math.floor(totalWeekMs / 3600000);
     const minutes = Math.floor((totalWeekMs % 3600000) / 60000);
     totalDisplay.textContent = `${hours}h ${minutes}m`;
 
-    // مقیاس محور Y (حداکثر زمان هر پروژه در یک روز)
     const allDurations = activeProjects.flatMap(p => p.weekDurations);
     const maxDailyMs = Math.max(...allDurations, 1);
     const maxHours = Math.ceil(maxDailyMs / 3600000);
     const yMaxMs = maxHours * 3600000;
 
-    // روزهای هفته
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
     const dayMs = 86400000;
     const windowStart = todayStart - 6 * dayMs;
     const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-    // SVG
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     const vbWidth = 700;
     const vbHeight = 220;
@@ -795,7 +796,6 @@ async function loadTimeOverview() {
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     g.setAttribute('transform', `translate(${margin.left},${margin.top})`);
 
-    // خطوط راهنما
     for (let h = 1; h <= maxHours; h++) {
       const y = height - (h / maxHours) * height;
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -812,7 +812,6 @@ async function loadTimeOverview() {
       g.appendChild(text);
     }
 
-    // برچسب روزها
     for (let i = 0; i < 7; i++) {
       const x = (i / 6) * width;
       const day = new Date(windowStart + i * dayMs).getDay();
@@ -824,7 +823,6 @@ async function loadTimeOverview() {
       g.appendChild(text);
     }
 
-    // رسم هر پروژه مستقل (غیرانباشته)
     activeProjects.forEach(project => {
       const color = project.color || '#4ECDC4';
       const durations = project.weekDurations;
@@ -841,16 +839,14 @@ async function loadTimeOverview() {
       }
       pathD += ' Z';
 
-      // مساحت با شفافیت ۲۰٪
       const areaPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       areaPath.setAttribute('d', pathD);
       areaPath.setAttribute('fill', color);
       areaPath.setAttribute('opacity', '0.2');
       areaPath.setAttribute('stroke', 'none');
-      areaPath.setAttribute('data-project-id', project.id);   // ← اضافه شد
+      areaPath.setAttribute('data-project-id', project.id);
       g.appendChild(areaPath);
 
-      // خط بیرونی پررنگ
       let lineD = '';
       for (let i = 0; i < 7; i++) {
         const x = (i / 6) * width;
@@ -863,7 +859,7 @@ async function loadTimeOverview() {
       linePath.setAttribute('stroke', color);
       linePath.setAttribute('stroke-width', '1');
       linePath.setAttribute('opacity', '1');
-      linePath.setAttribute('data-project-id', project.id);   // ← اضافه شد
+      linePath.setAttribute('data-project-id', project.id);
       g.appendChild(linePath);
     });
 
@@ -871,7 +867,6 @@ async function loadTimeOverview() {
     container.innerHTML = '';
     container.appendChild(svg);
 
-    // Project Breakdown افقی (بدون عنوان)
     const circumference = 2 * Math.PI * 15;
     breakdownList.innerHTML = activeProjects.map(p => {
       const totalMs = p.weekDurations.reduce((a,b)=>a+b,0);
@@ -895,7 +890,6 @@ async function loadTimeOverview() {
       `;
     }).join('');
 
-    // ── Hover effect: highlight related chart area ──────────
     const svgEl = container.querySelector('svg');
     const allItems = breakdownList.querySelectorAll('.breakdown-item');
 
@@ -906,51 +900,47 @@ async function loadTimeOverview() {
       allPaths.forEach(path => {
         const fill = path.getAttribute('fill');
         if (fill && fill !== 'none') {
-          path.setAttribute('opacity', '0.2');    // مساحت
+          path.setAttribute('opacity', '0.2');
         } else {
-          path.setAttribute('opacity', '1');      // خط
+          path.setAttribute('opacity', '1');
         }
       });
     }
 
     breakdownList.addEventListener('mouseover', (e) => {
       const item = e.target.closest('.breakdown-item');
-      resetAllHighlights();   // همه را به حالت عادی برگردان
+      resetAllHighlights();
 
       if (!item) return;
 
       const projectId = item.dataset.projectId;
       const color = item.dataset.projectColor;
 
-      // باکس پشت آیتم
       item.style.backgroundColor = hexToRgba(color, 0.1);
 
       if (!svgEl) return;
 
-      // مسیرهای پروژهٔ hover شده → وضوح کامل
       const projectPaths = svgEl.querySelectorAll(`path[data-project-id="${projectId}"]`);
       projectPaths.forEach(path => {
         const fill = path.getAttribute('fill');
         if (fill && fill !== 'none') {
-          path.setAttribute('opacity', '0.2');   // مساحت
+          path.setAttribute('opacity', '0.2');
         } else {
-          path.setAttribute('opacity', '1');     // خط
+          path.setAttribute('opacity', '1');
         }
       });
 
-      // بقیهٔ پروژه‌ها → خیلی کمرنگ
       const otherPaths = svgEl.querySelectorAll(`path[data-project-id]:not([data-project-id="${projectId}"])`);
       otherPaths.forEach(path => {
         const fill = path.getAttribute('fill');
         if (fill && fill !== 'none') {
-          path.setAttribute('opacity', '0.05');  // مساحت خیلی کم‌رنگ
+          path.setAttribute('opacity', '0.05');
         } else {
-          path.setAttribute('opacity', '0.2');   // خط خیلی کم‌رنگ
+          path.setAttribute('opacity', '0.2');
         }
       });
     });
 
-    // وقتی موس کاملاً از لیست خارج می‌شود، همه ریست شوند
     breakdownList.addEventListener('mouseleave', () => {
       resetAllHighlights();
     });
@@ -961,7 +951,7 @@ async function loadTimeOverview() {
   }
 }
 
-// ── Calendar & Notifications ────────────────────────────────
+/* ------------------------- CALENDAR & NOTIFICATIONS ------------------------- */
 async function loadMiniCalendar() {
   const container = document.getElementById('dash-mini-calendar');
   if (!container) return;
@@ -1118,7 +1108,7 @@ async function cleanupOldNotifications() {
   }
 }
 
-// ── TICKETS ─────────────────────────────────────────────────
+/* =========================== TICKETS ============================ */
 async function loadTickets() {
   const list = document.getElementById('ticket-list');
   document.getElementById('ticket-thread').classList.add('hidden');
@@ -1230,7 +1220,7 @@ async function closeTicket() {
   } catch (e) { alert(e.message); }
 }
 
-// ── MESSAGES ────────────────────────────────────────────────
+/* =========================== MESSAGES ============================ */
 async function loadMessages() {
   const list = document.getElementById('message-list'); list.innerHTML = '<div class="empty-state">Loading...</div>';
   try {
@@ -1282,7 +1272,7 @@ async function submitMessage() {
   } catch (e) { alert(e.message); }
 }
 
-// ── CONTRACTS ────────────────────────────────────────────────
+/* =========================== CONTRACTS ============================ */
 async function loadContracts() {
   const list = document.getElementById('contracts-list'); list.innerHTML = '<div class="empty-state">Loading...</div>';
   try {
@@ -1340,7 +1330,7 @@ async function submitContract() {
   } catch (e) { alert(e.message); }
 }
 
-// ── CONNECTIONS ─────────────────────────────────────────────
+/* =========================== CONNECTIONS ============================ */
 async function searchProfiles(term) {
   const resultsDiv = document.getElementById('conn-search-results');
   resultsDiv.style.display = 'block';
@@ -1550,7 +1540,7 @@ async function respondConn(id, status) {
   } catch (e) { alert(e.message); }
 }
 
-// ── USERS (Admin) ────────────────────────────────────────────
+/* =========================== USERS (ADMIN) ============================ */
 async function loadUsers() {
   const container = document.getElementById('users-cards-list');
   const searchInput = document.getElementById('users-search-input');
@@ -1745,7 +1735,7 @@ async function openUserDetail(uid) {
   }
 }
 
-// ── Notification Helper ──────────────────────────────────────
+/* :::::::::::::::::::::::::: NOTIFICATION HELPERS :::::::::::::::::::::::::: */
 async function addNotification(userId, type, title, body = '', link = '') {
   console.log('addNotification called with:', { userId, type, title, body, link });
   try {
@@ -1771,7 +1761,6 @@ async function addNotification(userId, type, title, body = '', link = '') {
   }
 }
 
-// ── Notification Badge & UI ─────────────────────────────────
 async function refreshNotificationUI() {
   await updateNotificationBadge();
   const dashSection = document.getElementById('section-dashboard');
@@ -1796,7 +1785,7 @@ async function updateNotificationBadge() {
   }
 }
 
-// ── Utils ────────────────────────────────────────────────────
+/* :::::::::::::::::::::::::: UTILITIES :::::::::::::::::::::::::: */
 function esc(str) {
   if (!str) return '';
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
