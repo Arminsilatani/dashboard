@@ -1479,7 +1479,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 20px;
-  margin: 0 auto; /* وسط‌چین افقی */
+  margin: 0; /* وسط‌چین افقی */
 }
 
 /* برای واکنش‌گرایی (موبایل) عرض را بیشتر کن */
