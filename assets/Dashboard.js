@@ -101,13 +101,11 @@ document.addEventListener('click', async function (e) {
   if (!id) return;
 
   const link = notifItem.dataset.link;
-  // اگر لینک خارجی بود، فقط در تب جدید باز کن و notification را حذف نکن
   if (link && link.startsWith('http')) {
     window.open(link, '_blank');
-    return;  // دیگر هیچ کاری (حذف یا loadSection) انجام نده
+    return;
   }
 
-  // حذف از دیتابیس (فقط برای لینک‌های داخلی)
   await deleteNotificationById(id);
   notifItem.remove();
   updateNotificationBadge();
@@ -242,7 +240,6 @@ function initAuthListeners() {
     currentUser = await fetchProfile(data.user);
     if (!currentUser) { errorEl.textContent = 'Unable to load profile.'; return; }
 
-    // به‌روزرسانی referred_by برای کاربر فعلی (در صورت نیاز)
     const pendingRef = sessionStorage.getItem('pendingRef');
     if (pendingRef && !currentUser.referred_by) {
       await db.update('profiles', currentUser.id, { referred_by: pendingRef });
@@ -377,7 +374,7 @@ function initAuthListeners() {
   }));
 }
 
-// ── createInviteConnection (بدون تغییر) ───────────────────
+// ── createInviteConnection ──────────────────────────────────
 async function createInviteConnection(referrerId, newUserId) {
   try {
     const existing = await db.select('dashboard_connectionrequests',
@@ -413,7 +410,7 @@ async function createInviteConnection(referrerId, newUserId) {
   }
 }
 
-// ── fetchProfile (تنها نسخه) ─────────────────────────────
+// ── fetchProfile ────────────────────────────────────────────
 async function fetchProfile(authUser) {
   let profile = await db.select('profiles', `id=eq.${authUser.id}`);
   if (profile && profile.length) return profile[0];
@@ -441,7 +438,7 @@ async function fetchProfile(authUser) {
 
   if (pendingRef) {
     await createInviteConnection(pendingRef, newProfile.id);
-    sessionStorage.removeItem('pendingRef'); // پاک‌سازی بعد از انجام کامل
+    sessionStorage.removeItem('pendingRef');
   }
 
   return newProfile;
@@ -689,13 +686,13 @@ async function loadDashboard() {
     document.getElementById('dash-website').textContent = currentUser.website || '—';
     document.getElementById('dash-avatar').src = currentUser.photo_url || generateAvatarUrl(name);
     await Promise.all([loadMiniCalendar(), loadNotifications()]);
-    await loadTimeOverview();
+    await loadTimeOverview(); // ← اکنون در دسترس است
     updateNotificationBadge();
     if (currentUser.role === 'General') {
-  loadDashboardUserList();
-} else {
-  document.getElementById('dash-users-row').style.display = 'none';
-}
+      loadDashboardUserList();
+    } else {
+      document.getElementById('dash-users-row').style.display = 'none';
+    }
   } catch (e) {
     console.error(e);
   } finally {
@@ -703,6 +700,9 @@ async function loadDashboard() {
   }
 }
 
+/* ── Time Overview Helpers ────────────────────────────────── */
+
+// محاسبه زمان یک پروژه در ۷ روز اخیر
 function getProjectWeekDurations(project) {
   const now = Date.now();
   const dayMs = 86400000;
@@ -722,22 +722,27 @@ function getProjectWeekDurations(project) {
     }
   }
 
-  /**
- * رسم Donut Chart و Project Breakdown در کارت Time Overview
- */
+  if (project.history && Array.isArray(project.history)) {
+    project.history.forEach(s => addSession(s.start, s.end));
+  }
+  if (project.is_running && project.last_start_time) {
+    addSession(project.last_start_time, now);
+  }
+  return durations;
+}
+
+// رسم Donut Chart و Project Breakdown
 async function loadTimeOverview() {
   const svg = document.getElementById('time-overview-donut');
   const breakdownList = document.getElementById('time-overview-breakdown-list');
   const centerTotal = document.getElementById('chart-center-total');
   if (!svg || !breakdownList || !centerTotal) return;
 
-  // حالت loading
   svg.innerHTML = '';
   breakdownList.innerHTML = '<p class="empty-state">Loading...</p>';
   centerTotal.textContent = '--:--';
 
   try {
-    // دریافت همه پروژه‌های کاربر از جدول tempozio
     const projects = await db.select('tempozio', `user_id=eq.${currentUser.id}`);
     if (!projects || projects.length === 0) {
       svg.innerHTML = '<text x="150" y="150" text-anchor="middle" fill="#888" font-size="14">No projects this week</text>';
@@ -745,7 +750,6 @@ async function loadTimeOverview() {
       return;
     }
 
-    // محاسبه مجموع زمان هر پروژه در این هفته
     const projectData = projects.map(p => {
       const weekDurations = getProjectWeekDurations(p);
       const totalMs = weekDurations.reduce((a, b) => a + b, 0);
@@ -768,19 +772,18 @@ async function loadTimeOverview() {
     const minutes = Math.floor((totalWeekMs % 3600000) / 60000);
     centerTotal.textContent = `${hours}h ${minutes}m`;
 
-    // محاسبه درصد
     projectData.forEach(p => {
       p.percent = (p.totalMs / totalWeekMs) * 100;
     });
 
-    // ---------- رسم Donut Chart ----------
-    svg.innerHTML = ''; // پاک‌سازی
+    // رسم Donut
+    svg.innerHTML = '';
     const width = 300, height = 300;
     const centerX = width / 2, centerY = height / 2;
     const outerR = 110;
     const innerR = 55;
 
-    let startAngle = -Math.PI / 2; // شروع از بالا
+    let startAngle = -Math.PI / 2;
 
     projectData.forEach(p => {
       const sliceAngle = (p.percent / 100) * 2 * Math.PI;
@@ -809,7 +812,6 @@ async function loadTimeOverview() {
       path.setAttribute('stroke-width', '2');
       svg.appendChild(path);
 
-      // نوشتن نام پروژه روی برش (اگر بزرگ باشد)
       if (p.percent >= 8) {
         const midAngle = startAngle + sliceAngle / 2;
         const labelR = (outerR + innerR) / 2;
@@ -830,7 +832,7 @@ async function loadTimeOverview() {
       startAngle = endAngle;
     });
 
-    // ---------- ساخت لیست Breakdown ----------
+    // Breakdown
     breakdownList.innerHTML = projectData.map(p => {
       const percentStr = p.percent.toFixed(1);
       return `
@@ -857,15 +859,7 @@ async function loadTimeOverview() {
   }
 }
 
-  if (project.history && Array.isArray(project.history)) {
-    project.history.forEach(s => addSession(s.start, s.end));
-  }
-  if (project.is_running && project.last_start_time) {
-    addSession(project.last_start_time, now);
-  }
-  return durations;
-}
-
+// ── Calendar & Notifications ────────────────────────────────
 async function loadMiniCalendar() {
   const container = document.getElementById('dash-mini-calendar');
   if (!container) return;
@@ -888,7 +882,7 @@ async function loadMiniCalendar() {
     html += `<div class="${cls}">${d}</div>`;
   }
   container.innerHTML = html;
-    container.onclick = function(e) {
+  container.onclick = function(e) {
     const dayEl = e.target.closest('.mini-cal-day');
     if (dayEl && dayEl.classList.contains('today')) {
       window.open('https://arminsilatani.github.io/ravlo/', '_blank');
@@ -898,28 +892,13 @@ async function loadMiniCalendar() {
 
 async function ensureTodayNotifications() {
   if (!currentUser) return;
-
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
-  const { data: events } = await sb
-    .from('ravlo')
-    .select('*')
-    .eq('user_id', currentUser.id);
-
+  const { data: events } = await sb.from('ravlo').select('*').eq('user_id', currentUser.id);
   if (!events || events.length === 0) return;
-
   const activeToday = events.filter(ev => isEventActiveOnDate(ev, today));
-
   for (const ev of activeToday) {
-    const { data: existing } = await sb
-      .from('notifications')
-      .select('id')
-      .eq('user_id', currentUser.id)
-      .eq('type', 'event')
-      .eq('event_id', ev.id)
-      .maybeSingle();
-
+    const { data: existing } = await sb.from('notifications').select('id').eq('user_id', currentUser.id).eq('type', 'event').eq('event_id', ev.id).maybeSingle();
     if (!existing) {
       await sb.from('notifications').insert({
         user_id: currentUser.id,
@@ -937,36 +916,20 @@ async function ensureTodayNotifications() {
 
 async function cleanupStaleNotifications() {
   if (!currentUser) return;
-
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
-  const { data: notifs } = await sb
-    .from('notifications')
-    .select('id, event_id')
-    .eq('user_id', currentUser.id)
-    .eq('type', 'event');
-
+  const { data: notifs } = await sb.from('notifications').select('id, event_id').eq('user_id', currentUser.id).eq('type', 'event');
   if (!notifs) return;
-
   for (const n of notifs) {
     if (!n.event_id) {
       await sb.from('notifications').delete().eq('id', n.id);
       continue;
     }
-
-    const { data: events } = await sb
-      .from('ravlo')
-      .select('start_date, status, recurrence_type, recurrence_days, recurrence_interval, completed_occurrences')
-      .eq('id', n.event_id)
-      .eq('user_id', currentUser.id)
-      .limit(1);
-
+    const { data: events } = await sb.from('ravlo').select('start_date, status, recurrence_type, recurrence_days, recurrence_interval, completed_occurrences').eq('id', n.event_id).eq('user_id', currentUser.id).limit(1);
     if (!events || events.length === 0) {
       await sb.from('notifications').delete().eq('id', n.id);
       continue;
     }
-
     if (!isEventActiveOnDate(events[0], today)) {
       await sb.from('notifications').delete().eq('id', n.id);
     }
@@ -978,17 +941,12 @@ async function loadNotifications() {
   if (!c) return;
   await cleanupStaleNotifications();
   await ensureTodayNotifications();
-
   try {
-    const notifications = await db.select('notifications',
-      `user_id=eq.${currentUser.id}&order=created_at.desc&limit=20`
-    );
-
+    const notifications = await db.select('notifications', `user_id=eq.${currentUser.id}&order=created_at.desc&limit=20`);
     if (!notifications || !notifications.length) {
       c.innerHTML = '<p class="empty-state">No notifications</p>';
       return;
     }
-
     const cleanNotifs = notifications.filter(n => {
       if (n.type === 'connection' &&
           (n.title?.toLowerCase().includes('declined') ||
@@ -998,12 +956,10 @@ async function loadNotifications() {
       }
       return true;
     });
-
     if (!cleanNotifs.length) {
       c.innerHTML = '<p class="empty-state">No notifications</p>';
       return;
     }
-
     c.innerHTML = cleanNotifs.map(n => {
       let dotClass = {
         calendar: 'notif-dot-calendar',
@@ -1013,26 +969,21 @@ async function loadNotifications() {
         connection: 'notif-dot-connection',
         system: 'notif-dot-system'
       }[n.type] || 'notif-dot-system';
-
-      return `<div class="mini-item ${n.is_read ? '' : 'unread-notif'}"
-                   data-id="${n.id}"
-                   data-link="${esc(n.link || '')}">
+      return `<div class="mini-item ${n.is_read ? '' : 'unread-notif'}" data-id="${n.id}" data-link="${esc(n.link || '')}">
         <div style="display:flex;align-items:center;">
           <span class="notif-dot-icon ${dotClass}"></span>
           ${esc(n.title)}
         </div>
         <div class="mini-meta">
-  ${esc(n.body || '')}<br>
-  <span class="notif-date">${fmtDate(n.created_at)}</span>
-</div>
+          ${esc(n.body || '')}<br>
+          <span class="notif-date">${fmtDate(n.created_at)}</span>
+        </div>
       </div>`;
     }).join('');
-
   } catch (e) {
     console.error('Error loading notifications:', e);
     c.innerHTML = '<div class="mini-item">…</div>';
   }
-
   c.onclick = (e) => {
     const item = e.target.closest('.mini-item');
     if (!item) return;
@@ -1052,12 +1003,10 @@ async function cleanupOldNotifications() {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const dateStr = thirtyDaysAgo.toISOString();
-    
     const oldNotifs = await db.select('notifications', `user_id=eq.${currentUser.id}&created_at=lt.${dateStr}&select=id`);
     for (const n of (oldNotifs || [])) {
       await db.delete('notifications', n.id);
     }
-    
     const declinedNotifs = await db.select('notifications', `user_id=eq.${currentUser.id}&or=(title.ilike.*declined*,body.ilike.*declined*)&select=id`);
     for (const n of (declinedNotifs || [])) {
       await db.delete('notifications', n.id);
@@ -1313,19 +1262,19 @@ async function searchProfiles(term) {
       const div = document.createElement('div');
       div.className = 'card';
       const avatar = p.photo_url || generateAvatarUrl(name);
-div.innerHTML = `
-  <div style="display:flex;align-items:center;gap:10px;">
-    <img src="${avatar}" class="conn-avatar" />
-    <div>
-      <div class="card-title">${esc(name)}</div>
-      <div class="card-sub">${esc(p.username || p.email || '')}</div>
-    </div>
-  </div>
-  ${isConnected
-    ? '<span class="badge badge-accepted">Connected</span>'
-    : `<button class="btn-accent send-conn-btn" data-uid="${p.id}">Send Request</button>`
-  }
-`;
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;">
+          <img src="${avatar}" class="conn-avatar" />
+          <div>
+            <div class="card-title">${esc(name)}</div>
+            <div class="card-sub">${esc(p.username || p.email || '')}</div>
+          </div>
+        </div>
+        ${isConnected
+          ? '<span class="badge badge-accepted">Connected</span>'
+          : `<button class="btn-accent send-conn-btn" data-uid="${p.id}">Send Request</button>`
+        }
+      `;
       resultsDiv.appendChild(div);
     });
 
@@ -1380,10 +1329,10 @@ async function processConnectToken(requestId) {
     const accept = confirm('You have a connection invitation. Do you want to accept?');
     const newStatus = accept ? 'accepted' : 'rejected';
     if (newStatus === 'accepted') {
-  await db.update('dashboard_connectionrequests', requestId, { status: newStatus });
-} else {
-  await db.delete('dashboard_connectionrequests', requestId);
-}
+      await db.update('dashboard_connectionrequests', requestId, { status: newStatus });
+    } else {
+      await db.delete('dashboard_connectionrequests', requestId);
+    }
 
     const responderName = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'Someone';
     await addNotification(request.from_id, 'connection',
@@ -1433,13 +1382,13 @@ async function loadConnections() {
         const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username || otherId;
         const card = document.createElement('div'); card.className = 'card';
         const avatar = p.photo_url || generateAvatarUrl(name);
-card.innerHTML = `
-  <div style="display:flex;align-items:center;gap:10px;">
-    <img src="${avatar}" class="conn-avatar" />
-    <div class="card-title">${esc(name)}</div>
-  </div>
-  <span class="badge badge-accepted">Connected</span>
-`;
+        card.innerHTML = `
+          <div style="display:flex;align-items:center;gap:10px;">
+            <img src="${avatar}" class="conn-avatar" />
+            <div class="card-title">${esc(name)}</div>
+          </div>
+          <span class="badge badge-accepted">Connected</span>
+        `;
         list.appendChild(card);
       });
     }
@@ -1455,19 +1404,20 @@ card.innerHTML = `
         const p = pMap[otherId] || {};
         const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username || otherId;
         const card = document.createElement('div'); card.className = 'card'; card.style.flexWrap = 'wrap';
-const avatar = p.photo_url || generateAvatarUrl(name);
-card.innerHTML = `
-  <div style="display:flex;align-items:center;gap:10px;">
-    <img src="${avatar}" class="conn-avatar" />
-    <div>
-      <div class="card-title">${isIncoming ? 'From' : 'To'}: ${esc(name)}</div>
-      <div class="card-sub">${fmtDate(r.created_at)}</div>
-    </div>
-  </div>
-  <div style="display:flex;gap:8px">
-    ${isIncoming ? `<button class="btn-accent" onclick="respondConn('${r.id}','accepted')">Accept</button><button class="btn-ghost" onclick="respondConn('${r.id}','rejected')">Reject</button>` : `<span class="badge badge-pending">Pending</span>`}
-  </div>
-`;        reqList.appendChild(card);
+        const avatar = p.photo_url || generateAvatarUrl(name);
+        card.innerHTML = `
+          <div style="display:flex;align-items:center;gap:10px;">
+            <img src="${avatar}" class="conn-avatar" />
+            <div>
+              <div class="card-title">${isIncoming ? 'From' : 'To'}: ${esc(name)}</div>
+              <div class="card-sub">${fmtDate(r.created_at)}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            ${isIncoming ? `<button class="btn-accent" onclick="respondConn('${r.id}','accepted')">Accept</button><button class="btn-ghost" onclick="respondConn('${r.id}','rejected')">Reject</button>` : `<span class="badge badge-pending">Pending</span>`}
+          </div>
+        `;
+        reqList.appendChild(card);
       });
     }
   } catch (e) {
@@ -1478,7 +1428,6 @@ card.innerHTML = `
 
 async function respondConn(id, status) {
   try {
-    // ابتدا رکورد را واکشی کن تا بتوانیم نوتیفیکیشن بفرستیم
     const reqs = await db.select('dashboard_connectionrequests', `id=eq.${id}`);
     if (!reqs || !reqs.length) {
       loadConnections();
@@ -1568,7 +1517,7 @@ async function loadUsers() {
 }
 
 async function openEditUser(uid) {
-  openUserDetail(uid);  // به‌جای باز کردن مستقیم، جزئیات کامل نشان داده می‌شود
+  openUserDetail(uid);
 }
 
 async function saveUser() {
@@ -1588,7 +1537,6 @@ async function saveUser() {
   } catch (e) { alert(e.message); }
 }
 
-// ⬅️ این تابع را خارج از loadNotifications بگذارید
 async function loadDashboardUserList() {
   const row = document.getElementById('dash-users-row');
   const list = document.getElementById('dash-users-list');
@@ -1648,7 +1596,6 @@ async function loadDashboardUserList() {
 
     renderFilteredUsers();
 
-    // Search functionality
     if (searchInput) {
       searchInput.addEventListener('input', function () {
         renderFilteredUsers(this.value);
@@ -1661,18 +1608,15 @@ async function loadDashboardUserList() {
 
 async function openUserDetail(uid) {
   try {
-    // واکشی کامل پروفایل
     const [user] = await db.select('profiles', `id=eq.${uid}`);
     if (!user) return alert('User not found.');
 
-    // محاسبه تعداد دعوت‌شده‌ها
     let invitedCount = 0;
     try {
       const referrals = await db.select('profiles', `referred_by=eq.${uid}&select=id`);
       invitedCount = (referrals || []).length;
     } catch (e) {}
 
-    // پر کردن فیلدهای نمایشی
     const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'No Name';
     document.getElementById('modal-user-name').textContent = fullName;
     document.getElementById('modal-user-avatar').src = user.photo_url || generateAvatarUrl(fullName);
@@ -1686,17 +1630,13 @@ async function openUserDetail(uid) {
     document.getElementById('modal-user-joined').textContent = fmtDate(user.created_at);
     document.getElementById('modal-user-invited').textContent = invitedCount;
 
-    // فیلدهای ویرایشی
     document.getElementById('edit-user-role').value = user.role || 'Recruit';
     document.getElementById('edit-user-first-name').value = user.first_name || '';
     document.getElementById('edit-user-last-name').value = user.last_name || '';
     document.getElementById('edit-user-username').value = user.username || '';
     document.getElementById('edit-user-telegram').value = user.telegram_id || '';
 
-    // ذخیره userId برای ذخیره
     editingUserId = user.id;
-
-    // نمایش مودال
     document.getElementById('edit-user-modal').classList.remove('hidden');
   } catch (e) {
     alert('Error loading user details: ' + e.message);
@@ -1709,7 +1649,6 @@ async function addNotification(userId, type, title, body = '', link = '') {
   try {
     const url = `${SUPABASE_URL}/rest/v1/notifications`;
     const token = await getToken();
-    console.log('Token:', token ? 'exists' : 'null');
     const headers = {
       'apikey': SUPABASE_ANON_KEY,
       'Authorization': `Bearer ${token || SUPABASE_ANON_KEY}`,
@@ -1721,19 +1660,16 @@ async function addNotification(userId, type, title, body = '', link = '') {
       headers,
       body: JSON.stringify({ user_id: userId, type, title, body, link })
     });
-    console.log('Notification response status:', res.status);
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       console.error('Notification insert failed:', err);
-    } else {
-      console.log('Notification inserted successfully');
     }
   } catch (e) {
     console.error('Notification error:', e);
   }
 }
 
-// ── به‌روزرسانی نشان و لیست اعلان‌ها (برای کاربر جاری) ─────
+// ── Notification Badge & UI ─────────────────────────────────
 async function refreshNotificationUI() {
   await updateNotificationBadge();
   const dashSection = document.getElementById('section-dashboard');
@@ -1742,7 +1678,6 @@ async function refreshNotificationUI() {
   }
 }
 
-// ── Notification Badge ──────────────────────────────────────
 async function updateNotificationBadge() {
   const badge = document.getElementById('notif-badge');
   if (!badge) return;
@@ -1775,7 +1710,7 @@ function formatDuration(ms) {
   if (!ms || ms <= 0) return '0m';
   const totalSeconds = Math.floor(ms / 1000);
   const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const minutes = Math.floor((totalSeconds % 3600) / 60000);
   if (hours > 0) return `${hours}h ${minutes}m`;
   return `${minutes}m`;
 }
