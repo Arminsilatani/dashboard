@@ -1543,13 +1543,13 @@ input[type="password"]::-webkit-textfield-decoration-container {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 120px;
-  line-height: 1;
+  line-height: 1.1;
 }
 
 .time-overview-breakdown-row .breakdown-time {
   font-size: 12px;
   color: var(--muted);
-  line-height: 1;
+  line-height: 1.1;
 }
 
 .time-overview-empty {
