@@ -1600,6 +1600,36 @@ input[type="password"]::-webkit-textfield-decoration-container {
 }
 
 /* =================================================================
+   MY NOTES CARD
+   ================================================================= */
+.notes-card {
+  flex: 1;
+  min-width: 220px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.notes-card textarea {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  resize: vertical;
+  min-height: 120px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.notes-card textarea:focus {
+  border-color: var(--accent);
+}
+/* =================================================================
    RESPONSIVE
    ================================================================= */
 @media (max-width: 680px) {
