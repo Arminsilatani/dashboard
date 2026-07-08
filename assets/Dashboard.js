@@ -768,13 +768,13 @@ async function loadTimeOverview() {
     const minutes = Math.floor((totalWeekMs % 3600000) / 60000);
     totalDisplay.textContent = `${hours}h ${minutes}m`;
 
-    // مقیاس محور Y (حداکثر زمان هر پروژه در یک روز، بدون جمع شدن)
+    // مقیاس محور Y (حداکثر زمان هر پروژه در یک روز)
     const allDurations = activeProjects.flatMap(p => p.weekDurations);
     const maxDailyMs = Math.max(...allDurations, 1);
     const maxHours = Math.ceil(maxDailyMs / 3600000);
-    const yMaxMs = maxHours * 3600000; // برای کل نمودار یکسان
+    const yMaxMs = maxHours * 3600000;
 
-    // روزهای هفته (از امروز به عقب)
+    // روزهای هفته
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
     const dayMs = 86400000;
@@ -794,7 +794,7 @@ async function loadTimeOverview() {
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     g.setAttribute('transform', `translate(${margin.left},${margin.top})`);
 
-    // خطوط راهنمای افقی
+    // خطوط راهنما
     for (let h = 1; h <= maxHours; h++) {
       const y = height - (h / maxHours) * height;
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -811,7 +811,7 @@ async function loadTimeOverview() {
       g.appendChild(text);
     }
 
-    // برچسب روزهای هفته
+    // برچسب روزها
     for (let i = 0; i < 7; i++) {
       const x = (i / 6) * width;
       const day = new Date(windowStart + i * dayMs).getDay();
@@ -823,12 +823,11 @@ async function loadTimeOverview() {
       g.appendChild(text);
     }
 
-    // رسم هر پروژه به صورت جداگانه (غیر انباشته)
+    // رسم هر پروژه مستقل (غیرانباشته)
     activeProjects.forEach(project => {
       const color = project.color || '#4ECDC4';
       const durations = project.weekDurations;
 
-      // ساختن مسیر از پایین (y=height) به بالا و برگشت
       let pathD = `M 0 ${height}`;
       for (let i = 0; i < 7; i++) {
         const x = (i / 6) * width;
@@ -841,11 +840,11 @@ async function loadTimeOverview() {
       }
       pathD += ' Z';
 
-      // مساحت با شفافیت
+      // مساحت با شفافیت ۲۰٪
       const areaPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       areaPath.setAttribute('d', pathD);
       areaPath.setAttribute('fill', color);
-      areaPath.setAttribute('opacity', '0.2');   // 20% opacity
+      areaPath.setAttribute('opacity', '0.2');
       areaPath.setAttribute('stroke', 'none');
       g.appendChild(areaPath);
 
@@ -861,7 +860,7 @@ async function loadTimeOverview() {
       linePath.setAttribute('fill', 'none');
       linePath.setAttribute('stroke', color);
       linePath.setAttribute('stroke-width', '2');
-      linePath.setAttribute('opacity', '1');     // کاملاً مشهود
+      linePath.setAttribute('opacity', '1');
       g.appendChild(linePath);
     });
 
@@ -869,7 +868,7 @@ async function loadTimeOverview() {
     container.innerHTML = '';
     container.appendChild(svg);
 
-    // Project Breakdown (سمت راست)
+    // Project Breakdown افقی (بدون عنوان)
     breakdownList.innerHTML = activeProjects.map(p => {
       const totalMs = p.weekDurations.reduce((a,b)=>a+b,0);
       const percent = (totalMs / totalWeekMs * 100).toFixed(1);
