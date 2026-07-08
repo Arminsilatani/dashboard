@@ -861,7 +861,7 @@ async function loadTimeOverview() {
       linePath.setAttribute('d', lineD);
       linePath.setAttribute('fill', 'none');
       linePath.setAttribute('stroke', color);
-      linePath.setAttribute('stroke-width', '2');
+      linePath.setAttribute('stroke-width', '1');
       linePath.setAttribute('opacity', '1');
       linePath.setAttribute('data-project-id', project.id);   // ← اضافه شد
       g.appendChild(linePath);
