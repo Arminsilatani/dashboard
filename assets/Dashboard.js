@@ -736,6 +736,7 @@ async function loadTimeOverview() {
   const totalDisplay = document.getElementById('time-overview-total');
   if (!container || !breakdownList || !totalDisplay) return;
 
+  // پاک‌سازی و حالت بارگذاری
   container.innerHTML = '';
   breakdownList.innerHTML = '<p class="empty-state">Loading...</p>';
   totalDisplay.textContent = '--:--';
@@ -743,12 +744,12 @@ async function loadTimeOverview() {
   try {
     const projects = await db.select('tempozio', `user_id=eq.${currentUser.id}`);
     if (!projects || projects.length === 0) {
-      container.innerHTML = '<div class="chart-empty-message">No projects this week</div>';
+      container.innerHTML = '<p class="time-overview-empty">No projects this week</p>';
       breakdownList.innerHTML = '<p class="empty-state">No data</p>';
       return;
     }
 
-    // زمان هر پروژه در ۷ روز
+    // محاسبه زمان هر پروژه در ۷ روز
     const projectDurations = projects.map(p => ({
       ...p,
       weekDurations: getProjectWeekDurations(p)
@@ -756,23 +757,22 @@ async function loadTimeOverview() {
 
     const activeProjects = projectDurations.filter(p => p.weekDurations.reduce((a,b)=>a+b,0) > 0);
     if (activeProjects.length === 0) {
-      container.innerHTML = '<div class="chart-empty-message">No time tracked this week</div>';
+      container.innerHTML = '<p class="time-overview-empty">No time tracked this week</p>';
       breakdownList.innerHTML = '<p class="empty-state">No time recorded</p>';
       return;
     }
 
-    // مجموع زمان کل
+    // مجموع زمان کل (برای تایتل)
     const totalWeekMs = activeProjects.reduce((sum, p) => sum + p.weekDurations.reduce((a,b)=>a+b,0), 0);
     const hours = Math.floor(totalWeekMs / 3600000);
     const minutes = Math.floor((totalWeekMs % 3600000) / 60000);
     totalDisplay.textContent = `${hours}h ${minutes}m`;
 
-    // حداکثر روزانه برای مقیاس محور Y
-    const dailySums = Array(7).fill(0);
-    activeProjects.forEach(p => p.weekDurations.forEach((v,i) => dailySums[i] += v));
-    const maxDailyMs = Math.max(...dailySums, 1);
+    // مقیاس محور Y (حداکثر زمان هر پروژه در یک روز، بدون جمع شدن)
+    const allDurations = activeProjects.flatMap(p => p.weekDurations);
+    const maxDailyMs = Math.max(...allDurations, 1);
     const maxHours = Math.ceil(maxDailyMs / 3600000);
-    const yMaxMs = maxHours * 3600000;
+    const yMaxMs = maxHours * 3600000; // برای کل نمودار یکسان
 
     // روزهای هفته (از امروز به عقب)
     const today = new Date();
@@ -794,7 +794,7 @@ async function loadTimeOverview() {
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     g.setAttribute('transform', `translate(${margin.left},${margin.top})`);
 
-    // خطوط راهنما
+    // خطوط راهنمای افقی
     for (let h = 1; h <= maxHours; h++) {
       const y = height - (h / maxHours) * height;
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -823,57 +823,53 @@ async function loadTimeOverview() {
       g.appendChild(text);
     }
 
-    // رسم مساحت‌های انباشته
-    const cumulative = Array(7).fill(0);
+    // رسم هر پروژه به صورت جداگانه (غیر انباشته)
     activeProjects.forEach(project => {
       const color = project.color || '#4ECDC4';
       const durations = project.weekDurations;
 
+      // ساختن مسیر از پایین (y=height) به بالا و برگشت
       let pathD = `M 0 ${height}`;
-      // بالا
       for (let i = 0; i < 7; i++) {
         const x = (i / 6) * width;
-        const y = height - ((cumulative[i] + durations[i]) / yMaxMs) * height;
+        const y = height - (durations[i] / yMaxMs) * height;
         pathD += ` L ${x} ${y}`;
       }
-      // برگشت به پایین
       for (let i = 6; i >= 0; i--) {
         const x = (i / 6) * width;
-        const y = height - (cumulative[i] / yMaxMs) * height;
-        pathD += ` L ${x} ${y}`;
+        pathD += ` L ${x} ${height}`;
       }
       pathD += ' Z';
 
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', pathD);
-      path.setAttribute('fill', color);
-      path.setAttribute('opacity', '0.75');
-      g.appendChild(path);
+      // مساحت با شفافیت
+      const areaPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      areaPath.setAttribute('d', pathD);
+      areaPath.setAttribute('fill', color);
+      areaPath.setAttribute('opacity', '0.2');   // 20% opacity
+      areaPath.setAttribute('stroke', 'none');
+      g.appendChild(areaPath);
 
-      // به‌روزرسانی cumulative
-      for (let i = 0; i < 7; i++) cumulative[i] += durations[i];
+      // خط بیرونی پررنگ
+      let lineD = '';
+      for (let i = 0; i < 7; i++) {
+        const x = (i / 6) * width;
+        const y = height - (durations[i] / yMaxMs) * height;
+        lineD += (i === 0 ? 'M' : 'L') + ` ${x} ${y} `;
+      }
+      const linePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      linePath.setAttribute('d', lineD);
+      linePath.setAttribute('fill', 'none');
+      linePath.setAttribute('stroke', color);
+      linePath.setAttribute('stroke-width', '2');
+      linePath.setAttribute('opacity', '1');     // کاملاً مشهود
+      g.appendChild(linePath);
     });
-
-    // خط بالایی (مجموع)
-    let lineD = '';
-    for (let i = 0; i < 7; i++) {
-      const x = (i / 6) * width;
-      const y = height - (cumulative[i] / yMaxMs) * height;
-      lineD += `${i===0 ? 'M' : 'L'} ${x} ${y} `;
-    }
-    const topLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    topLine.setAttribute('d', lineD);
-    topLine.setAttribute('fill', 'none');
-    topLine.setAttribute('stroke', '#fff');
-    topLine.setAttribute('stroke-width', '1.5');
-    topLine.setAttribute('opacity', '0.5');
-    g.appendChild(topLine);
 
     svg.appendChild(g);
     container.innerHTML = '';
     container.appendChild(svg);
 
-    // Project Breakdown
+    // Project Breakdown (سمت راست)
     breakdownList.innerHTML = activeProjects.map(p => {
       const totalMs = p.weekDurations.reduce((a,b)=>a+b,0);
       const percent = (totalMs / totalWeekMs * 100).toFixed(1);
