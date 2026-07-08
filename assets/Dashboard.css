@@ -1504,7 +1504,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
 .time-overview-total {
   color: var(--accent);
   font-size: 0.9em;
-  font-weight: 700;
+  font-weight: 400;
   margin-left: 10px;
   letter-spacing: 0.3px;
 }
