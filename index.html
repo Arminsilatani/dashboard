@@ -193,15 +193,24 @@
                     <div id="dash-users-list" class="mini-list"></div>
                   </div>
                 </div>
-        <!-- Time Overview Card (70% width at the bottom) -->
-        <div class="dash-row">
-          <div class="time-overview-card">
-            <h3 class="card-heading">Time Overview</h3>
-            <div id="time-overview-content">
-              <p class="empty-state">Content coming soon...</p>
+            <!-- Time Overview Card -->
+            <div class="dash-row">
+              <div class="time-overview-card">
+                <h3 class="card-heading">Time Overview</h3>
+                <div class="time-overview-content" id="time-overview-content">
+                  <!-- سمت چپ: نمودار دایره‌ای -->
+                  <div class="time-overview-chart">
+                    <svg id="time-overview-donut" viewBox="0 0 300 300"></svg>
+                    <div class="chart-center" id="chart-center-total">00:00</div>
+                  </div>
+                  <!-- سمت راست: Project Breakdown -->
+                  <div class="time-overview-breakdown">
+                    <h4 class="breakdown-title">Project Breakdown</h4>
+                    <div class="breakdown-list" id="time-overview-breakdown-list"></div>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
       </section>
 
       <section id="section-tickets" class="section">
