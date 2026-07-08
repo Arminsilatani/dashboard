@@ -729,7 +729,6 @@ function getProjectWeekDurations(project) {
   return durations;
 }
 
-// رسم Stacked Area Chart و Project Breakdown
 async function loadTimeOverview() {
   const container = document.getElementById('time-overview-chart-area');
   const breakdownList = document.getElementById('time-overview-breakdown-list');
@@ -795,6 +794,7 @@ async function loadTimeOverview() {
     const height = vbHeight - margin.top - margin.bottom;   // حالا درست محاسبه میشه
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     g.setAttribute('transform', `translate(${margin.left},${margin.top})`);
+
     // خطوط راهنما
     for (let h = 1; h <= maxHours; h++) {
       const y = height - (h / maxHours) * height;
@@ -870,16 +870,18 @@ async function loadTimeOverview() {
     container.appendChild(svg);
 
     // Project Breakdown افقی (بدون عنوان)
+    const circumference = 2 * Math.PI * 15; // ≈ 94.25
     breakdownList.innerHTML = activeProjects.map(p => {
       const totalMs = p.weekDurations.reduce((a,b)=>a+b,0);
       const percent = (totalMs / totalWeekMs * 100).toFixed(1);
+      const fillDash = (parseFloat(percent) / 100) * circumference;
       return `
         <div class="breakdown-item">
           <svg class="progress-ring" viewBox="0 0 36 36">
             <circle class="bg" cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="3"/>
             <circle class="fill" cx="18" cy="18" r="15" fill="none"
                     stroke="${p.color || '#4ECDC4'}" stroke-width="3" stroke-linecap="round"
-                    stroke-dasharray="${percent} 100"
+                    stroke-dasharray="${fillDash.toFixed(2)} ${circumference.toFixed(2)}"
                     transform="rotate(-90 18 18)" />
             <text x="18" y="18" dy="0.3em" text-anchor="middle" fill="#f5f5f5" font-size="8">${percent}%</text>
           </svg>
