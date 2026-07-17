@@ -76,8 +76,10 @@ const db = {
 
 /* :::::::::::::::::::::::::: STATE :::::::::::::::::::::::::: */
 let currentUser = null;
+let currentProfile = null;
 let editingUserId = null;
 let openTicketId = null;
+let authEmail = '';
 
 /* :::::::::::::::::::::::::: LOADER :::::::::::::::::::::::::: */
 function showLoader() {
@@ -94,13 +96,502 @@ function hideLoader() {
   if (initialLoader) initialLoader.classList.add('hidden');
 }
 
-/* :::::::::::::::::::::::::: NOTIFICATION DELETION :::::::::::::::::::::::::: */
+/* ============================================================
+   GLASSMORPHISM AUTH OVERLAY – Ravlo style (JS)
+   ============================================================ */
+
+async function checkEmailExists(email) {
+  try {
+    const { data, error } = await sb.rpc('check_email_exists', { email_to_check: email });
+    if (error) throw error;
+    return !!data;
+  } catch (e) {
+    // Fallback: if RPC fails, try profiles table if it has email column
+    try {
+      const { data: profile, error: profileError } = await sb
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+      if (profileError) throw profileError;
+      return !!profile;
+    } catch (err) {
+      return false;
+    }
+  }
+}
+
+async function buildCurrentProfile(user) {
+  try {
+    const { data: profile, error } = await sb
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    if (error && error.code !== 'PGRST116') throw error;
+
+    const md = user.user_metadata || {};
+    return {
+      id: user.id,
+      email: user.email || '',
+      first_name: profile?.first_name ?? md.first_name ?? '',
+      last_name: profile?.last_name ?? md.last_name ?? '',
+      photo_url: profile?.photo_url ?? md.photo_url ?? '',
+      username: profile?.username ?? md.username ?? '',
+      role: profile?.role ?? md.role ?? 'Recruit',
+      phone: profile?.phone ?? '',
+      website: profile?.website ?? '',
+      created_at: profile?.created_at ?? user.created_at,
+      referred_by: profile?.referred_by ?? '',
+      telegram_id: profile?.telegram_id ?? '',
+    };
+  } catch (e) {
+    return {
+      id: user.id,
+      email: user.email || '',
+      first_name: user.user_metadata?.first_name || '',
+      last_name: user.user_metadata?.last_name || '',
+      role: 'Recruit',
+    };
+  }
+}
+
+function openModal(modal) {
+  if (!modal) return;
+  modal.style.display = 'flex';
+  modal.classList.add('modal-open');
+  document.body.classList.add('modal-open');
+}
+
+function closeModal(modal) {
+  if (!modal) return;
+  modal.style.display = 'none';
+  modal.classList.remove('modal-open');
+  document.body.classList.remove('modal-open');
+}
+
+function showAuthStep(stepId) {
+  document.querySelectorAll('.auth-step').forEach((s) => {
+    s.classList.remove('active');
+    s.classList.add('hidden');
+  });
+  const target = document.getElementById(stepId);
+  if (target) {
+    target.classList.add('active');
+    target.classList.remove('hidden');
+  }
+}
+
+async function syncSidebarComponent() {
+  const { data: { session } } = await sb.auth.getSession();
+  const user = session?.user || null;
+
+  const sidebarUser = document.querySelector('.sidebar-user');
+  const signOutBtn = document.getElementById('signout-btn');
+  const avatar = document.getElementById('sidebar-avatar');
+  const nameEl = document.getElementById('sidebar-name');
+  const roleEl = document.getElementById('sidebar-role');
+
+  const oldSignInBtn = document.querySelector('.sidebar-signin-btn');
+  if (oldSignInBtn) oldSignInBtn.remove();
+
+  if (user && currentProfile) {
+    if (sidebarUser) sidebarUser.style.display = '';
+    if (signOutBtn) signOutBtn.style.display = '';
+
+    const profile = currentProfile;
+    const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || profile.email || 'User';
+    if (nameEl) nameEl.textContent = fullName;
+    if (roleEl) roleEl.textContent = profile.role || 'Recruit';
+    if (avatar) {
+      avatar.src = profile.photo_url || generateAvatarUrl(fullName);
+    }
+
+    if (profile.role === 'General') {
+      document.querySelectorAll('.admin-only').forEach((el) => el.classList.remove('hidden'));
+    } else {
+      document.querySelectorAll('.admin-only').forEach((el) => el.classList.add('hidden'));
+    }
+
+    const signInBtn = document.querySelector('.sidebar-signin-btn');
+    if (signInBtn) signInBtn.remove();
+
+    document.dispatchEvent(new CustomEvent('auth:sidebar:login', { detail: { profile } }));
+  } else {
+    if (sidebarUser) sidebarUser.style.display = 'none';
+    if (signOutBtn) signOutBtn.style.display = 'none';
+
+    const nav = document.querySelector('.sidebar-nav');
+    if (nav) {
+      const btn = document.createElement('button');
+      btn.className = 'nav-item sidebar-signin-btn';
+      btn.innerHTML = `
+        <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        <span class="nav-text">Sign In</span>
+      `;
+      btn.style.marginTop = '8px';
+      btn.addEventListener('click', function () {
+        const overlay = document.getElementById('auth-overlay');
+        if (overlay) {
+          document.getElementById('auth-email').value = '';
+          document.getElementById('auth-password').value = '';
+          document.getElementById('auth-password-login').value = '';
+          document.getElementById('reg-password').value = '';
+          document.getElementById('reg-confirm').value = '';
+          document.getElementById('reg-firstname').value = '';
+          document.getElementById('reg-lastname').value = '';
+          document.getElementById('reg-success').style.display = 'none';
+          document.getElementById('reg-form-fields').style.display = '';
+          document.querySelectorAll('.auth-error').forEach((el) => {
+            el.textContent = '';
+            el.classList.add('hidden');
+          });
+          document.querySelectorAll('.auth-success').forEach((el) => {
+            el.classList.add('hidden');
+          });
+          showAuthStep('step-1');
+          openModal(overlay);
+        }
+      });
+      nav.prepend(btn);
+    }
+
+    document.dispatchEvent(new CustomEvent('auth:sidebar:logout'));
+  }
+}
+
+function initAuthListeners() {
+  const overlay = document.getElementById('auth-overlay');
+
+  const continueBtn = document.getElementById('auth-continue-btn');
+  const errorEl = document.getElementById('auth-error');
+  if (!continueBtn || !errorEl) return;
+
+  continueBtn.addEventListener('click', async function () {
+    const email = document.getElementById('auth-email').value.trim();
+    errorEl.textContent = '';
+    errorEl.classList.add('hidden');
+
+    if (!email) {
+      errorEl.textContent = 'Please enter your email.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      errorEl.textContent = 'Please enter a valid email address.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    authEmail = email;
+    showLoader();
+
+    try {
+      const exists = await checkEmailExists(email);
+      if (exists) {
+        document.getElementById('auth-user-email').textContent = email;
+        showAuthStep('step-2-login');
+      } else {
+        document.getElementById('register-email-display').value = email;
+        document.getElementById('reg-form-fields').style.display = '';
+        document.getElementById('reg-success').style.display = 'none';
+        showAuthStep('step-2-register');
+      }
+      errorEl.textContent = '';
+      errorEl.classList.add('hidden');
+    } catch (e) {
+      errorEl.textContent = 'Something went wrong. Try again.';
+      errorEl.classList.remove('hidden');
+    } finally {
+      hideLoader();
+    }
+  });
+
+  // ---- Sign In ----
+  document.getElementById('auth-signin-btn')?.addEventListener('click', async function () {
+    const email = authEmail || document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value;
+    const errorEl = document.getElementById('auth-error-login');
+    if (!errorEl) return;
+
+    errorEl.textContent = '';
+    errorEl.classList.add('hidden');
+
+    if (!email || !password) {
+      errorEl.textContent = 'Please enter your password.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    showLoader();
+
+    try {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+
+      const profile = await buildCurrentProfile(data.user);
+      currentUser = data.user;
+      currentProfile = profile;
+
+      const pendingRef = sessionStorage.getItem('pendingRef');
+      if (pendingRef && !profile.referred_by) {
+        await db.update('profiles', profile.id, { referred_by: pendingRef });
+        try {
+          await addNotification(pendingRef, 'system', 'Someone joined via your link', '', '#connections');
+        } catch (e) {}
+        const refreshed = await buildCurrentProfile(data.user);
+        currentProfile = refreshed;
+      }
+
+      closeModal(overlay);
+      document.getElementById('app-screen').classList.add('active');
+      await refreshCurrentUser();
+      updateSidebarUI();
+      document.getElementById('section-dashboard').classList.add('active');
+      loadSection('dashboard');
+      await cleanupOldNotifications();
+      updateNotificationBadge();
+      await syncSidebarComponent();
+
+      const pendingToken = sessionStorage.getItem('pendingConnectToken');
+      if (pendingToken) {
+        sessionStorage.removeItem('pendingConnectToken');
+        await processConnectToken(pendingToken);
+      }
+
+      document.dispatchEvent(new CustomEvent('auth:login', { detail: { user: data.user, profile } }));
+
+    } catch (err) {
+      errorEl.textContent = err.message || 'Sign in failed.';
+      errorEl.classList.remove('hidden');
+    } finally {
+      hideLoader();
+    }
+  });
+
+  // ---- Register ----
+  document.getElementById('auth-register-btn')?.addEventListener('click', async function () {
+    const firstname = document.getElementById('reg-firstname').value.trim();
+    const lastname = document.getElementById('reg-lastname').value.trim();
+    const password = document.getElementById('reg-password').value;
+    const confirm = document.getElementById('reg-confirm').value;
+    const errorEl = document.getElementById('auth-error-register');
+    if (!errorEl) return;
+
+    errorEl.textContent = '';
+    errorEl.classList.add('hidden');
+
+    const nameRegex = /^[A-Za-z]+$/;
+    if (!nameRegex.test(firstname)) {
+      errorEl.textContent = 'First name must contain only English letters.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+    if (!nameRegex.test(lastname)) {
+      errorEl.textContent = 'Last name must contain only English letters.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    if (!firstname || !lastname) {
+      errorEl.textContent = 'First and last name required.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+    if (password.length < 6) {
+      errorEl.textContent = 'Password must be at least 6 characters.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+    if (password !== confirm) {
+      errorEl.textContent = 'Passwords do not match.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    showLoader();
+
+    try {
+      const pendingToken = sessionStorage.getItem('pendingConnectToken') || '';
+      const pendingRef = sessionStorage.getItem('pendingRef') || '';
+      const redirectBase = window.location.origin + window.location.pathname;
+      let redirectUrl = redirectBase;
+      if (pendingToken && pendingRef) {
+        redirectUrl = `${redirectBase}?connect=${pendingToken}&ref=${pendingRef}`;
+      } else if (pendingToken) {
+        redirectUrl = `${redirectBase}?connect=${pendingToken}`;
+      } else if (pendingRef) {
+        redirectUrl = `${redirectBase}?ref=${pendingRef}`;
+      }
+
+      const { data, error } = await sb.auth.signUp({
+        email: authEmail,
+        password,
+        options: {
+          data: { first_name: firstname, last_name: lastname },
+          emailRedirectTo: redirectUrl
+        }
+      });
+
+      if (error) throw error;
+
+      document.getElementById('reg-form-fields').style.display = 'none';
+      document.getElementById('reg-success').style.display = 'block';
+      errorEl.textContent = '';
+      errorEl.classList.add('hidden');
+
+      document.dispatchEvent(new CustomEvent('auth:register', { detail: { user: data.user } }));
+
+    } catch (err) {
+      errorEl.textContent = err.message || 'Registration failed.';
+      errorEl.classList.remove('hidden');
+    } finally {
+      hideLoader();
+    }
+  });
+
+  // ---- Forgot password ----
+  document.getElementById('auth-forgot-link')?.addEventListener('click', function (e) {
+    e.preventDefault();
+    document.getElementById('forgot-email').value = authEmail || document.getElementById('auth-email').value.trim();
+    showAuthStep('step-forgot');
+  });
+
+  document.getElementById('auth-send-reset-btn')?.addEventListener('click', async function () {
+    const email = document.getElementById('forgot-email').value.trim();
+    const msgEl = document.getElementById('auth-success-msg');
+    if (!msgEl) return;
+
+    msgEl.textContent = '';
+    msgEl.classList.add('hidden');
+
+    if (!email) {
+      msgEl.textContent = 'Please enter your email.';
+      msgEl.classList.remove('hidden');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      msgEl.textContent = 'Please enter a valid email.';
+      msgEl.classList.remove('hidden');
+      return;
+    }
+
+    showLoader();
+
+    try {
+      const { error } = await sb.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + window.location.pathname
+      });
+      if (error) throw error;
+
+      msgEl.textContent = 'Password reset link sent! Check your email.';
+      msgEl.classList.remove('hidden');
+    } catch (err) {
+      msgEl.textContent = err.message || 'Failed to send reset link.';
+      msgEl.classList.remove('hidden');
+    } finally {
+      hideLoader();
+    }
+  });
+
+  // ---- Back buttons ----
+  document.getElementById('auth-back-to-email')?.addEventListener('click', function () {
+    showAuthStep('step-1');
+  });
+
+  document.getElementById('auth-back-to-email-2')?.addEventListener('click', function () {
+    showAuthStep('step-1');
+  });
+
+  document.getElementById('auth-back-to-login')?.addEventListener('click', function (e) {
+    e.preventDefault();
+    const email = document.getElementById('forgot-email').value.trim();
+    if (email) {
+      document.getElementById('auth-email').value = email;
+      document.getElementById('auth-user-email').textContent = email;
+    }
+    showAuthStep('step-2-login');
+  });
+
+  document.getElementById('reg-to-login-btn')?.addEventListener('click', function () {
+    document.getElementById('auth-user-email').textContent = authEmail || document.getElementById('auth-email').value.trim();
+    showAuthStep('step-2-login');
+  });
+
+  // ---- Enter key support ----
+  document.querySelectorAll('.auth-step').forEach((step) => {
+    step.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const map = {
+          'step-1': 'auth-continue-btn',
+          'step-2-login': 'auth-signin-btn',
+          'step-2-register': 'auth-register-btn',
+          'step-forgot': 'auth-send-reset-btn'
+        };
+        const btnId = map[this.id];
+        if (btnId) document.getElementById(btnId)?.click();
+      }
+    });
+  });
+
+  // ---- Password toggle ----
+  document.querySelectorAll('.toggle-password-btn').forEach((btn) => {
+    btn.addEventListener('click', function () {
+      const input = document.getElementById(this.dataset.target);
+      if (!input) return;
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      this.innerHTML = isPassword
+        ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="m14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+        : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+    });
+  });
+}
+
+/* ---------------------------- SESSION RESTORATION ---------------------------- */
+async function restoreSession() {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+
+    if (session?.user) {
+      const profile = await buildCurrentProfile(session.user);
+      currentUser = session.user;
+      currentProfile = profile;
+
+      const overlay = document.getElementById('auth-overlay');
+      if (overlay) closeModal(overlay);
+
+      document.getElementById('app-screen').classList.add('active');
+      await refreshCurrentUser();
+      updateSidebarUI();
+      document.getElementById('section-dashboard').classList.add('active');
+      loadSection('dashboard');
+      await cleanupOldNotifications();
+      updateNotificationBadge();
+      await syncSidebarComponent();
+
+      document.dispatchEvent(new CustomEvent('auth:session:restored', { detail: { user: session.user, profile } }));
+      return true;
+    } else {
+      const overlay = document.getElementById('auth-overlay');
+      if (overlay) closeModal(overlay);
+      await syncSidebarComponent();
+      return false;
+    }
+  } catch (e) {
+    await syncSidebarComponent();
+    return false;
+  }
+}
+
+/* =========================== NOTIFICATION DELETION ============================ */
 async function deleteNotificationById(notificationId) {
   try {
     await db.delete('notifications', notificationId);
-  } catch (e) {
-    console.warn('Failed to delete notification:', e);
-  }
+  } catch (e) {}
 }
 
 document.addEventListener('click', async function (e) {
@@ -127,197 +618,41 @@ document.addEventListener('click', async function (e) {
   }
 });
 
-/* =========================== AUTH FLOW ============================ */
-let authEmail = '';
-
-function showStep(stepId) {
-  document.querySelectorAll('.auth-step').forEach(el => el.classList.add('hidden'));
-  document.getElementById(stepId)?.classList.remove('hidden');
-}
-
-function initAuthListeners() {
-  document.getElementById('auth-continue-btn')?.addEventListener('click', async function () {
-    const email = document.getElementById('auth-email').value.trim();
-    const errorEl = document.getElementById('auth-error');
-    if (!email) { errorEl.textContent = 'Please enter an email.'; return; }
-    authEmail = email;
-    showLoader();
-    try {
-      const { data: exists, error: rpcError } = await sb.rpc('check_email_exists', { email_to_check: email });
-      if (rpcError) throw rpcError;
-      if (exists) {
-        document.getElementById('auth-user-email').textContent = email;
-        showStep('step-2-login');
-      } else {
-        showStep('step-2-register');
-        document.getElementById('reg-form-fields').style.display = '';
-        document.getElementById('reg-success').style.display = 'none';
-      }
-      errorEl.textContent = '';
-    } catch (e) { errorEl.textContent = 'Something went wrong. Try again.'; }
-    finally { hideLoader(); }
-  });
-
-  document.getElementById('auth-signin-btn')?.addEventListener('click', async function () {
-    const email = authEmail, password = document.getElementById('auth-password').value,
-          errorEl = document.getElementById('auth-error-login');
-    if (!email || !password) { errorEl.textContent = 'Please enter your password.'; return; }
-    showLoader();
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
-    hideLoader();
-    if (error) { errorEl.textContent = error.message; return; }
-    currentUser = await fetchProfile(data.user);
-    if (!currentUser) { errorEl.textContent = 'Unable to load profile.'; return; }
-
-    const pendingRef = sessionStorage.getItem('pendingRef');
-    if (pendingRef && !currentUser.referred_by) {
-      await db.update('profiles', currentUser.id, { referred_by: pendingRef });
-      try {
-        await addNotification(pendingRef, 'system', 'Someone joined via your link', '', '#connections');
-      } catch(e) {}
-    }
-
-    showApp();
-
-    const pendingToken = sessionStorage.getItem('pendingConnectToken');
-    if (pendingToken) {
-      sessionStorage.removeItem('pendingConnectToken');
-      await processConnectToken(pendingToken);
-    }
-  });
-
-  document.getElementById('auth-forgot-link')?.addEventListener('click', function (e) {
-    e.preventDefault();
-    document.getElementById('forgot-email').value = authEmail;
-    showStep('step-forgot');
-  });
-
-  document.getElementById('auth-send-reset-btn')?.addEventListener('click', async function () {
-    const email = document.getElementById('forgot-email').value.trim();
-    if (!email) return;
-    showLoader();
-    const { error } = await sb.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + window.location.pathname
-    });
-    hideLoader();
-    if (error) {
-      document.getElementById('auth-error-login').textContent = error.message;
-      return;
-    }
-    document.getElementById('auth-success-msg').textContent = 'Password reset link sent.';
-    document.getElementById('auth-success-msg').style.display = 'block';
-  });
-
-  document.getElementById('auth-back-to-login')?.addEventListener('click', e => {
-    e.preventDefault();
-    showStep('step-2-login');
-  });
-
-  document.getElementById('auth-register-btn')?.addEventListener('click', async function () {
-    const firstname = document.getElementById('reg-firstname').value.trim(),
-          lastname = document.getElementById('reg-lastname').value.trim(),
-          password = document.getElementById('reg-password').value,
-          confirm = document.getElementById('reg-confirm').value,
-          errorEl = document.getElementById('auth-error-register');
-
-    const nameRegex = /^[A-Za-z]+$/;
-    if (!nameRegex.test(firstname)) {
-      errorEl.textContent = 'First name must contain only English letters.';
-      return;
-    }
-    if (!nameRegex.test(lastname)) {
-      errorEl.textContent = 'Last name must contain only English letters.';
-      return;
-    }
-
-    if (!firstname || !lastname || !password || !confirm) {
-      errorEl.textContent = 'All fields are required.';
-      return;
-    }
-    if (password !== confirm) {
-      errorEl.textContent = 'Passwords do not match.';
-      return;
-    }
-
-    showLoader();
-
-    const pendingToken = sessionStorage.getItem('pendingConnectToken') || '';
-    const pendingRef = sessionStorage.getItem('pendingRef') || '';
-    const redirectBase = window.location.origin + window.location.pathname;
-    let redirectUrl = redirectBase;
-    if (pendingToken && pendingRef) {
-      redirectUrl = `${redirectBase}?connect=${pendingToken}&ref=${pendingRef}`;
-    } else if (pendingToken) {
-      redirectUrl = `${redirectBase}?connect=${pendingToken}`;
-    } else if (pendingRef) {
-      redirectUrl = `${redirectBase}?ref=${pendingRef}`;
-    }
-
-    const { error } = await sb.auth.signUp({
-      email: authEmail,
-      password,
-      options: {
-        data: { first_name: firstname, last_name: lastname },
-        emailRedirectTo: redirectUrl
-      }
-    });
-
-    hideLoader();
-
-    if (error) {
-      errorEl.textContent = error.message;
-      return;
-    }
-
-    document.getElementById('reg-form-fields').style.display = 'none';
-    document.getElementById('reg-success').style.display = 'block';
-    errorEl.textContent = '';
-  });
-
-  document.getElementById('reg-to-login-btn')?.addEventListener('click', () => {
-    document.getElementById('auth-user-email').textContent = authEmail;
-    showStep('step-2-login');
-  });
-
-  document.querySelectorAll('.auth-step').forEach(step => step.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const map = {
-        'step-1': 'auth-continue-btn',
-        'step-2-login': 'auth-signin-btn',
-        'step-2-register': 'auth-register-btn',
-        'step-forgot': 'auth-send-reset-btn'
-      };
-      document.getElementById(map[step.id])?.click();
-    }
-  }));
-
-  document.querySelectorAll('.toggle-password-btn').forEach(btn => btn.addEventListener('click', function () {
-    const input = document.getElementById(this.dataset.target);
-    if (!input) return;
-    const isPassword = input.type === 'password';
-    input.type = isPassword ? 'text' : 'password';
-    this.innerHTML = isPassword
-      ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="m14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
-      : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
-  }));
-}
-
-/* ------------------------- PROFILE & AUTH HELPERS ------------------------- */
+/* =========================== LEGACY AUTH HELPERS (compatibility) ============================ */
 function showAuth() {
-  document.getElementById('initial-loader').classList.add('hidden');
-  document.getElementById('auth-overlay').style.display = 'flex';
-  document.getElementById('app-screen').classList.remove('active');
-  showStep('step-1');
-  document.getElementById('auth-email').value = '';
-  document.getElementById('auth-error').textContent = '';
-  const successMsg = document.getElementById('auth-success-msg');
-  if (successMsg) successMsg.style.display = 'none';
+  document.getElementById('initial-loader')?.classList.add('hidden');
+  const overlay = document.getElementById('auth-overlay');
+  if (overlay) {
+    const fields = ['auth-email', 'auth-password', 'reg-password', 'reg-confirm', 'reg-firstname', 'reg-lastname'];
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const regSuccess = document.getElementById('reg-success');
+    if (regSuccess) regSuccess.style.display = 'none';
+    const regForm = document.getElementById('reg-form-fields');
+    if (regForm) regForm.style.display = '';
+    
+    document.querySelectorAll('.auth-error').forEach(el => {
+      el.textContent = '';
+      el.classList.add('hidden');
+    });
+    document.querySelectorAll('.auth-success').forEach(el => el.classList.add('hidden'));
+    
+    showAuthStep('step-1');
+    openModal(overlay);
+  }
+  document.getElementById('app-screen')?.classList.remove('active');
+  syncSidebarComponent();
 }
 
 async function showApp() {
-  document.getElementById('initial-loader').classList.add('hidden');
-  document.getElementById('auth-overlay').style.display = 'none';
+  // مخفی کردن همه لودرها در ابتدا
+  hideLoader();
+  
+  document.getElementById('initial-loader')?.classList.add('hidden');
+  const overlay = document.getElementById('auth-overlay');
+  if (overlay) closeModal(overlay);
   document.getElementById('app-screen').classList.add('active');
   await refreshCurrentUser();
   updateSidebarUI();
@@ -325,25 +660,64 @@ async function showApp() {
   loadSection('dashboard');
   await cleanupOldNotifications();
   updateNotificationBadge();
+  await syncSidebarComponent();
 }
 
 async function refreshCurrentUser() {
   if (!currentUser?.id) return;
   const res = await db.select('profiles', `id=eq.${currentUser.id}`);
   if (res && res.length) currentUser = res[0];
+  if (currentProfile) {
+    const refreshed = await buildCurrentProfile(currentUser);
+    currentProfile = refreshed;
+  }
   const { data: { user } } = await sb.auth.getUser();
   if (user?.email) currentUser.email = user.email;
 }
 
 function updateSidebarUI() {
-  const name = [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || 'User';
+  const name = [currentUser?.first_name, currentUser?.last_name].filter(Boolean).join(' ') || 'User';
   document.getElementById('sidebar-name').textContent = name;
-  document.getElementById('sidebar-role').textContent = currentUser.role || 'Recruit';
+  document.getElementById('sidebar-role').textContent = currentUser?.role || 'Recruit';
   const av = document.getElementById('sidebar-avatar');
-  av.src = currentUser.photo_url || generateAvatarUrl(name);
-  if (currentUser.role === 'General') {
+  if (av) av.src = currentUser?.photo_url || generateAvatarUrl(name);
+  if (currentUser?.role === 'General') {
     document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+  } else {
+    document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
   }
+}
+
+async function fetchProfile(authUser) {
+  let profile = await db.select('profiles', `id=eq.${authUser.id}`);
+  if (profile && profile.length) return profile[0];
+
+  const meta = authUser.user_metadata || {};
+  const pendingRef = sessionStorage.getItem('pendingRef');
+  const newProfileData = {
+    id: authUser.id,
+    first_name: meta.first_name || '',
+    last_name: meta.last_name || '',
+    username: meta.username || '',
+    role: 'Recruit',
+    created_at: new Date().toISOString()
+  };
+
+  if (pendingRef) {
+    newProfileData.referred_by = pendingRef;
+    try {
+      await addNotification(pendingRef, 'system', 'New user joined via your link', '', '#connections');
+    } catch (e) {}
+  }
+
+  const [newProfile] = await db.insert('profiles', newProfileData);
+
+  if (pendingRef) {
+    await createInviteConnection(pendingRef, newProfile.id);
+    sessionStorage.removeItem('pendingRef');
+  }
+
+  return newProfile;
 }
 
 async function createInviteConnection(referrerId, newUserId) {
@@ -366,9 +740,7 @@ async function createInviteConnection(referrerId, newUserId) {
         referrerName = [referrerProf[0].first_name, referrerProf[0].last_name]
                         .filter(Boolean).join(' ') || 'Someone';
       }
-    } catch (profileError) {
-      console.warn('Could not fetch referrer profile, using default name:', profileError);
-    }
+    } catch (profileError) {}
 
     await addNotification(newUserId, 'connection', 'New connection request',
       `${referrerName} wants to connect with you`, '#connections');
@@ -376,47 +748,16 @@ async function createInviteConnection(referrerId, newUserId) {
       `Request sent to new user`, '#connections');
 
     await refreshNotificationUI();
-  } catch (e) {
-    console.error('Failed to create invite connection:', e);
-  }
-}
-
-async function fetchProfile(authUser) {
-  let profile = await db.select('profiles', `id=eq.${authUser.id}`);
-  if (profile && profile.length) return profile[0];
-
-  const meta = authUser.user_metadata || {};
-  const pendingRef = sessionStorage.getItem('pendingRef');
-  const newProfileData = {
-    id: authUser.id,
-    first_name: meta.first_name || '',
-    last_name: meta.last_name || '',
-    username: meta.username || '',
-    role: 'Recruit',
-    created_at: new Date().toISOString()
-  };
-
-  if (pendingRef) {
-    newProfileData.referred_by = pendingRef;
-    try {
-      await addNotification(pendingRef, 'system',
-        'New user joined via your link', '', '#connections');
-    } catch(e) {}
-  }
-
-  const [newProfile] = await db.insert('profiles', newProfileData);
-
-  if (pendingRef) {
-    await createInviteConnection(pendingRef, newProfile.id);
-    sessionStorage.removeItem('pendingRef');
-  }
-
-  return newProfile;
+  } catch (e) {}
 }
 
 async function signOut() {
-  await sb.auth.signOut();
+  try {
+    await sb.auth.signOut();
+  } catch (e) {}
   currentUser = null;
+  currentProfile = null;
+  await syncSidebarComponent();
   showAuth();
 }
 
@@ -440,7 +781,6 @@ let cropper = null, pendingPhotoFile = null;
 function bindEvents() {
   document.getElementById('signout-btn').addEventListener('click', async () => {
     await signOut();
-    showAuth();
   });
   document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('click', () => loadSection(btn.dataset.section)));
   document.querySelectorAll('.card-heading.clickable').forEach(el => el.addEventListener('click', () => {
@@ -468,7 +808,7 @@ function bindEvents() {
       pendingPhotoFile = null;
       document.getElementById('edit-profile-modal').classList.remove('hidden');
     } catch (err) {
-      console.error('Error opening profile modal:', err);
+      // silent
     } finally {
       hideLoader();
     }
@@ -611,6 +951,7 @@ function bindEvents() {
   });
 
   document.getElementById('big-invite-btn')?.addEventListener('click', () => {
+    if (!currentUser) return;
     const link = `${window.location.origin}${window.location.pathname}?ref=${currentUser.id}`;
     document.getElementById('conn-share-link').value = link;
     document.getElementById('conn-link-modal').classList.remove('hidden');
@@ -651,12 +992,16 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (refUserId) {
     sessionStorage.setItem('pendingRef', refUserId);
   }
+
+  initAuthListeners();
+
   const { data: { session } } = await sb.auth.getSession();
   if (session?.user) {
     try {
       let profile = await db.select('profiles', `id=eq.${session.user.id}`);
       if (profile && profile.length) {
         currentUser = profile[0];
+        currentProfile = await buildCurrentProfile(session.user);
         showApp();
         if (connectToken) {
           await processConnectToken(connectToken);
@@ -667,7 +1012,6 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (connectToken) sessionStorage.setItem('pendingConnectToken', connectToken);
       }
     } catch (e) {
-      console.error('Boot error:', e);
       showAuth();
       if (connectToken) sessionStorage.setItem('pendingConnectToken', connectToken);
     }
@@ -676,7 +1020,34 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (connectToken) sessionStorage.setItem('pendingConnectToken', connectToken);
   }
   bindEvents();
-  initAuthListeners();
+
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session?.user) {
+      const profile = await buildCurrentProfile(session.user);
+      currentUser = session.user;
+      currentProfile = profile;
+      await syncSidebarComponent();
+      if (typeof updateNotificationBadge === 'function') {
+        await updateNotificationBadge();
+      }
+      const overlay = document.getElementById('auth-overlay');
+      if (overlay) closeModal(overlay);
+      document.getElementById('app-screen').classList.add('active');
+      await refreshCurrentUser();
+      updateSidebarUI();
+      document.getElementById('section-dashboard').classList.add('active');
+      loadSection('dashboard');
+      await cleanupOldNotifications();
+      updateNotificationBadge();
+    } else if (event === 'SIGNED_OUT') {
+      currentUser = null;
+      currentProfile = null;
+      await syncSidebarComponent();
+      const badge = document.getElementById('notif-badge');
+      if (badge) badge.classList.remove('active');
+      showAuth();
+    }
+  });
 });
 
 /* =========================== DASHBOARD ============================ */
@@ -701,7 +1072,7 @@ async function loadDashboard() {
       document.getElementById('dash-users-row').style.display = 'none';
     }
   } catch (e) {
-    console.error(e);
+    // silent
   } finally {
     hideLoader();
   }
@@ -946,7 +1317,6 @@ async function loadTimeOverview() {
     });
 
   } catch (e) {
-    console.error('Time Overview Error:', e);
     breakdownList.innerHTML = '<p class="empty-state">Error loading data</p>';
   }
 }
@@ -1031,8 +1401,13 @@ async function cleanupStaleNotifications() {
 async function loadNotifications() {
   const c = document.getElementById('dash-notif-list');
   if (!c) return;
+  
+  // پاک‌سازی نوتیفیکیشن‌های تکراری
+  await cleanupDuplicateNotifications();
+  
   await cleanupStaleNotifications();
   await ensureTodayNotifications();
+  
   try {
     const notifications = await db.select('notifications', `user_id=eq.${currentUser.id}&order=created_at.desc&limit=20`);
     if (!notifications || !notifications.length) {
@@ -1073,7 +1448,6 @@ async function loadNotifications() {
       </div>`;
     }).join('');
   } catch (e) {
-    console.error('Error loading notifications:', e);
     c.innerHTML = '<div class="mini-item">…</div>';
   }
   c.onclick = (e) => {
@@ -1090,21 +1464,34 @@ async function loadNotifications() {
   };
 }
 
-async function cleanupOldNotifications() {
+async function cleanupDuplicateNotifications() {
+  if (!currentUser) return;
   try {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const dateStr = thirtyDaysAgo.toISOString();
-    const oldNotifs = await db.select('notifications', `user_id=eq.${currentUser.id}&created_at=lt.${dateStr}&select=id`);
-    for (const n of (oldNotifs || [])) {
-      await db.delete('notifications', n.id);
+    const { data: notifs, error } = await sb
+      .from('notifications')
+      .select('id, event_id, created_at')
+      .eq('user_id', currentUser.id)
+      .eq('type', 'event')
+      .order('created_at', { ascending: false });
+    
+    if (error || !notifs || notifs.length === 0) return;
+    
+    const grouped = {};
+    for (const n of notifs) {
+      if (!n.event_id) continue;
+      if (!grouped[n.event_id]) grouped[n.event_id] = [];
+      grouped[n.event_id].push(n);
     }
-    const declinedNotifs = await db.select('notifications', `user_id=eq.${currentUser.id}&or=(title.ilike.*declined*,body.ilike.*declined*)&select=id`);
-    for (const n of (declinedNotifs || [])) {
-      await db.delete('notifications', n.id);
+    
+    for (const [eventId, items] of Object.entries(grouped)) {
+      if (items.length <= 1) continue;
+      const deleteIds = items.slice(1).map(n => n.id);
+      for (const id of deleteIds) {
+        await sb.from('notifications').delete().eq('id', id);
+      }
     }
   } catch (e) {
-    console.warn('Cleanup failed:', e);
+    // خطا را نادیده بگیر
   }
 }
 
@@ -1224,7 +1611,7 @@ async function closeTicket() {
 async function loadMessages() {
   const list = document.getElementById('message-list'); list.innerHTML = '<div class="empty-state">Loading...</div>';
   try {
-    const q = currentUser.role === 'admin'
+    const q = currentUser.role === 'General'
       ? `from_id=eq.${currentUser.id}&order=created_at.desc`
       : `to_id=eq.${currentUser.id}&order=created_at.desc`;
     const msgs = await db.select('messages', q);
@@ -1737,7 +2124,6 @@ async function openUserDetail(uid) {
 
 /* :::::::::::::::::::::::::: NOTIFICATION HELPERS :::::::::::::::::::::::::: */
 async function addNotification(userId, type, title, body = '', link = '') {
-  console.log('addNotification called with:', { userId, type, title, body, link });
   try {
     const url = `${SUPABASE_URL}/rest/v1/notifications`;
     const token = await getToken();
@@ -1754,11 +2140,8 @@ async function addNotification(userId, type, title, body = '', link = '') {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      console.error('Notification insert failed:', err);
     }
-  } catch (e) {
-    console.error('Notification error:', e);
-  }
+  } catch (e) {}
 }
 
 async function refreshNotificationUI() {
