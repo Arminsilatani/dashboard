@@ -1,46 +1,36 @@
-<!--
-Author: Armin Silatani
-Date: 2026-07-08
-Version: 0.0.0
--->
-<!-- =========================== DASHBOARD PAGE ============================ -->
+<!-- :::::::::::::::::::::::::: DASHBOARD PAGE :::::::::::::::::::::::::: -->
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard</title>
-  <!-- :::::::::::::::::::::::::: FAVICON & STYLES :::::::::::::::::::::::::: -->
-  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="assets/Dashboard.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard</title>
+    <!-- :::::::::::::::::::::::::: FAVICON & STYLES :::::::::::::::::::::::::: -->
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="assets/Dashboard.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
 </head>
 <body>
 
-<!-- ============================================================
-     AUTH OVERLAY – GLASSMORPHISM (Ravlo style)
-     ============================================================ -->
+<!-- :::::::::::::::::::::::::: AUTH OVERLAY :::::::::::::::::::::::::: -->
 <div id="auth-overlay" class="modal auth-overlay">
     <div class="modal-content auth-modal-content auth-box">
-        <!-- Branding -->
         <div id="auth-header" class="auth-header">
             <img src="assets/apple-touch-icon.png" alt="Dashboard" class="auth-logo" onerror="this.style.display='none'">
             <h1 class="auth-branding">Dashboard</h1>
             <p class="auth-subtitle">Sign in to manage your panel</p>
         </div>
-
         <!-- Step 1: Email -->
         <div id="step-1" class="auth-step auth-step--active">
             <input type="email" id="auth-email" class="auth-input auth-field" placeholder="Email address" autocomplete="email">
-            <p id="auth-error" class="auth-error hidden"></p>  <!-- ✅ شناسه اصلاح شد -->
+            <p id="auth-error" class="auth-error hidden"></p>
             <button id="auth-continue-btn" class="auth-btn auth-btn--primary accent-btn auth-full-btn">Continue</button>
         </div>
-
         <!-- Step 2: Login -->
         <div id="step-2-login" class="auth-step">
             <p id="auth-user-email" class="auth-email-display auth-user-email"></p>
             <div class="password-field-wrapper">
-                <input type="password" id="auth-password" class="auth-input auth-field" placeholder="Password" autocomplete="current-password">  <!-- ✅ شناسه اصلاح شد -->
+                <input type="password" id="auth-password" class="auth-input auth-field" placeholder="Password" autocomplete="current-password">
                 <button type="button" class="toggle-password-btn" data-target="auth-password" aria-label="Show password">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
@@ -52,20 +42,19 @@ Version: 0.0.0
             </div>
             <p class="auth-link-row">Forgot password? <a href="#" id="auth-forgot-link" class="auth-link auth-forgot-link">Reset</a></p>
         </div>
-
         <!-- Step 2: Register -->
         <div id="step-2-register" class="auth-step">
             <input type="email" id="register-email-display" class="auth-input auth-field" readonly>
-            <input type="text" id="reg-firstname" class="auth-input auth-field" placeholder="First Name">  <!-- ✅ شناسه اصلاح شد -->
-            <input type="text" id="reg-lastname" class="auth-input auth-field" placeholder="Last Name">    <!-- ✅ شناسه اصلاح شد -->
+            <input type="text" id="reg-firstname" class="auth-input auth-field" placeholder="First Name">
+            <input type="text" id="reg-lastname" class="auth-input auth-field" placeholder="Last Name">
             <div class="password-field-wrapper">
-                <input type="password" id="reg-password" class="auth-input auth-field" placeholder="Password (min 6 chars)" autocomplete="new-password">  <!-- ✅ شناسه اصلاح شد -->
+                <input type="password" id="reg-password" class="auth-input auth-field" placeholder="Password (min 6 chars)" autocomplete="new-password">
                 <button type="button" class="toggle-password-btn" data-target="reg-password" aria-label="Show password">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
             </div>
             <div class="password-field-wrapper">
-                <input type="password" id="reg-confirm" class="auth-input auth-field" placeholder="Confirm password" autocomplete="new-password">  <!-- ✅ شناسه اصلاح شد -->
+                <input type="password" id="reg-confirm" class="auth-input auth-field" placeholder="Confirm password" autocomplete="new-password">
                 <button type="button" class="toggle-password-btn" data-target="reg-confirm" aria-label="Show password">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
@@ -85,7 +74,6 @@ Version: 0.0.0
             <div id="reg-form-fields" style="display:flex;flex-direction:column;gap:12px;width:100%;">
             </div>
         </div>
-
         <!-- Forgot password -->
         <div id="step-forgot" class="auth-step">
             <h3 class="auth-reset-title">Reset Password</h3>
@@ -99,298 +87,288 @@ Version: 0.0.0
         </div>
     </div>
 </div>
-  <!-- ------------------------- LOADERS ------------------------- -->
-  <div id="initial-loader" class="fullpage-loader hidden">
-    <div class="lds-grid">
-      <div></div><div></div><div></div>
-      <div></div><div></div><div></div>
-      <div></div><div></div><div></div>
-    </div>
-  </div>
-  <div id="global-loader" class="modal hidden">
-    <div class="modal-box modal-loader-box">
-      <p class="loader-text">Signing in…</p>
-    </div>
-  </div>
 
-  <!-- ------------------------- MAIN APP ------------------------- -->
-  <div id="app-screen" class="screen">
+<!-- :::::::::::::::::::::::::: LOADERS :::::::::::::::::::::::::: -->
+<div id="initial-loader" class="fullpage-loader hidden">
+    <div class="lds-grid">
+        <div></div><div></div><div></div>
+        <div></div><div></div><div></div>
+        <div></div><div></div><div></div>
+    </div>
+</div>
+<div id="global-loader" class="modal hidden">
+    <div class="modal-box modal-loader-box">
+        <p class="loader-text">Signing in…</p>
+    </div>
+</div>
+
+<!-- :::::::::::::::::::::::::: MAIN APP :::::::::::::::::::::::::: -->
+<div id="app-screen" class="screen">
+    <!-- :::::::::::::::::::::::::: SIDEBAR :::::::::::::::::::::::::: -->
     <aside class="sidebar" id="sidebar">
-      <div class="sidebar-user" id="sidebar-profile-trigger">
-        <div style="position: relative; display: inline-flex; flex-shrink: 0;">
-          <img id="sidebar-avatar" src="" alt="avatar" class="avatar" />
-          <span class="notif-badge" id="notif-badge"></span>
+        <div class="sidebar-user" id="sidebar-profile-trigger">
+            <div style="position: relative; display: inline-flex; flex-shrink: 0;">
+                <img id="sidebar-avatar" src="" alt="avatar" class="avatar" />
+                <span class="notif-badge" id="notif-badge"></span>
+            </div>
+            <div class="sidebar-user-info">
+                <div id="sidebar-name" class="sidebar-name"></div>
+                <div id="sidebar-role" class="sidebar-role"></div>
+            </div>
         </div>
-        <div class="sidebar-user-info">
-          <div id="sidebar-name" class="sidebar-name"></div>
-          <div id="sidebar-role" class="sidebar-role"></div>
-        </div>
-      </div>
-      <nav class="sidebar-nav">
-        <button class="nav-item active" data-section="tickets">
-          <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-          <span class="nav-text">Tickets</span>
+        <nav class="sidebar-nav">
+            <button class="nav-item active" data-section="tickets">
+                <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                <span class="nav-text">Tickets</span>
+            </button>
+            <button class="nav-item" data-section="messages">
+                <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v2a2 2 0 0 1-2 2H6l-3 3V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span class="nav-text">Messages</span>
+            </button>
+            <button class="nav-item" data-section="contracts">
+                <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                <span class="nav-text">Contracts</span>
+            </button>
+            <button class="nav-item" data-section="connections">
+                <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>
+                <span class="nav-text">Connections</span>
+            </button>
+            <button class="nav-item admin-only hidden" data-section="users">
+                <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span class="nav-text">Users</span>
+            </button>
+        </nav>
+        <button id="signout-btn" class="btn-signout">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span class="nav-text">Sign Out</span>
         </button>
-        <button class="nav-item" data-section="messages">
-          <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v2a2 2 0 0 1-2 2H6l-3 3V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          <span class="nav-text">Messages</span>
-        </button>
-        <button class="nav-item" data-section="contracts">
-          <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-          <span class="nav-text">Contracts</span>
-        </button>
-        <button class="nav-item" data-section="connections">
-          <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>
-          <span class="nav-text">Connections</span>
-        </button>
-        <button class="nav-item admin-only hidden" data-section="users">
-          <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          <span class="nav-text">Users</span>
-        </button>
-      </nav>
-      <button id="signout-btn" class="btn-signout">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        <span class="nav-text">Sign Out</span>
-      </button>
     </aside>
 
+    <!-- :::::::::::::::::::::::::: CONTENT :::::::::::::::::::::::::: -->
     <main class="content">
-      <!-- ------------------------- DASHBOARD SECTION ------------------------- -->
-      <section id="section-dashboard" class="section">
-        <!-- ردیف اول: پروفایل + نوتیفیکیشن -->
-        <div class="dash-row">
-          <div class="dash-profile-card">
-            <div class="profile-header">
-              <div class="profile-avatar-wrap">
-                <img id="dash-avatar" src="" alt="avatar" class="dash-avatar" />
-                <button class="dash-edit-btn dash-avatar-edit-btn" id="open-edit-profile-btn">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                </button>
-              </div>
-              <div class="profile-header-text">
-                <h2 id="dash-fullname"></h2>
-                <span id="dash-role-badge" class="badge badge-open"></span>
-              </div>
-            </div>
-            <div class="profile-details">
-              <div class="detail-item"><span class="detail-label">Email</span><span class="detail-value" id="dash-email">—</span></div>
-              <div class="detail-item"><span class="detail-label">Phone</span><span class="detail-value" id="dash-phone">—</span></div>
-              <div class="detail-item"><span class="detail-label">Website</span><span class="detail-value" id="dash-website">—</span></div>
-            </div>
-          </div>
-          <div class="dash-notif-card">
-            <h3 class="card-heading">Notifications</h3>
-            <div id="dash-notif-list"><p class="empty-state">No new notifications</p></div>
-          </div>
-        </div>
-
-        <!-- گروه Calendar + Tickets/Messages با فاصله ۵۰px -->
-        <div class="dash-group-spaced">
-          <!-- ردیف دوم: Calendar -->
-          <div class="dash-row">
-            <div class="dash-calendar-card">
-              <h3 class="card-heading">Calendar</h3>
-              <div id="dash-mini-calendar"></div>
-              <div class="mini-cal-footer">
-                <img src="assets/Ra.svg" alt="Ravlo" class="ravlo-footer-logo">
-                <span>powered by Ravlo</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- ردیف سوم: Recent Tickets + Recent Messages -->
-          <div class="dash-row">
-            <div class="dash-list-card">
-              <h3 class="card-heading clickable" data-nav="tickets">Recent Tickets →</h3>
-              <div id="dash-tickets-list" class="mini-list"></div>
-            </div>
-            <div class="dash-list-card">
-              <h3 class="card-heading clickable" data-nav="messages">Recent Messages →</h3>
-              <div id="dash-messages-list" class="mini-list"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ردیف چهارم: Time Overview -->
-        <div class="dash-row dash-row-nowrap">
-          <div class="time-overview-card">
-            <h3 class="card-heading">
-              Time Overview
-              <span class="time-overview-total" id="time-overview-total">--:--</span>
-            </h3>
-            <div class="time-overview-content">
-              <div class="time-overview-chart">
-                <div id="time-overview-chart-area"></div>
-              </div>
-              <div class="time-overview-breakdown-row" id="time-overview-breakdown-list"></div>
-            </div>
-            <div class="tempozio-footer">
-              <img src="assets/Te.svg" alt="Tempozio" class="tempozio-footer-logo">
-              <span>powered by Tempozio</span>
-            </div>
-          </div>
-
-          <!-- ستون خالی: My Notes -->
-          <div class="notes-card">
-            <h3 class="card-heading">My Notes</h3>
-            <!-- این کارت عمداً خالی رها شده است -->
-          </div>
-        </div>
-
-        <!-- ردیف پنجم: Users (admin only) -->
-        <div class="dash-row" id="dash-users-row" style="display:none;">
-          <div class="dash-list-card" style="flex:1;">
-            <h3 class="card-heading">All Users</h3>
-            <div style="margin-bottom:16px;">
-              <input type="text" id="dash-user-search" class="auth-field" placeholder="Search by name..." autocomplete="off">
-            </div>
-            <div id="dash-users-list" class="mini-list"></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ------------------------- TICKETS SECTION ------------------------- -->
-      <section id="section-tickets" class="section">
-        <div class="section-header"><h2>Tickets</h2><button class="btn-accent" id="new-ticket-btn">+ New Ticket</button></div>
-        <div id="ticket-list" class="card-list"></div>
-        <div id="new-ticket-form" class="modal hidden"><div class="modal-box"><h3>New Ticket</h3><input id="ticket-subject" type="text" placeholder="Subject" /><textarea id="ticket-body" placeholder="Describe your issue..."></textarea><div class="modal-actions"><button class="btn-accent" id="submit-ticket-btn">Submit</button><button class="btn-ghost" id="cancel-ticket-btn">Cancel</button></div></div></div>
-        <div id="ticket-thread" class="hidden"><button class="btn-ghost back-btn" id="back-tickets-btn">← Back</button><div id="thread-subject" class="thread-title"></div><div id="thread-messages" class="thread-msgs"></div><div class="thread-reply"><textarea id="reply-body" placeholder="Write a reply..."></textarea><button class="btn-accent" id="send-reply-btn">Send</button></div><div class="admin-only hidden"><button class="btn-ghost" id="close-ticket-btn">Close Ticket</button></div></div>
-      </section>
-
-      <!-- ------------------------- MESSAGES SECTION ------------------------- -->
-      <section id="section-messages" class="section">
-        <div class="section-header"><h2>Messages</h2><button class="btn-accent admin-only hidden" id="new-message-btn">+ Send Message</button></div>
-        <div id="message-list" class="card-list"></div>
-        <div id="send-message-modal" class="modal hidden"><div class="modal-box"><h3>Send Message</h3><select id="msg-to-select"></select><textarea id="msg-body" placeholder="Message..."></textarea><div class="modal-actions"><button class="btn-accent" id="submit-msg-btn">Send</button><button class="btn-ghost" id="cancel-msg-btn">Cancel</button></div></div></div>
-      </section>
-
-      <!-- ------------------------- CONTRACTS SECTION ------------------------- -->
-      <section id="section-contracts" class="section">
-        <div class="section-header"><h2>Contracts &amp; Files</h2><div class="admin-only hidden"><button class="btn-accent" id="new-section-btn">+ Section</button><button class="btn-accent" id="new-contract-btn">+ File</button></div></div>
-        <div id="contracts-list" class="contracts-tree"></div>
-        <div id="add-section-modal" class="modal hidden"><div class="modal-box"><h3>New Section</h3><input id="section-title-input" type="text" placeholder="Section title" /><div class="modal-actions"><button class="btn-accent" id="submit-section-btn">Add</button><button class="btn-ghost" id="cancel-section-btn">Cancel</button></div></div></div>
-        <div id="add-contract-modal" class="modal hidden"><div class="modal-box"><h3>New File</h3><select id="contract-section-select"></select><input id="contract-title-input" type="text" placeholder="File title" /><input id="contract-url-input" type="url" placeholder="File URL" /><div class="modal-actions"><button class="btn-accent" id="submit-contract-btn">Add</button><button class="btn-ghost" id="cancel-contract-btn">Cancel</button></div></div></div>
-      </section>
-
-      <!-- ------------------------- CONNECTIONS SECTION ------------------------- -->
-      <section id="section-connections" class="section">
-        <div class="section-header"><h2>Connections</h2></div>
-        <div class="conn-search-bar">
-          <input type="text" id="conn-search-input" class="auth-field" placeholder="Search by name..." autocomplete="off">
-          <div id="conn-search-results" class="card-list" style="margin-top:8px; display:none;"></div>
-        </div>
-        <div id="conn-invite-big-btn" style="display:none; text-align:center; margin:20px 0;">
-          <button id="big-invite-btn" style="background:var(--accent); color:#0d0d0d; border:none; border-radius:50%; width:80px; height:80px; font-size:40px; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.3); transition:0.2s;">+</button>
-          <p style="color:var(--muted); margin-top:8px;">Invite a new member</p>
-        </div>
-        <div id="connections-list" class="card-list"></div>
-        <div id="conn-requests-list" class="card-list"></div>
-        <div id="conn-link-modal" class="modal hidden">
-          <div class="modal-box">
-            <h3>🔗 Your Invite Link</h3>
-            <p style="color:var(--muted); font-size:13px;">Share this link to invite others. They’ll be connected to you automatically after signing up.</p>
-            <div class="copy-link-box">
-              <input type="text" id="conn-share-link" class="auth-field" readonly>
-              <button id="copy-conn-link-btn" class="btn-accent">Copy</button>
-            </div>
-            <button class="btn-ghost" id="close-conn-link-modal-btn">Close</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- ------------------------- USERS SECTION ------------------------- -->
-      <section id="section-users" class="section">
-        <div class="section-header"><h2>User Management</h2></div>
-        <div style="margin-bottom:16px;">
-          <input type="text" id="users-search-input" class="auth-field" placeholder="Search by name..." autocomplete="off">
-        </div>
-        <div id="users-cards-list" class="card-list"></div>
-        <div id="edit-user-modal" class="modal hidden">
-          <div class="modal-box" style="max-width:520px;">
-            <h3>User Details</h3>
-            <div class="user-detail-card">
-              <div class="user-detail-avatar">
-                <img id="modal-user-avatar" src="" alt="avatar" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);">
-              </div>
-              <div class="user-detail-info">
-                <div class="user-detail-name" id="modal-user-name"></div>
-                <div class="user-detail-role"><span id="modal-user-role-badge" class="badge"></span></div>
-                <div class="user-detail-meta">
-                  <div><span class="detail-label">Email</span><span id="modal-user-email">—</span></div>
-                  <div><span class="detail-label">Phone</span><span id="modal-user-phone">—</span></div>
-                  <div><span class="detail-label">Website</span><span id="modal-user-website">—</span></div>
-                  <div><span class="detail-label">Username</span><span id="modal-user-username">—</span></div>
-                  <div><span class="detail-label">Telegram</span><span id="modal-user-telegram">—</span></div>
-                  <div><span class="detail-label">Joined</span><span id="modal-user-joined">—</span></div>
-                  <div><span class="detail-label">Invited</span><span id="modal-user-invited">0</span></div>
+        <!-- :::::::::::::::::::::::::: DASHBOARD SECTION :::::::::::::::::::::::::: -->
+        <section id="section-dashboard" class="section">
+            <div class="dash-row">
+                <div class="dash-profile-card">
+                    <div class="profile-header">
+                        <div class="profile-avatar-wrap">
+                            <img id="dash-avatar" src="" alt="avatar" class="dash-avatar" />
+                            <button class="dash-edit-btn dash-avatar-edit-btn" id="open-edit-profile-btn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                            </button>
+                        </div>
+                        <div class="profile-header-text">
+                            <h2 id="dash-fullname"></h2>
+                            <span id="dash-role-badge" class="badge badge-open"></span>
+                        </div>
+                    </div>
+                    <div class="profile-details">
+                        <div class="detail-item"><span class="detail-label">Email</span><span class="detail-value" id="dash-email">—</span></div>
+                        <div class="detail-item"><span class="detail-label">Phone</span><span class="detail-value" id="dash-phone">—</span></div>
+                        <div class="detail-item"><span class="detail-label">Website</span><span class="detail-value" id="dash-website">—</span></div>
+                    </div>
                 </div>
-              </div>
+                <div class="dash-notif-card">
+                    <h3 class="card-heading">Notifications</h3>
+                    <div id="dash-notif-list"><p class="empty-state">No new notifications</p></div>
+                </div>
             </div>
-            <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:16px;">
-              <label style="color:var(--muted); font-size:12px;">Edit Role</label>
-              <select id="edit-user-role" style="margin-bottom:12px;">
-                <option value="Recruit">Recruit</option>
-                <option value="Sergeant">Sergeant</option>
-                <option value="Commander">Commander</option>
-                <option value="General">General</option>
-              </select>
-              <input id="edit-user-first-name" type="text" placeholder="First name" />
-              <input id="edit-user-last-name" type="text" placeholder="Last name" />
-              <input id="edit-user-username" type="text" placeholder="Username" />
-              <input id="edit-user-telegram" type="text" placeholder="Telegram ID" />
-              <div class="modal-actions">
-                <button class="btn-accent" id="save-user-btn">Save Changes</button>
-                <button class="btn-ghost" id="cancel-edit-user-btn">Close</button>
-              </div>
+            <div class="dash-group-spaced">
+                <div class="dash-row">
+                    <div class="dash-calendar-card">
+                        <h3 class="card-heading">Calendar</h3>
+                        <div id="dash-mini-calendar"></div>
+                        <div class="mini-cal-footer">
+                            <img src="assets/Ra.svg" alt="Ravlo" class="ravlo-footer-logo">
+                            <span>powered by Ravlo</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="dash-row">
+                    <div class="dash-list-card">
+                        <h3 class="card-heading clickable" data-nav="tickets">Recent Tickets →</h3>
+                        <div id="dash-tickets-list" class="mini-list"></div>
+                    </div>
+                    <div class="dash-list-card">
+                        <h3 class="card-heading clickable" data-nav="messages">Recent Messages →</h3>
+                        <div id="dash-messages-list" class="mini-list"></div>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-      </section>
+            <div class="dash-row dash-row-nowrap">
+                <div class="time-overview-card">
+                    <h3 class="card-heading">
+                        Time Overview
+                        <span class="time-overview-total" id="time-overview-total">--:--</span>
+                    </h3>
+                    <div class="time-overview-content">
+                        <div class="time-overview-chart">
+                            <div id="time-overview-chart-area"></div>
+                        </div>
+                        <div class="time-overview-breakdown-row" id="time-overview-breakdown-list"></div>
+                    </div>
+                    <div class="tempozio-footer">
+                        <img src="assets/Te.svg" alt="Tempozio" class="tempozio-footer-logo">
+                        <span>powered by Tempozio</span>
+                    </div>
+                </div>
+                <div class="notes-card">
+                    <h3 class="card-heading">My Notes</h3>
+                </div>
+            </div>
+            <div class="dash-row" id="dash-users-row" style="display:none;">
+                <div class="dash-list-card" style="flex:1;">
+                    <h3 class="card-heading">All Users</h3>
+                    <div style="margin-bottom:16px;">
+                        <input type="text" id="dash-user-search" class="auth-field" placeholder="Search by name..." autocomplete="off">
+                    </div>
+                    <div id="dash-users-list" class="mini-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- :::::::::::::::::::::::::: TICKETS SECTION :::::::::::::::::::::::::: -->
+        <section id="section-tickets" class="section">
+            <div class="section-header"><h2>Tickets</h2><button class="btn-accent" id="new-ticket-btn">+ New Ticket</button></div>
+            <div id="ticket-list" class="card-list"></div>
+            <div id="new-ticket-form" class="modal hidden"><div class="modal-box"><h3>New Ticket</h3><input id="ticket-subject" type="text" placeholder="Subject" /><textarea id="ticket-body" placeholder="Describe your issue..."></textarea><div class="modal-actions"><button class="btn-accent" id="submit-ticket-btn">Submit</button><button class="btn-ghost" id="cancel-ticket-btn">Cancel</button></div></div></div>
+            <div id="ticket-thread" class="hidden"><button class="btn-ghost back-btn" id="back-tickets-btn">← Back</button><div id="thread-subject" class="thread-title"></div><div id="thread-messages" class="thread-msgs"></div><div class="thread-reply"><textarea id="reply-body" placeholder="Write a reply..."></textarea><button class="btn-accent" id="send-reply-btn">Send</button></div><div class="admin-only hidden"><button class="btn-ghost" id="close-ticket-btn">Close Ticket</button></div></div>
+        </section>
+
+        <!-- :::::::::::::::::::::::::: MESSAGES SECTION :::::::::::::::::::::::::: -->
+        <section id="section-messages" class="section">
+            <div class="section-header"><h2>Messages</h2><button class="btn-accent admin-only hidden" id="new-message-btn">+ Send Message</button></div>
+            <div id="message-list" class="card-list"></div>
+            <div id="send-message-modal" class="modal hidden"><div class="modal-box"><h3>Send Message</h3><select id="msg-to-select"></select><textarea id="msg-body" placeholder="Message..."></textarea><div class="modal-actions"><button class="btn-accent" id="submit-msg-btn">Send</button><button class="btn-ghost" id="cancel-msg-btn">Cancel</button></div></div></div>
+        </section>
+
+        <!-- :::::::::::::::::::::::::: CONTRACTS SECTION :::::::::::::::::::::::::: -->
+        <section id="section-contracts" class="section">
+            <div class="section-header"><h2>Contracts &amp; Files</h2><div class="admin-only hidden"><button class="btn-accent" id="new-section-btn">+ Section</button><button class="btn-accent" id="new-contract-btn">+ File</button></div></div>
+            <div id="contracts-list" class="contracts-tree"></div>
+            <div id="add-section-modal" class="modal hidden"><div class="modal-box"><h3>New Section</h3><input id="section-title-input" type="text" placeholder="Section title" /><div class="modal-actions"><button class="btn-accent" id="submit-section-btn">Add</button><button class="btn-ghost" id="cancel-section-btn">Cancel</button></div></div></div>
+            <div id="add-contract-modal" class="modal hidden"><div class="modal-box"><h3>New File</h3><select id="contract-section-select"></select><input id="contract-title-input" type="text" placeholder="File title" /><input id="contract-url-input" type="url" placeholder="File URL" /><div class="modal-actions"><button class="btn-accent" id="submit-contract-btn">Add</button><button class="btn-ghost" id="cancel-contract-btn">Cancel</button></div></div></div>
+        </section>
+
+        <!-- :::::::::::::::::::::::::: CONNECTIONS SECTION :::::::::::::::::::::::::: -->
+        <section id="section-connections" class="section">
+            <div class="section-header"><h2>Connections</h2></div>
+            <div class="conn-search-bar">
+                <input type="text" id="conn-search-input" class="auth-field" placeholder="Search by name..." autocomplete="off">
+                <div id="conn-search-results" class="card-list" style="margin-top:8px; display:none;"></div>
+            </div>
+            <div id="conn-invite-big-btn" style="display:none; text-align:center; margin:20px 0;">
+                <button id="big-invite-btn" style="background:var(--accent); color:#0D0D0D; border:none; border-radius:50%; width:80px; height:80px; font-size:40px; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.3); transition:0.2s;">+</button>
+                <p style="color:var(--muted); margin-top:8px;">Invite a new member</p>
+            </div>
+            <div id="connections-list" class="card-list"></div>
+            <div id="conn-requests-list" class="card-list"></div>
+            <div id="conn-link-modal" class="modal hidden">
+                <div class="modal-box">
+                    <h3>🔗 Your Invite Link</h3>
+                    <p style="color:var(--muted); font-size:13px;">Share this link to invite others. They’ll be connected to you automatically after signing up.</p>
+                    <div class="copy-link-box">
+                        <input type="text" id="conn-share-link" class="auth-field" readonly>
+                        <button id="copy-conn-link-btn" class="btn-accent">Copy</button>
+                    </div>
+                    <button class="btn-ghost" id="close-conn-link-modal-btn">Close</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- :::::::::::::::::::::::::: USERS SECTION :::::::::::::::::::::::::: -->
+        <section id="section-users" class="section">
+            <div class="section-header"><h2>User Management</h2></div>
+            <div style="margin-bottom:16px;">
+                <input type="text" id="users-search-input" class="auth-field" placeholder="Search by name..." autocomplete="off">
+            </div>
+            <div id="users-cards-list" class="card-list"></div>
+            <div id="edit-user-modal" class="modal hidden">
+                <div class="modal-box" style="max-width:520px;">
+                    <h3>User Details</h3>
+                    <div class="user-detail-card">
+                        <div class="user-detail-avatar">
+                            <img id="modal-user-avatar" src="" alt="avatar" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);">
+                        </div>
+                        <div class="user-detail-info">
+                            <div class="user-detail-name" id="modal-user-name"></div>
+                            <div class="user-detail-role"><span id="modal-user-role-badge" class="badge"></span></div>
+                            <div class="user-detail-meta">
+                                <div><span class="detail-label">Email</span><span id="modal-user-email">—</span></div>
+                                <div><span class="detail-label">Phone</span><span id="modal-user-phone">—</span></div>
+                                <div><span class="detail-label">Website</span><span id="modal-user-website">—</span></div>
+                                <div><span class="detail-label">Username</span><span id="modal-user-username">—</span></div>
+                                <div><span class="detail-label">Telegram</span><span id="modal-user-telegram">—</span></div>
+                                <div><span class="detail-label">Joined</span><span id="modal-user-joined">—</span></div>
+                                <div><span class="detail-label">Invited</span><span id="modal-user-invited">0</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:16px;">
+                        <label style="color:var(--muted); font-size:12px;">Edit Role</label>
+                        <select id="edit-user-role" style="margin-bottom:12px;">
+                            <option value="Recruit">Recruit</option>
+                            <option value="Sergeant">Sergeant</option>
+                            <option value="Commander">Commander</option>
+                            <option value="General">General</option>
+                        </select>
+                        <input id="edit-user-first-name" type="text" placeholder="First name" />
+                        <input id="edit-user-last-name" type="text" placeholder="Last name" />
+                        <input id="edit-user-username" type="text" placeholder="Username" />
+                        <input id="edit-user-telegram" type="text" placeholder="Telegram ID" />
+                        <div class="modal-actions">
+                            <button class="btn-accent" id="save-user-btn">Save Changes</button>
+                            <button class="btn-ghost" id="cancel-edit-user-btn">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
-  </div>
+</div>
 
-  <!-- ------------------------- MODALS ------------------------- -->
-  <!-- Edit Profile Modal -->
-  <div id="edit-profile-modal" class="modal hidden">
+<!-- :::::::::::::::::::::::::: MODALS :::::::::::::::::::::::::: -->
+<!-- Edit Profile Modal -->
+<div id="edit-profile-modal" class="modal hidden">
     <div class="modal-box">
-      <h3>Edit Profile</h3>
-      <div class="profile-photo-upload">
-        <img id="edit-avatar-preview" src="" alt="avatar" class="edit-avatar-preview" />
-        <label class="btn-ghost photo-upload-label">Change Photo<input type="file" id="edit-photo-input" accept="image/*" class="photo-upload-input" /></label>
-      </div>
-      <input type="text" id="edit-first-name" class="auth-field" placeholder="First Name" />
-      <input type="text" id="edit-last-name" class="auth-field" placeholder="Last Name" />
-      <input type="email" id="edit-email" class="auth-field" placeholder="Email" />
-      <input type="tel" id="edit-phone" class="auth-field" placeholder="Phone" />
-      <input type="url" id="edit-website" class="auth-field" placeholder="Website" />
-      <div class="modal-actions">
-        <button class="btn-accent" id="save-profile-btn">Save</button>
-        <button class="btn-ghost" id="cancel-edit-profile-btn">Cancel</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Crop Image Modal -->
-  <div id="crop-modal" class="modal hidden">
-    <div class="modal-box crop-modal-box">
-      <h3>Crop Your Photo</h3>
-      <div class="crop-image-wrapper"><img id="crop-image" class="crop-image" /></div>
-      <div class="modal-actions crop-modal-actions">
-        <span class="zorio-credit">
-          <img src="assets/logos/Zo.svg" alt="Zorio" class="zorio-logo" />
-          powered by <span class="zorio-name">Zorio</span>
-        </span>
-        <div class="crop-buttons">
-          <button class="btn-ghost" id="cancel-crop-btn">Cancel</button>
-          <button class="btn-accent" id="confirm-crop-btn">Confirm</button>
+        <h3>Edit Profile</h3>
+        <div class="profile-photo-upload">
+            <img id="edit-avatar-preview" src="" alt="avatar" class="edit-avatar-preview" />
+            <label class="btn-ghost photo-upload-label">Change Photo<input type="file" id="edit-photo-input" accept="image/*" class="photo-upload-input" /></label>
         </div>
-      </div>
+        <input type="text" id="edit-first-name" class="auth-field" placeholder="First Name" />
+        <input type="text" id="edit-last-name" class="auth-field" placeholder="Last Name" />
+        <input type="email" id="edit-email" class="auth-field" placeholder="Email" />
+        <input type="tel" id="edit-phone" class="auth-field" placeholder="Phone" />
+        <input type="url" id="edit-website" class="auth-field" placeholder="Website" />
+        <div class="modal-actions">
+            <button class="btn-accent" id="save-profile-btn">Save</button>
+            <button class="btn-ghost" id="cancel-edit-profile-btn">Cancel</button>
+        </div>
     </div>
-  </div>
+</div>
 
-  <!-- :::::::::::::::::::::::::: SCRIPTS :::::::::::::::::::::::::: -->
-  <script src="assets/supabase.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-  <script src="assets/Dashboard.js"></script>
+<!-- Crop Image Modal -->
+<div id="crop-modal" class="modal hidden">
+    <div class="modal-box crop-modal-box">
+        <h3>Crop Your Photo</h3>
+        <div class="crop-image-wrapper"><img id="crop-image" class="crop-image" /></div>
+        <div class="modal-actions crop-modal-actions">
+            <span class="zorio-credit">
+                <img src="assets/logos/Zo.svg" alt="Zorio" class="zorio-logo" />
+                powered by <span class="zorio-name">Zorio</span>
+            </span>
+            <div class="crop-buttons">
+                <button class="btn-ghost" id="cancel-crop-btn">Cancel</button>
+                <button class="btn-accent" id="confirm-crop-btn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- :::::::::::::::::::::::::: SCRIPTS :::::::::::::::::::::::::: -->
+<script src="assets/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="assets/Dashboard.js"></script>
 </body>
 </html>
